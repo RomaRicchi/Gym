@@ -16,6 +16,7 @@ public class SocioRepository : ISocioRepository
 
         if (!string.IsNullOrWhiteSpace(q))
             qry = qry.Where(s => s.nombre.Contains(q) || s.dni.Contains(q) || s.email.Contains(q));
+
         if (activo.HasValue)
             qry = qry.Where(s => s.activo == activo);
 
@@ -27,13 +28,46 @@ public class SocioRepository : ISocioRepository
         return (items, total);
     }
 
-    public Task<bool> ExistsAsync(string dni, string email, CancellationToken ct = default)
-        => _db.socio.AnyAsync(s => s.dni == dni || s.email == email, ct);
+    public Task<socio?> GetByIdAsync(uint id, CancellationToken ct = default) =>
+        _db.socio.AsNoTracking().FirstOrDefaultAsync(s => s.id == id, ct);
+
+    public Task<bool> ExistsAsync(string dni, string email, CancellationToken ct = default) =>
+        _db.socio.AnyAsync(s => s.dni == dni || s.email == email, ct);
 
     public async Task<socio> AddAsync(socio entity, CancellationToken ct = default)
     {
         _db.socio.Add(entity);
         await _db.SaveChangesAsync(ct);
         return entity;
+    }
+
+    public async Task<bool> UpdateAsync(uint id, Action<socio> apply, CancellationToken ct = default)
+    {
+        var e = await _db.socio.FirstOrDefaultAsync(s => s.id == id, ct);
+        if (e is null) return false;
+
+        apply(e);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> SetActivoAsync(uint id, bool value, CancellationToken ct = default)
+    {
+        var e = await _db.socio.FirstOrDefaultAsync(s => s.id == id, ct);
+        if (e is null) return false;
+
+        e.activo = value;
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> DeleteAsync(uint id, CancellationToken ct = default)
+    {
+        var e = await _db.socio.FirstOrDefaultAsync(s => s.id == id, ct);
+        if (e is null) return false;
+
+        _db.socio.Remove(e);
+        await _db.SaveChangesAsync(ct);
+        return true;
     }
 }

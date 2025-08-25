@@ -1,26 +1,28 @@
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using GymApi.Data; 
+using GymApi.Data;
+
+namespace GymApi.Controllers;
 
 [ApiController]
 [Route("api/ping")]
 public class PingController : ControllerBase
 {
-    private readonly GymApi.Data.GymDbContext _db;
-    public PingController(GymApi.Data.GymDbContext db) => _db = db;
-
-    [HttpGet("planes")]
-    public async Task<IActionResult> GetPlanes()
-    {
-        var planes = await _db.plan.Take(5).ToListAsync();
-        return Ok(planes);
-    }
+    private readonly GymDbContext _db;
+    public PingController(GymDbContext db) => _db = db;
 
     [HttpGet("socios")]
-    public async Task<IActionResult> GetSocios()
+    public async Task<IActionResult> Socios()
     {
-        var socios = await _db.socio.Take(5).ToListAsync();
-        return Ok(socios);
+        // Si DB está bien, devuelve el total
+        var total = await _db.socio.CountAsync();
+        return Ok(new { ok = true, total });
+    }
+
+    [HttpGet("planes")]
+    public async Task<IActionResult> Planes()
+    {
+        var total = await _db.plan.CountAsync();
+        return Ok(new { ok = true, total });
     }
 }

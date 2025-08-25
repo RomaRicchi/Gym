@@ -34,6 +34,9 @@ C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Microsoft.OpenApi.dll
 C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Mono.TextTemplating.dll
 C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\MySqlConnector.dll
 C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Pomelo.EntityFrameworkCore.MySql.dll
+C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\System.CodeDom.dll
 C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\System.Composition.AttributedModel.dll
 C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\System.Composition.Convention.dll
@@ -113,6 +116,7 @@ C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\GymApi.AssemblyInfo.cs
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\GymApi.csproj.CoreCompileInputs.cache
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\GymApi.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\GymApi.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\GymApi.sourcelink.json
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\rjimswa.dswa.cache.json
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
@@ -127,6 +131,3 @@ C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\refint\GymApi.dll
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\GymApi.pdb
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\GymApi.genruntimeconfig.cache
 C:\Users\ROMA\Desktop\Gym\GymApi\obj\Debug\net9.0\ref\GymApi.dll
-C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
-C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
-C:\Users\ROMA\Desktop\Gym\GymApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
