@@ -3,8 +3,8 @@ setlocal
 
 REM Rutas basadas en la ubicación del .bat
 set "ROOT=%~dp0"
-set "API_DIR=%ROOT%GymApi"
-set "WEB_DIR=%ROOT%gym-web"
+set "API_DIR=%ROOT%Api"
+set "WEB_DIR=%ROOT%Frontend"
 
 REM Checks básicos
 where dotnet >nul 2>nul || (echo [ERR] Falta dotnet en PATH & pause & exit /b 1)
@@ -17,7 +17,7 @@ echo [API] Restaurando dependencias...
 pushd "%API_DIR%"
 dotnet restore
 echo [API] Iniciando en http://localhost:5144 ...
-start "GymApi" cmd /c "dotnet watch run --no-restore --urls http://localhost:5144"
+start "Api" cmd /c "dotnet watch run --no-restore --urls http://localhost:5144"
 popd
 
 REM Frontend

@@ -1,0 +1,88 @@
+# =========================
+# OS / editor basura
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+*.lnk
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# =========================
+# IDEs
+# =========================
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# =========================
+# .NET / ASP.NET Core
+# =========================
+[Bb]in/
+[Oo]bj/
+artifacts/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+_ReSharper*/
+*.DotSettings.user
+
+# Archivos locales de configuración (no subir secretos)
+Api/appsettings.*.local.json
+
+# Opcional: si tu appsettings.Development.json tiene secretos, destapá esta línea
+# Api/appsettings.Development.json
+
+# =========================
+# Node / Vite (React)
+# =========================
+**/node_modules/
+**/dist/
+**/.vite/
+**/.cache/
+*.tsbuildinfo
+
+# Archivos de entorno (mantener un .env.example si querés)
+*.env
+*.env.*.local
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =========================
+# Reportes / Coverage
+# =========================
+coverage/
+.nyc_output/
+reports/
+
+# =========================
+# Dumps / backups grandes
+# =========================
+*.sql
+*.sql.gz
+*.dump
+*.bak
+*.7z
+
+# =========================
+# Zips/builds locales
+# =========================
+*.zip

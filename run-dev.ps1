@@ -19,8 +19,8 @@ Require-Cmd npm
 # Ubicaciones relativas al script (asumimos que lo guardás en la raíz del repo)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $repoRoot  = $scriptDir
-$apiDir    = Join-Path $repoRoot "GymApi"
-$webDir    = Join-Path $repoRoot "gym-web"
+$apiDir    = Join-Path $repoRoot "Api"
+$webDir    = Join-Path $repoRoot "Frontend"
 
 if (-not (Test-Path $apiDir)) { throw "No se encontró carpeta '$apiDir'" }
 if (-not (Test-Path $webDir)) { throw "No se encontró carpeta '$webDir'" }
