@@ -8,6 +8,7 @@ Permite administrar **socios, profesores, planes, rutinas, comprobantes y turnos
 ---
 
 ## 🧱 Arquitectura del Proyecto
+
 Gym/
 ├── GymApi/ → Backend (ASP.NET Core 9.0, Web API, EF Core, MariaDB)
 │ ├── Controllers/ → Controladores REST
@@ -174,10 +175,15 @@ Abrir en el navegador:
 👉 http://localhost:5173
 
 📘 Autor
+
 Romanela Ricchiardi
+
 Laboratorio de programacion II .NET
+
 Tecnicatura Universitaria en Desarrollo de Software — Universidad de La Punta (ULP)
+
 📧 roma.ricchiardi@gmail.com
+
 💼 GitHub: [RomaRicchi](https://github.com/RomaRicchi)
 
 
