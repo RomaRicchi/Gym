@@ -1,6 +1,6 @@
 using GymApi.Data.Models;
 
-namespace GymApi.Repositories;
+namespace GymApi.Data.Repositories;
 
 public interface ISocioRepository
 {

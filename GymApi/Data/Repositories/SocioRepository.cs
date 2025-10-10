@@ -2,7 +2,7 @@ using GymApi.Data;
 using GymApi.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace GymApi.Repositories;
+namespace GymApi.Data.Repositories;
 
 public class SocioRepository : ISocioRepository
 {

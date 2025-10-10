@@ -1,44 +1,30 @@
-using System.Text.Json.Serialization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 using GymApi.Data;
-using GymApi.Repositories;
+using GymApi.Services;             
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers + JSON (evita ciclos y oculta nulls)
-builder.Services.AddControllers()
-    .AddJsonOptions(o =>
-    {
-        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-    });
-
-// CORS dev (frente Vite en otro puerto)
-builder.Services.AddCors(o => o.AddPolicy("dev",
-    p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
-
-// Swagger
+// Swagger, Controllers, CORS
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gym API", Version = "v1" });
-});
+builder.Services.AddSwaggerGen();
+builder.Services.AddCors(o => o.AddPolicy("dev", p =>
+    p.WithOrigins("http://localhost:5173")
+     .AllowAnyHeader()
+     .AllowAnyMethod()
+));
 
-// DbContext (usa tu cadena "GymDb" del appsettings.json)
+// MySQL/MariaDB
+var cs = builder.Configuration.GetConnectionString("GymDb");
+// Si preferís la versión explícita:
+var serverVersion = new MariaDbServerVersion(new Version(10, 4, 32));
 builder.Services.AddDbContext<GymDbContext>(opt =>
-    opt.UseMySql(
-        builder.Configuration.GetConnectionString("GymDb"),
-        ServerVersion.Create(new Version(10, 4, 32), Pomelo.EntityFrameworkCore.MySql.Infrastructure.ServerType.MariaDb),
-        o => o.EnableRetryOnFailure()
-    ));
+    opt.UseMySql(cs, serverVersion));
 
-// ⬅️ REGISTROS DE DI: **siempre antes de Build()**
-builder.Services.AddScoped<ISocioRepository, SocioRepository>();
+// Storage (appsettings: "Storage": { "ComprobantesPath": "..." })
+builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
+builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 
-// -----------------------------------------------------------
-// A PARTIR DE ACÁ, recien construimos la app
-// -----------------------------------------------------------
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -47,11 +33,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Si estás usando HTTP, dejá comentado esto:
-// app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseCors("dev");
+app.UseHttpsRedirection();
 
 app.MapControllers();
+
+// Seed inicial
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+    await GymApi.Data.Seed.SeedData.RunAsync(db);
+}
 
 app.Run();
