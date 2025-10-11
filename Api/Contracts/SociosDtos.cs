@@ -1,10 +1,28 @@
 namespace Api.Contracts;
 
+// DTO usado en listados o detalle
 public record SocioListItemDto(
-    uint id, string dni, string nombre, string email, string? telefono, bool? activo, DateTime? creado_en);
+    uint Id,
+    string Dni,
+    string Nombre,
+    string Email,
+    string? Telefono,
+    bool? Activo,
+    DateTime? CreadoEn
+);
 
+// DTO para crear un socio
 public record SocioCreateDto(
-    string dni, string nombre, string email, string? telefono);
+    string Dni,
+    string Nombre,
+    string Email,
+    string? Telefono
+);
 
+// DTO para editar un socio
 public record SocioUpdateDto(
-    string nombre, string email, string? telefono, bool? activo);
+    string? Nombre,
+    string? Email,
+    string? Telefono,
+    bool Activo
+);

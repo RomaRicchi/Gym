@@ -7,15 +7,15 @@ public partial class Checkin
 {
     public uint Id { get; set; }
 
-    public uint Socio_id { get; set; }
+    public uint SocioId { get; set; }
 
-    public uint? Turno_plantilla_id { get; set; }
+    public uint? TurnoPlantillaId { get; set; }
 
-    public DateTime Fecha_hora { get; set; }
+    public DateTime FechaHora { get; set; }
 
     public string Origen { get; set; } = null!;
 
-    public virtual socio Socio { get; set; } = null!;
+    public virtual Socio Socio { get; set; } = null!;
 
-    public virtual turno_plantilla? Turno_plantilla { get; set; }
+    public virtual TurnoPlantilla? TurnoPlantilla { get; set; }
 }

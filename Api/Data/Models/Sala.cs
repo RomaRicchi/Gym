@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace Api.Data.Models;
 
-
 public partial class Sala
 {
     public uint Id { get; set; }
@@ -14,5 +13,5 @@ public partial class Sala
 
     public bool? Activa { get; set; }
 
-    public virtual ICollection<turno_plantilla> Turno_plantilla { get; set; } = new List<turno_plantilla>();
+    public virtual ICollection<TurnoPlantilla> TurnosPlantilla { get; set; } = new List<TurnoPlantilla>();
 }

@@ -3,14 +3,13 @@ using System.Collections.Generic;
 
 namespace Api.Data.Models;
 
-
 public partial class Suscripcion
 {
     public uint Id { get; set; }
 
-    public uint Socio_id { get; set; }
+    public uint SocioId { get; set; }
 
-    public uint Plan_id { get; set; }
+    public uint PlanId { get; set; }
 
     public DateTime Inicio { get; set; }
 
@@ -18,11 +17,11 @@ public partial class Suscripcion
 
     public string Estado { get; set; } = null!;
 
-    public DateTime Creado_en { get; set; }
+    public DateTime CreadoEn { get; set; }
 
-    public virtual plan Plan { get; set; } = null!;
+    public virtual Plan Plan { get; set; } = null!;
 
-    public virtual socio Socio { get; set; } = null!;
+    public virtual Socio Socio { get; set; } = null!;
 
-    public virtual ICollection<suscripcion_turno> Suscripcion_turno { get; set; } = new List<suscripcion_turno>();
+    public virtual ICollection<SuscripcionTurno> SuscripcionesTurno { get; set; } = new List<SuscripcionTurno>();
 }

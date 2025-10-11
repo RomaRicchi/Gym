@@ -1,5 +1,5 @@
 using Api.Data;
-using Api.Repositories.Interfaces;
+using Api.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,76 +16,96 @@ public class OrdenesController : ControllerBase
     [HttpGet("pendientes")]
     public async Task<IActionResult> GetPendientes([FromQuery] string estado = "en_revision", CancellationToken ct = default)
     {
-        var list = await _db.Orden_pago
-            .Where(o => o.estado == estado || o.estado == "pendiente")
-            .OrderByDescending(o => o.creado_en)
-            .Select(o => new {
-                o.id, o.socio_id, o.plan_id, o.monto, o.estado, o.creado_en, o.vence_en
+        var list = await _db.OrdenesPago
+            .Where(o => o.Estado == estado || o.Estado == "pendiente")
+            .OrderByDescending(o => o.CreadoEn)
+            .Select(o => new
+            {
+                o.Id,
+                o.SocioId,
+                o.PlanId,
+                o.Monto,
+                o.Estado,
+                o.CreadoEn,
+                o.VenceEn
             })
             .ToListAsync(ct);
 
         return Ok(list);
     }
 
-    public record AprobarBody(string? notas, int? diasVigencia); // opcional: prolongar suscripción
+    // ---------- PATCH: Aprobar Orden ----------
+    public record AprobarBody(string? Notas, int? DiasVigencia);
+
     [HttpPatch("{id}/aprobar")]
     public async Task<IActionResult> Aprobar([FromRoute] int id, [FromBody] AprobarBody? body, CancellationToken ct)
     {
-        var orden = await _db.Orden_pago.FirstOrDefaultAsync(o => o.id == id, ct);
+        var orden = await _db.OrdenesPago.FirstOrDefaultAsync(o => o.Id == id, ct);
         if (orden is null) return NotFound("Orden no encontrada");
-        if (orden.estado == "verificado") return Conflict("Orden ya verificada");
-        if (orden.estado == "rechazado") return Conflict("Orden rechazada");
-        if (orden.estado == "expirado") return Conflict("Orden expirada");
+        if (orden.Estado == "verificado") return Conflict("Orden ya verificada");
+        if (orden.Estado == "rechazado") return Conflict("Orden rechazada");
+        if (orden.Estado == "expirado") return Conflict("Orden expirada");
 
-        orden.estado = "verificado";
-        orden.notas = body?.notas;
+        orden.Estado = "verificado";
+        orden.Notas = body?.Notas;
 
-        // Activar/crear suscripción: 30 días por defecto (o body.diasVigencia)
-        var dias = (body?.diasVigencia is > 0) ? body!.diasVigencia!.Value : 30;
+        // Activar o crear suscripción (30 días por defecto)
+        var dias = (body?.DiasVigencia is > 0) ? body!.DiasVigencia!.Value : 30;
         var ahora = DateTime.UtcNow;
         var fin = ahora.AddDays(dias);
 
-        var sus = await _db.Suscripcion.FirstOrDefaultAsync(s => s.socio_id == orden.socio_id && s.plan_id == orden.plan_id && s.estado == "activa", ct);
+        var sus = await _db.Suscripciones.FirstOrDefaultAsync(
+            s => s.SocioId == orden.SocioId && s.PlanId == orden.PlanId && s.Estado == "activa", ct);
+
         if (sus is null)
         {
-            sus = new Data.Models.suscripcion {
-                socio_id = orden.socio_id,
-                plan_id = orden.plan_id,
-                inicio = ahora,
-                fin = fin,
-                estado = "activa"
+            sus = new Suscripcion
+            {
+                SocioId = orden.SocioId,
+                PlanId = orden.PlanId,
+                Inicio = ahora,
+                Fin = fin,
+                Estado = "activa",
+                CreadoEn = ahora
             };
-            _db.Suscripcion.Add(sus);
+            _db.Suscripciones.Add(sus);
         }
         else
         {
-            // renovar: extender fin
-            if (sus.fin < fin) sus.fin = fin;
-            sus.estado = "activa";
+            if (sus.Fin < fin)
+                sus.Fin = fin;
+
+            sus.Estado = "activa";
         }
 
         await _db.SaveChangesAsync(ct);
-        return Ok(new { ok = true, orden_id = id });
+        return Ok(new { ok = true, OrdenId = id });
     }
 
-    public record RechazarBody(string motivo);
+    // ---------- PATCH: Rechazar Orden ----------
+    public record RechazarBody(string Motivo);
+
     [HttpPatch("{id}/rechazar")]
     public async Task<IActionResult> Rechazar([FromRoute] int id, [FromBody] RechazarBody body, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(body.motivo)) return BadRequest("motivo requerido");
+        if (string.IsNullOrWhiteSpace(body.Motivo))
+            return BadRequest("motivo requerido");
 
-        var orden = await _db.Orden_pago.FirstOrDefaultAsync(o => o.id == id, ct);
+        var orden = await _db.OrdenesPago.FirstOrDefaultAsync(o => o.Id == id, ct);
         if (orden is null) return NotFound("Orden no encontrada");
-        if (orden.estado == "verificado") return Conflict("Orden ya verificada");
+        if (orden.Estado == "verificado") return Conflict("Orden ya verificada");
 
-        orden.estado = "rechazado";
-        orden.notas = body.motivo;
+        orden.Estado = "rechazado";
+        orden.Notas = body.Motivo;
 
-        // Si hubiese suscripción pendiente, dejarla cancelada
-        var sus = await _db.Suscripcion.FirstOrDefaultAsync(s => s.socio_id == orden.socio_id && s.plan_id == orden.plan_id && s.estado != "cancelada", ct);
-        if (sus is not null) sus.estado = "cancelada";
+        // Si existe suscripción pendiente, cancelarla
+        var sus = await _db.Suscripciones.FirstOrDefaultAsync(
+            s => s.SocioId == orden.SocioId && s.PlanId == orden.PlanId && s.Estado != "cancelada", ct);
+
+        if (sus is not null)
+            sus.Estado = "cancelada";
 
         await _db.SaveChangesAsync(ct);
-        return Ok(new { ok = true, orden_id = id });
+        return Ok(new { ok = true, OrdenId = id });
     }
 }

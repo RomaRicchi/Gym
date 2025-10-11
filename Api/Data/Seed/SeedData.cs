@@ -10,52 +10,68 @@ public static class SeedData
     {
         await db.Database.EnsureCreatedAsync();
 
-        if (!await db.Plan.AnyAsync())
+        // === 🏋️‍♂️ Planes base ===
+        if (!await db.Planes.AnyAsync())
         {
-            db.Plan.AddRange(
-                new plan { nombre = "Plan 2 días", dias_por_semana = 2, precio = 18000m },
-                new plan { nombre = "Plan 3 días", dias_por_semana = 3, precio = 22000m },
-                new plan { nombre = "Plan 5 días", dias_por_semana = 5, precio = 28000m }
+            db.Planes.AddRange(
+                new Plan { Nombre = "Plan 2 días", DiasPorSemana = 2, Precio = 18000m, Activo = true },
+                new Plan { Nombre = "Plan 3 días", DiasPorSemana = 3, Precio = 22000m, Activo = true },
+                new Plan { Nombre = "Plan 5 días", DiasPorSemana = 5, Precio = 28000m, Activo = true }
             );
             await db.SaveChangesAsync();
         }
 
-        var prof = await db.Profesor.FirstOrDefaultAsync();
+        // === 🧑‍🏫 Profesores ===
+        var prof = await db.Profesores.FirstOrDefaultAsync();
         if (prof is null)
         {
-            prof = new profesor { nombre = "Lourdes", email = "lourdes@gym.local", estado = "activo" };
-            db.Profesor.Add(prof);
+            prof = new Profesor
+            {
+                Nombre = "Lourdes",
+                Email = "lourdes@gym.local",
+                Estado = "activo"
+            };
+            db.Profesores.Add(prof);
             await db.SaveChangesAsync();
         }
 
-        var sala1 = await db.Sala.FirstOrDefaultAsync();
+        // === 🏠 Salas ===
+        var sala1 = await db.Salas.FirstOrDefaultAsync();
         if (sala1 is null)
         {
-            sala1 = new sala { nombre = "Sala Principal", capacidad = 20, activa = true };
-            db.Sala.Add(sala1);
+            sala1 = new Sala
+            {
+                Nombre = "Sala Principal",
+                Capacidad = 20,
+                Activa = true
+            };
+            db.Salas.Add(sala1);
             await db.SaveChangesAsync();
         }
 
-        if (!await db.Turno_plantilla.AnyAsync())
+        // === 🕒 Turnos predefinidos ===
+        if (!await db.TurnosPlantilla.AnyAsync())
         {
-            turno_plantilla Turno(sbyte dia, int hora, int minuto, int duracion, int cupo)
-                => new turno_plantilla {
-                    dia_semana = dia,              // 1=Lunes ... 7=Domingo (ajustá si usás otra convención)
-                    hora_inicio = new TimeOnly(hora, minuto),
-                    duracion_min = duracion,
-                    sala_id = sala1.id,
-                    profesor_id = prof.id,
-                    cupo = cupo,
-                    activo = true
+            TurnoPlantilla Turno(sbyte dia, int hora, int minuto, int duracion, int cupo) =>
+                new TurnoPlantilla
+                {
+                    DiaSemana = dia, // 1=Lunes ... 7=Domingo
+                    HoraInicio = new TimeOnly(hora, minuto),
+                    DuracionMin = duracion,
+                    SalaId = sala1.Id,
+                    ProfesorId = prof.Id,
+                    Cupo = cupo,
+                    Activo = true
                 };
 
-            db.Turno_plantilla.AddRange(
+            db.TurnosPlantilla.AddRange(
                 Turno(1, 19, 0, 60, 20), // Lunes 19:00
-                Turno(3, 19, 0, 60, 20), // Miércoles 19:00
-                Turno(5, 19, 0, 60, 20), // Viernes 19:00
                 Turno(2, 19, 0, 60, 20), // Martes 19:00
-                Turno(4, 19, 0, 60, 20)  // Jueves 19:00
+                Turno(3, 19, 0, 60, 20), // Miércoles 19:00
+                Turno(4, 19, 0, 60, 20), // Jueves 19:00
+                Turno(5, 19, 0, 60, 20)  // Viernes 19:00
             );
+
             await db.SaveChangesAsync();
         }
     }

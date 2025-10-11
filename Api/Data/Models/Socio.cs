@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace Api.Data.Models;
 
-
 public partial class Socio
 {
     public uint Id { get; set; }
@@ -18,13 +17,13 @@ public partial class Socio
 
     public bool? Activo { get; set; }
 
-    public DateTime Creado_en { get; set; }
+    public DateTime CreadoEn { get; set; }
 
-    public virtual ICollection<checkin> Checkin { get; set; } = new List<checkin>();
+    public virtual ICollection<Checkin> Checkins { get; set; } = new List<Checkin>();
 
-    public virtual ICollection<orden_pago> Orden_pago { get; set; } = new List<orden_pago>();
+    public virtual ICollection<OrdenPago> OrdenesPago { get; set; } = new List<OrdenPago>();
 
-    public virtual ICollection<rutina_asignada> Rutina_asignada { get; set; } = new List<rutina_asignada>();
+    public virtual ICollection<RutinaAsignada> RutinasAsignadas { get; set; } = new List<RutinaAsignada>();
 
-    public virtual ICollection<suscripcion> Suscripcion { get; set; } = new List<suscripcion>();
+    public virtual ICollection<Suscripcion> Suscripciones { get; set; } = new List<Suscripcion>();
 }

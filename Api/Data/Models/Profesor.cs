@@ -3,16 +3,15 @@ using System.Collections.Generic;
 
 namespace Api.Data.Models;
 
-
 public partial class Profesor
 {
-    public uint id { get; set; }
+    public uint Id { get; set; }
 
-    public string nombre { get; set; } = null!;
+    public string Nombre { get; set; } = null!;
 
-    public string? email { get; set; }
+    public string? Email { get; set; }
 
-    public string estado { get; set; } = null!;
+    public string Estado { get; set; } = null!;
 
-    public virtual ICollection<turno_plantilla> turno_plantilla { get; set; } = new List<turno_plantilla>();
+    public virtual ICollection<TurnoPlantilla> TurnosPlantilla { get; set; } = new List<TurnoPlantilla>();
 }

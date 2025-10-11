@@ -28,7 +28,7 @@ public class SociosController : ControllerBase
         var (items, total) = await _repo.GetPagedAsync(page, pageSize, q, activo, ct);
 
         var dto = items.Select(s => new SocioListItemDto(
-            s.id, s.dni, s.nombre, s.email, s.telefono, s.activo, s.creado_en));
+            s.Id, s.Dni, s.Nombre, s.Email, s.Telefono, s.Activo, s.CreadoEn));
 
         return Ok(new { total, page, pageSize, items = dto });
     }
@@ -40,7 +40,7 @@ public class SociosController : ControllerBase
         var s = await _repo.GetByIdAsync((uint)id, ct);
         if (s is null) return NotFound();
 
-        var dto = new SocioListItemDto(s.id, s.dni, s.nombre, s.email, s.telefono, s.activo, s.creado_en);
+        var dto = new SocioListItemDto(s.Id, s.Dni, s.Nombre, s.Email, s.Telefono, s.Activo, s.CreadoEn);
         return Ok(dto);
     }
 
@@ -48,29 +48,30 @@ public class SociosController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] SocioCreateDto body, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(body.dni) ||
-            string.IsNullOrWhiteSpace(body.nombre) ||
-            string.IsNullOrWhiteSpace(body.email))
-            return BadRequest("dni, nombre y email son obligatorios");
+        if (string.IsNullOrWhiteSpace(body.Dni) ||
+            string.IsNullOrWhiteSpace(body.Nombre) ||
+            string.IsNullOrWhiteSpace(body.Email))
+            return BadRequest("Dni, Nombre y Email son obligatorios");
 
-        if (await _repo.ExistsAsync(body.dni, body.email, ct))
+        if (await _repo.ExistsAsync(body.Dni, body.Email, ct))
             return Conflict("DNI o email ya existen");
 
-        var entity = new socio
+        var entity = new Socio
         {
-            dni = body.dni.Trim(),
-            nombre = body.nombre.Trim(),
-            email = body.email.Trim(),
-            telefono = string.IsNullOrWhiteSpace(body.telefono) ? null : body.telefono.Trim(),
-            activo = true
+            Dni = body.Dni.Trim(),
+            Nombre = body.Nombre.Trim(),
+            Email = body.Email.Trim(),
+            Telefono = string.IsNullOrWhiteSpace(body.Telefono) ? null : body.Telefono.Trim(),
+            Activo = true,
+            CreadoEn = DateTime.UtcNow
         };
 
         try
         {
             var created = await _repo.AddAsync(entity, ct);
             var dto = new SocioListItemDto(
-                created.id, created.dni, created.nombre, created.email,
-                created.telefono, created.activo, created.creado_en);
+                created.Id, created.Dni, created.Nombre, created.Email,
+                created.Telefono, created.Activo, created.CreadoEn);
             return Ok(dto);
         }
         catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("Duplicate", StringComparison.OrdinalIgnoreCase) == true)
@@ -85,18 +86,18 @@ public class SociosController : ControllerBase
     {
         var ok = await _repo.UpdateAsync((uint)id, s =>
         {
-            if (!string.IsNullOrWhiteSpace(body.nombre)) s.nombre = body.nombre.Trim();
-            if (!string.IsNullOrWhiteSpace(body.email))  s.email  = body.email.Trim();
-            s.telefono = string.IsNullOrWhiteSpace(body.telefono) ? null : body.telefono!.Trim();
-            s.activo   = body.activo;
+            if (!string.IsNullOrWhiteSpace(body.Nombre)) s.Nombre = body.Nombre.Trim();
+            if (!string.IsNullOrWhiteSpace(body.Email)) s.Email = body.Email.Trim();
+            s.Telefono = string.IsNullOrWhiteSpace(body.Telefono) ? null : body.Telefono!.Trim();
+            s.Activo = body.Activo;
         }, ct);
 
         if (!ok) return NotFound();
 
         var updated = await _repo.GetByIdAsync((uint)id, ct)!;
         var dto = new SocioListItemDto(
-            updated!.id, updated.dni, updated.nombre, updated.email,
-            updated.telefono, updated.activo, updated.creado_en);
+            updated!.Id, updated.Dni, updated.Nombre, updated.Email,
+            updated.Telefono, updated.Activo, updated.CreadoEn);
         return Ok(dto);
     }
 

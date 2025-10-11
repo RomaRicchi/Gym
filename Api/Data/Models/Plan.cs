@@ -9,15 +9,15 @@ public partial class Plan
 
     public string Nombre { get; set; } = null!;
 
-    public int Dias_por_semana { get; set; }
+    public int DiasPorSemana { get; set; }
 
     public decimal Precio { get; set; }
 
     public bool? Activo { get; set; }
 
-    public virtual ICollection<orden_pago> Orden_pago { get; set; } = new List<orden_pago>();
+    public virtual ICollection<OrdenPago> OrdenesPago { get; set; } = new List<OrdenPago>();
 
-    public virtual ICollection<rutina_plantilla> Rutina_plantilla { get; set; } = new List<rutina_plantilla>();
+    public virtual ICollection<RutinaPlantilla> RutinasPlantilla { get; set; } = new List<RutinaPlantilla>();
 
-    public virtual ICollection<suscripcion> Suscripcion { get; set; } = new List<suscripcion>();
+    public virtual ICollection<Suscripcion> Suscripciones { get; set; } = new List<Suscripcion>();
 }

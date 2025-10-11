@@ -13,9 +13,9 @@ public partial class Ejercicio
 
     public string? Tips { get; set; }
 
-    public string? Media_url { get; set; }
+    public string? MediaUrl { get; set; }
 
-    public virtual ICollection<registro_item> Registro_item { get; set; } = new List<registro_item>();
+    public virtual ICollection<RegistroItem> RegistroItems { get; set; } = new List<RegistroItem>();
 
-    public virtual ICollection<rutina_plantilla_ejercicio> Rutina_plantilla_ejercicio { get; set; } = new List<rutina_plantilla_ejercicio>();
+    public virtual ICollection<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; } = new List<RutinaPlantillaEjercicio>();
 }
