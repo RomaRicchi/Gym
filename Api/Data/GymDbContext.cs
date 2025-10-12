@@ -13,17 +13,19 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<Checkin> Checkins { get; set; }
     public virtual DbSet<Comprobante> Comprobantes { get; set; }
     public virtual DbSet<Ejercicio> Ejercicios { get; set; }
-    public virtual DbSet<OrdenPago> OrdenesPago { get; set; }
+    public virtual DbSet<OrdenPago> OrdenesPago { get; set; }= null!;
     public virtual DbSet<OrdenTurno> OrdenesTurno { get; set; }
-    public virtual DbSet<Plan> Planes { get; set; }
-    public virtual DbSet<Profesor> Profesores { get; set; }
+    public virtual DbSet<EstadoOrdenPago> EstadoOrdenPago { get; set; }= null!;
+    public virtual DbSet<Rol> Roles { get; set; }
+    public virtual DbSet<Plan> Planes { get; set; }= null!;
+    public virtual DbSet<Personal> Personales { get; set; }
     public virtual DbSet<RegistroEntrenamiento> RegistrosEntrenamiento { get; set; }
     public virtual DbSet<RegistroItem> RegistrosItem { get; set; }
     public virtual DbSet<RutinaAsignada> RutinasAsignadas { get; set; }
     public virtual DbSet<RutinaPlantilla> RutinasPlantilla { get; set; }
     public virtual DbSet<RutinaPlantillaEjercicio> RutinasPlantillaEjercicios { get; set; }
     public virtual DbSet<Sala> Salas { get; set; }
-    public virtual DbSet<Socio> Socios { get; set; }
+    public virtual DbSet<Socio> Socios { get; set; }= null!;
     public virtual DbSet<Suscripcion> Suscripciones { get; set; }
     public virtual DbSet<SuscripcionTurno> SuscripcionesTurno { get; set; }
     public virtual DbSet<TurnoPlantilla> TurnosPlantilla { get; set; }
@@ -38,7 +40,21 @@ public partial class GymDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // 🔽 Mapeo automático a snake_case para tablas y columnas
+        // ✅ Marcar vistas sin clave
+        modelBuilder.Entity<VCupoReservado>().HasNoKey();
+        modelBuilder.Entity<VOcupacionHoy>().HasNoKey();
+        modelBuilder.Entity<VCheckinHoyAr>().HasNoKey();
+        modelBuilder.Entity<VOrdenesAr>().HasNoKey();
+        modelBuilder.Entity<VSuscripcionesAr>().HasNoKey();
+        modelBuilder.Entity<Socio>().ToTable("socio");
+        modelBuilder.Entity<Plan>().ToTable("plan");
+        modelBuilder.Entity<EstadoOrdenPago>().ToTable("estado_orden_pago");
+        modelBuilder.Entity<OrdenPago>().ToTable("orden_pago");
+        modelBuilder.Entity<Suscripcion>().ToTable("suscripcion");
+        modelBuilder.Entity<Comprobante>().ToTable("comprobante");
+
+
+        // 🔽 Mapeo automático a snake_case
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
             var tableName = entity.GetTableName();
@@ -51,6 +67,7 @@ public partial class GymDbContext : DbContext
             }
         }
     }
+
 
     private static string ToSnakeCase(string input)
     {

@@ -52,7 +52,7 @@ El sistema contiene más de 10 entidades relacionadas, cumpliendo con el requisi
 **Principales entidades:**
 - `usuario` → maneja autenticación, roles y estado.
 - `socio` → datos del cliente del gimnasio.
-- `profesor` → personal de entrenamiento.
+- `personal` → personal de entrenamiento.
 - `plan` → tipo de plan contratado.
 - `suscripcion` → vínculo entre socio y plan.
 - `rutina_plantilla` → ejercicios predefinidos por profesor.
@@ -62,7 +62,7 @@ El sistema contiene más de 10 entidades relacionadas, cumpliendo con el requisi
 **Relaciones destacadas:**
 - Un **plan** tiene muchos **socios**.  
 - Un **socio** puede tener muchas **suscripciones**.  
-- Un **profesor** diseña muchas **rutinas**.  
+- Un **personal** diseña muchas **rutinas**.  
 - Una **rutina** contiene muchos **ejercicios**.
 
 ---

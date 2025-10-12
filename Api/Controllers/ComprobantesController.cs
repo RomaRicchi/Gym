@@ -1,71 +1,131 @@
 using Api.Data;
 using Api.Data.Models;
-using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Api.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class ComprobantesController : ControllerBase
+namespace Api.Controllers
 {
-    private readonly GymDbContext _db;
-    private readonly IFileStorage _storage;
-
-    public ComprobantesController(GymDbContext db, IFileStorage storage)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ComprobantesController : ControllerBase
     {
-        _db = db;
-        _storage = storage;
-    }
+        private readonly GymDbContext _db;
+        private readonly IWebHostEnvironment _env;
 
-    /// <summary>Sube un comprobante (form-data: ordenId, file)</summary>
-    [HttpPost]
-    [RequestSizeLimit(50_000_000)]
-    public async Task<IActionResult> Upload([FromForm] int ordenId, [FromForm] IFormFile file, CancellationToken ct)
-    {
-        if (ordenId <= 0) return BadRequest("orden_id requerido");
-        if (file is null || file.Length == 0) return BadRequest("Archivo vacío");
-
-        var orden = await _db.OrdenesPago.FirstOrDefaultAsync(o => o.Id == ordenId, ct);
-        if (orden is null) return NotFound("Orden no encontrada");
-        if (orden.Estado == "verificado") return Conflict("La orden ya fue verificada");
-        if (orden.Estado == "rechazado") return Conflict("La orden fue rechazada");
-
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
-        if (!allowed.Contains(ext)) return BadRequest("Formato no permitido (.jpg/.png/.webp/.pdf)");
-
-        await using var stream = file.OpenReadStream();
-        var path = await _storage.SaveAsync(stream, file.FileName, $"orden_{orden.Id}", ct);
-
-        var comp = new Comprobante
+        public ComprobantesController(GymDbContext db, IWebHostEnvironment env)
         {
-            OrdenId = (uint)orden.Id,
-            FileUrl = path,
-            MimeType = file.ContentType,
-            SubidoEn = DateTime.UtcNow
-        };
+            _db = db;
+            _env = env;
+        }
 
-        _db.Comprobantes.Add(comp);
+        [HttpPost]
+        public async Task<IActionResult> Subir([FromForm] IFormFile archivo, [FromForm] uint ordenPagoId)
+        {
+            var orden = await _db.OrdenesPago.FindAsync(ordenPagoId);
+            if (orden == null)
+                return NotFound($"No se encontró la orden de pago #{ordenPagoId}");
 
-        // al subir, la orden pasa a "en_revision"
-        orden.Estado = "en_revision";
-        await _db.SaveChangesAsync(ct);
+            if (archivo == null || archivo.Length == 0)
+                return BadRequest("No se envió ningún archivo");
 
-        return Ok(new { ok = true, ComprobanteId = comp.Id, comp.FileUrl });
-    }
+            var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads");
+            if (!Directory.Exists(uploadsDir))
+                Directory.CreateDirectory(uploadsDir);
 
-    /// <summary>Lista comprobantes de una orden</summary>
-    [HttpGet("por-orden/{ordenId:int}")]
-    public async Task<IActionResult> GetPorOrden([FromRoute] int ordenId, CancellationToken ct)
-    {
-        var data = await _db.Comprobantes
-            .Where(c => c.OrdenId == ordenId)
-            .OrderByDescending(c => c.Id)
-            .Select(c => new { c.Id, c.FileUrl, c.MimeType, c.SubidoEn })
-            .ToListAsync(ct);
+            var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(archivo.FileName)}";
+            var filePath = Path.Combine(uploadsDir, fileName);
 
-        return Ok(data);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+                await archivo.CopyToAsync(stream);
+
+            var comprobante = new Comprobante
+            {
+                OrdenPagoId = ordenPagoId,
+                FileUrl = fileName,
+                MimeType = archivo.ContentType,
+                SubidoEn = DateTime.UtcNow
+            };
+
+            _db.Comprobantes.Add(comprobante);
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "Comprobante subido correctamente",
+                comprobante = new
+                {
+                    comprobante.Id,
+                    comprobante.OrdenPagoId,
+                    comprobante.FileUrl,
+                    comprobante.MimeType,
+                    comprobante.SubidoEn
+                }
+            });
+        }
+
+        // ---------- PATCH: Aprobar comprobante ----------
+        public record AprobarBody(string? Notas);
+
+        [HttpPatch("{id}/aprobar")]
+        public async Task<IActionResult> Aprobar([FromRoute] int id, [FromBody] AprobarBody? body, CancellationToken ct)
+        {
+            var comp = await _db.Comprobantes
+                .Include(c => c.OrdenPago)
+                .ThenInclude(o => o.Estado)
+                .FirstOrDefaultAsync(c => c.Id == id, ct);
+
+            if (comp is null)
+                return NotFound("Comprobante no encontrado");
+
+            var orden = comp.OrdenPago;
+            if (orden is null)
+                return NotFound("Orden asociada no encontrada");
+
+            var estadoVerificado = await _db.EstadoOrdenPago
+                .FirstOrDefaultAsync(e => e.Nombre == "verificado", ct);
+
+            if (estadoVerificado is null)
+                return BadRequest("No existe el estado 'verificado'.");
+
+            orden.EstadoId = estadoVerificado.Id;
+            orden.Notas = body?.Notas;
+
+            await _db.SaveChangesAsync(ct);
+            return Ok(new { ok = true, ComprobanteId = id });
+        }
+
+        // ---------- PATCH: Rechazar comprobante ----------
+        public record RechazarBody(string Motivo);
+
+        [HttpPatch("{id}/rechazar")]
+        public async Task<IActionResult> Rechazar([FromRoute] int id, [FromBody] RechazarBody body, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(body.Motivo))
+                return BadRequest("Motivo requerido.");
+
+            var comp = await _db.Comprobantes
+                .Include(c => c.OrdenPago)
+                .ThenInclude(o => o.Estado)
+                .FirstOrDefaultAsync(c => c.Id == id, ct);
+
+            if (comp is null)
+                return NotFound("Comprobante no encontrado");
+
+            var orden = comp.OrdenPago;
+            if (orden is null)
+                return NotFound("Orden asociada no encontrada");
+
+            var estadoRechazado = await _db.EstadoOrdenPago
+                .FirstOrDefaultAsync(e => e.Nombre == "rechazado", ct);
+
+            if (estadoRechazado is null)
+                return BadRequest("No existe el estado 'rechazado'.");
+
+            orden.EstadoId = estadoRechazado.Id;
+            orden.Notas = body.Motivo;
+
+            await _db.SaveChangesAsync(ct);
+            return Ok(new { ok = true, ComprobanteId = id });
+        }
     }
 }
