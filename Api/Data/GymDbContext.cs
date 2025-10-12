@@ -17,6 +17,7 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<OrdenTurno> OrdenesTurno { get; set; }
     public virtual DbSet<EstadoOrdenPago> EstadoOrdenPago { get; set; }= null!;
     public virtual DbSet<Rol> Roles { get; set; }
+    public virtual DbSet<DiaSemana> DiasSemana { get; set; }
     public virtual DbSet<Plan> Planes { get; set; }= null!;
     public virtual DbSet<Personal> Personales { get; set; }
     public virtual DbSet<RegistroEntrenamiento> RegistrosEntrenamiento { get; set; }

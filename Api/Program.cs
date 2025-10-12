@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("dev", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5144")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -39,6 +39,14 @@ builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();
 builder.Services.AddScoped<ISocioRepository, SocioRepository>();
 builder.Services.AddScoped<IComprobanteRepository, ComprobanteRepository>();
+builder.Services.AddScoped<IDiaSemanaRepository, DiaSemanaRepository>();
+builder.Services.AddScoped<IEstadoOrdenPagoRepository, EstadoOrdenPagoRepository>();
+builder.Services.AddScoped<IOrdenPagoRepository, OrdenPagoRepository>();
+builder.Services.AddScoped<ISalaRepository, SalaRepository>();
+builder.Services.AddScoped<ITurnoPlantillaRepository, TurnoPlantillaRepository>();
+builder.Services.AddScoped<ISuscripcionTurnoRepository, SuscripcionTurnoRepository>();
+builder.Services.AddScoped<ISuscripcionRepository, SuscripcionRepository>();
+
 
 var app = builder.Build();
 

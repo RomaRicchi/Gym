@@ -14,100 +14,115 @@ namespace Api.Repositories
             _db = db;
         }
 
-        // 🔹 Obtener todos los turnos
         public async Task<IReadOnlyList<TurnoPlantilla>> GetAllAsync(CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
-                .OrderBy(t => t.DiaSemana)
+                .Include(t => t.DiaSemana)
+                .AsNoTracking()
+                .OrderBy(t => t.DiaSemanaId)
                 .ThenBy(t => t.HoraInicio)
                 .ToListAsync(ct);
         }
 
-        // 🔹 Solo los turnos activos
         public async Task<IReadOnlyList<TurnoPlantilla>> GetActivosAsync(CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
+                .Include(t => t.DiaSemana)
+                .AsNoTracking()
                 .Where(t => t.Activo)
-                .OrderBy(t => t.DiaSemana)
+                .OrderBy(t => t.DiaSemanaId)
                 .ThenBy(t => t.HoraInicio)
                 .ToListAsync(ct);
         }
 
-        // 🔹 Turnos por día de la semana
-        public async Task<IReadOnlyList<TurnoPlantilla>> GetByDiaSemanaAsync(sbyte dia, CancellationToken ct = default)
+        public async Task<IReadOnlyList<TurnoPlantilla>> GetByDiaSemanaAsync(sbyte diaSemana, CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
-                .Where(t => t.DiaSemana == dia)
+                .Include(t => t.DiaSemana)
+                .AsNoTracking()
+                .Where(t => t.DiaSemanaId == diaSemana && t.Activo)
                 .OrderBy(t => t.HoraInicio)
                 .ToListAsync(ct);
         }
 
-        // 🔹 Turnos de un profesor/personal específico
         public async Task<IReadOnlyList<TurnoPlantilla>> GetByPersonalAsync(uint personalId, CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
-                .Include(t => t.Personal)
-                .Where(t => t.PersonalId == personalId)
-                .OrderBy(t => t.DiaSemana)
+                .Include(t => t.DiaSemana)
+                .AsNoTracking()
+                .Where(t => t.PersonalId == personalId && t.Activo)
+                .OrderBy(t => t.DiaSemanaId)
                 .ThenBy(t => t.HoraInicio)
                 .ToListAsync(ct);
         }
 
-        // 🔹 Obtener por ID
         public async Task<TurnoPlantilla?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
+                .Include(t => t.DiaSemana)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id, ct);
         }
 
-        // 🔹 Agregar un nuevo turno
-        public async Task<TurnoPlantilla> AddAsync(TurnoPlantilla entity, CancellationToken ct = default)
+        public async Task<TurnoPlantilla> AddAsync(TurnoPlantilla turno, CancellationToken ct = default)
         {
-            _db.TurnosPlantilla.Add(entity);
+            _db.TurnosPlantilla.Add(turno);
             await _db.SaveChangesAsync(ct);
-            return entity;
+            return turno;
         }
 
-        // 🔹 Actualizar un turno existente
-        public async Task UpdateAsync(TurnoPlantilla entity, CancellationToken ct = default)
+        public async Task<bool> UpdateAsync(TurnoPlantilla updated, CancellationToken ct = default)
         {
-            _db.TurnosPlantilla.Update(entity);
+            var turno = await _db.TurnosPlantilla.FindAsync(new object[] { updated.Id }, ct);
+            if (turno == null) return false;
+
+            turno.SalaId = updated.SalaId;
+            turno.PersonalId = updated.PersonalId;
+            turno.DiaSemanaId = updated.DiaSemanaId;
+            turno.HoraInicio = updated.HoraInicio;
+            turno.DuracionMin = updated.DuracionMin;
+            turno.Cupo = updated.Cupo;
+            turno.Activo = updated.Activo;
+
             await _db.SaveChangesAsync(ct);
+            return true;
         }
 
-        // 🔹 Eliminar un turno
-        public async Task DeleteAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         {
-            var turno = await _db.TurnosPlantilla.FindAsync(new object?[] { id }, ct);
-            if (turno != null)
-            {
-                _db.TurnosPlantilla.Remove(turno);
-                await _db.SaveChangesAsync(ct);
-            }
+            var turno = await _db.TurnosPlantilla.FindAsync(new object[] { id }, ct);
+            if (turno == null) return false;
+
+            _db.TurnosPlantilla.Remove(turno);
+            await _db.SaveChangesAsync(ct);
+            return true;
         }
 
-
-        public async Task<bool> ExisteConflictoAsync(uint salaId, sbyte dia, TimeOnly horaInicio, int duracionMin, CancellationToken ct = default)
+        public async Task<bool> ExisteSolapamientoAsync(uint salaId, byte diaSemana, TimeSpan horaInicio, int duracionMin, CancellationToken ct = default)
         {
-            var horaFin = horaInicio.AddMinutes(duracionMin);
-            return await _db.TurnosPlantilla.AnyAsync(t =>
-                t.SalaId == salaId &&
-                t.DiaSemana == dia &&
-                t.Activo == true &&
-                (
-                    (horaInicio >= t.HoraInicio && horaInicio < t.HoraInicio.AddMinutes(t.DuracionMin)) ||
-                    (horaFin > t.HoraInicio && horaFin <= t.HoraInicio.AddMinutes(t.DuracionMin))
-                ),
-                ct);
+            var horaFin = horaInicio + TimeSpan.FromMinutes(duracionMin);
+
+            return await _db.TurnosPlantilla
+                .AsNoTracking()
+                .AnyAsync(t =>
+                    t.SalaId == salaId &&
+                    t.DiaSemanaId == diaSemana &&
+                    t.Activo &&
+                    (
+                        (t.HoraInicio <= horaInicio && (t.HoraInicio + TimeSpan.FromMinutes(t.DuracionMin)) > horaInicio) ||
+                        (t.HoraInicio < horaFin && (t.HoraInicio + TimeSpan.FromMinutes(t.DuracionMin)) >= horaFin)
+                    ),
+                    ct
+                );
         }
     }
 }

@@ -1,28 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Api.Data.Models;
-
-public partial class TurnoPlantilla
+namespace Api.Data.Models
 {
-    public uint Id { get; set; }
+    [Table("turno_plantilla")]
+    public class TurnoPlantilla
+    {
+        [Key]
+        [Column("id")]
+        public uint Id { get; set; }
 
-    public uint SalaId { get; set; }
+        [Column("sala_id")]
+        public uint SalaId { get; set; }
 
-    public uint PersonalId { get; set; }
+        [ForeignKey("SalaId")]
+        public Sala? Sala { get; set; }
 
-    public sbyte DiaSemana { get; set; }
+        [Column("personal_id")]
+        public uint PersonalId { get; set; }
 
-    public TimeOnly HoraInicio { get; set; }
+        [ForeignKey("PersonalId")]
+        public Personal? Personal { get; set; }
 
-    public int DuracionMin { get; set; }
+        // ✅ FK a dia_semana
+        [Column("dia_semana")]
+        [ForeignKey("DiaSemana")]
+        public byte DiaSemanaId { get; set; }
 
-    public int Cupo { get; set; }
+        public DiaSemana? DiaSemana { get; set; }
 
-    public bool Activo { get; set; }   // 👈  <- asegurate que sea bool (no bool?)
+        [Column("hora_inicio")]
+        public TimeSpan HoraInicio { get; set; }
 
-    // 🔗 Relaciones
-    public virtual Sala Sala { get; set; } = null!;
+        [Column("duracion_min")]
+        public int DuracionMin { get; set; }
 
-    public virtual Personal Personal { get; set; } = null!;
+        [Column("cupo")]
+        public int Cupo { get; set; }
+
+        [Column("activo")]
+        public bool Activo { get; set; }
+    }
 }
