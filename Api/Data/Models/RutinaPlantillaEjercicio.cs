@@ -5,11 +5,11 @@ namespace Api.Data.Models;
 
 public partial class RutinaPlantillaEjercicio
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
-    public uint RutinaId { get; set; }
+    public int RutinaId { get; set; }
 
-    public uint EjercicioId { get; set; }
+    public int EjercicioId { get; set; }
 
     public int Orden { get; set; }
 

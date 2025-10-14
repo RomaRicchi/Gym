@@ -14,6 +14,7 @@ namespace Api.Repositories
             _db = db;
         }
 
+        // 🔹 Obtener todos
         public async Task<IReadOnlyList<TurnoPlantilla>> GetAllAsync(CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
@@ -26,6 +27,7 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
+        // 🔹 Obtener activos
         public async Task<IReadOnlyList<TurnoPlantilla>> GetActivosAsync(CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
@@ -39,6 +41,7 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
+        // 🔹 Obtener por día
         public async Task<IReadOnlyList<TurnoPlantilla>> GetByDiaSemanaAsync(sbyte diaSemana, CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
@@ -51,7 +54,8 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IReadOnlyList<TurnoPlantilla>> GetByPersonalAsync(uint personalId, CancellationToken ct = default)
+        // 🔹 Obtener por personal
+        public async Task<IReadOnlyList<TurnoPlantilla>> GetByPersonalAsync(int personalId, CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
@@ -63,6 +67,7 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
+        // 🔹 Obtener por ID
         public async Task<TurnoPlantilla?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
@@ -73,6 +78,7 @@ namespace Api.Repositories
                 .FirstOrDefaultAsync(t => t.Id == id, ct);
         }
 
+        // 🔹 Crear
         public async Task<TurnoPlantilla> AddAsync(TurnoPlantilla turno, CancellationToken ct = default)
         {
             _db.TurnosPlantilla.Add(turno);
@@ -80,6 +86,7 @@ namespace Api.Repositories
             return turno;
         }
 
+        // 🔹 Actualizar
         public async Task<bool> UpdateAsync(TurnoPlantilla updated, CancellationToken ct = default)
         {
             var turno = await _db.TurnosPlantilla.FindAsync(new object[] { updated.Id }, ct);
@@ -97,6 +104,7 @@ namespace Api.Repositories
             return true;
         }
 
+        // 🔹 Eliminar
         public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         {
             var turno = await _db.TurnosPlantilla.FindAsync(new object[] { id }, ct);
@@ -107,7 +115,8 @@ namespace Api.Repositories
             return true;
         }
 
-        public async Task<bool> ExisteSolapamientoAsync(uint salaId, byte diaSemana, TimeSpan horaInicio, int duracionMin, CancellationToken ct = default)
+        // 🔹 Validar solapamientos
+        public async Task<bool> ExisteSolapamientoAsync(int salaId, byte diaSemana, TimeSpan horaInicio, int duracionMin, CancellationToken ct = default)
         {
             var horaFin = horaInicio + TimeSpan.FromMinutes(duracionMin);
 

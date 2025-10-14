@@ -4,11 +4,11 @@ namespace Api.Data.Models;
 
 public partial class VSuscripcionesAr
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
-    public uint SocioId { get; set; }
+    public int SocioId { get; set; }
 
-    public uint PlanId { get; set; }
+    public int PlanId { get; set; }
 
     public DateTime? InicioAr { get; set; }
 

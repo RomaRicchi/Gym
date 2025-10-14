@@ -22,20 +22,19 @@ namespace Api.Controllers
             return Ok(list);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
         {
             var estado = await _repo.GetByIdAsync(id, ct);
-            if (estado is null) return NotFound();
-            return Ok(estado);
+            return estado is null ? NotFound() : Ok(estado);
         }
 
+        // 🔹 Nuevo endpoint para buscar por las primeras letras del nombre
         [HttpGet("nombre/{nombre}")]
         public async Task<IActionResult> GetByNombre(string nombre, CancellationToken ct = default)
         {
             var estado = await _repo.GetByNombreAsync(nombre, ct);
-            if (estado is null) return NotFound();
-            return Ok(estado);
+            return estado is null ? NotFound() : Ok(estado);
         }
 
         [HttpPost]
@@ -45,7 +44,7 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, nuevo);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] EstadoOrdenPago dto, CancellationToken ct = default)
         {
             var estado = await _repo.GetByIdAsync(id, ct);
@@ -58,11 +57,11 @@ namespace Api.Controllers
             return Ok(new { ok = true });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct = default)
         {
             await _repo.DeleteAsync(id, ct);
-            return Ok(new { ok = true });
+            return NoContent();
         }
     }
 }

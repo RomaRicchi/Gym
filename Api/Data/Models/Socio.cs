@@ -6,7 +6,7 @@ namespace Api.Data.Models;
 
 public partial class Socio
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
     public string Dni { get; set; } = null!;
 

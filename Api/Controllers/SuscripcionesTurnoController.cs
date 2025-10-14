@@ -31,7 +31,7 @@ namespace Api.Controllers
         }
 
         [HttpGet("suscripcion/{id}")]
-        public async Task<IActionResult> GetBySuscripcion(uint id, CancellationToken ct = default)
+        public async Task<IActionResult> GetBySuscripcion(int id, CancellationToken ct = default)
         {
             var list = await _repo.GetBySuscripcionAsync(id, ct);
             return Ok(list);

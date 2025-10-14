@@ -9,27 +9,27 @@ namespace Api.Data.Models
     {
         [Key]
         [Column("id")]
-        public uint Id { get; set; }
+        public int Id { get; set; }
 
+        // 🔹 FK a Sala
         [Column("sala_id")]
-        public uint SalaId { get; set; }
-
-        [ForeignKey("SalaId")]
+        public int SalaId { get; set; }
+        [ForeignKey(nameof(SalaId))]
         public Sala? Sala { get; set; }
 
+        // 🔹 FK a Personal
         [Column("personal_id")]
-        public uint PersonalId { get; set; }
-
-        [ForeignKey("PersonalId")]
+        public int PersonalId { get; set; }
+        [ForeignKey(nameof(PersonalId))]
         public Personal? Personal { get; set; }
 
-        // ✅ FK a dia_semana
-        [Column("dia_semana")]
-        [ForeignKey("DiaSemana")]
+        // 🔹 FK a DiaSemana
+        [Column("dia_semana_id")]
         public byte DiaSemanaId { get; set; }
-
+        [ForeignKey(nameof(DiaSemanaId))]
         public DiaSemana? DiaSemana { get; set; }
 
+        // 🔹 Datos del turno
         [Column("hora_inicio")]
         public TimeSpan HoraInicio { get; set; }
 

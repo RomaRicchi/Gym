@@ -2,7 +2,7 @@ namespace Api.Contracts;
 
 // DTO usado en listados o detalle
 public record SocioListItemDto(
-    uint Id,
+    int Id,
     string Dni,
     string Nombre,
     string Email,

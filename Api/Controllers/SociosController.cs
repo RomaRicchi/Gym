@@ -37,7 +37,7 @@ public class SociosController : ControllerBase
     [HttpGet("{id:int:min(1)}")]
     public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
     {
-        var s = await _repo.GetByIdAsync((uint)id, ct);
+        var s = await _repo.GetByIdAsync((int)id, ct);
         if (s is null) return NotFound();
 
         var dto = new SocioListItemDto(s.Id, s.Dni, s.Nombre, s.Email, s.Telefono, s.Activo, s.CreadoEn);
@@ -84,7 +84,7 @@ public class SociosController : ControllerBase
     [HttpPut("{id:int:min(1)}")]
     public async Task<IActionResult> Put([FromRoute] int id, [FromBody] SocioUpdateDto body, CancellationToken ct)
     {
-        var ok = await _repo.UpdateAsync((uint)id, s =>
+        var ok = await _repo.UpdateAsync((int)id, s =>
         {
             if (!string.IsNullOrWhiteSpace(body.Nombre)) s.Nombre = body.Nombre.Trim();
             if (!string.IsNullOrWhiteSpace(body.Email)) s.Email = body.Email.Trim();
@@ -94,7 +94,7 @@ public class SociosController : ControllerBase
 
         if (!ok) return NotFound();
 
-        var updated = await _repo.GetByIdAsync((uint)id, ct)!;
+        var updated = await _repo.GetByIdAsync((int)id, ct)!;
         var dto = new SocioListItemDto(
             updated!.Id, updated.Dni, updated.Nombre, updated.Email,
             updated.Telefono, updated.Activo, updated.CreadoEn);
@@ -105,7 +105,7 @@ public class SociosController : ControllerBase
     [HttpPatch("{id:int:min(1)}/activar")]
     public async Task<IActionResult> Activar([FromRoute] int id, [FromQuery] bool value = true, CancellationToken ct = default)
     {
-        var ok = await _repo.SetActivoAsync((uint)id, value, ct);
+        var ok = await _repo.SetActivoAsync((int)id, value, ct);
         return ok ? NoContent() : NotFound();
     }
 
@@ -115,12 +115,12 @@ public class SociosController : ControllerBase
     {
         if (hard)
         {
-            var ok = await _repo.DeleteAsync((uint)id, ct);
+            var ok = await _repo.DeleteAsync((int)id, ct);
             return ok ? NoContent() : NotFound();
         }
         else
         {
-            var ok = await _repo.SetActivoAsync((uint)id, false, ct);
+            var ok = await _repo.SetActivoAsync((int)id, false, ct);
             return ok ? NoContent() : NotFound();
         }
     }

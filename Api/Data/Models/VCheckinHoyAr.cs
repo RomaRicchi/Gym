@@ -4,11 +4,11 @@ namespace Api.Data.Models;
 
 public partial class VCheckinHoyAr
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
-    public uint SocioId { get; set; }
+    public int SocioId { get; set; }
 
-    public uint? TurnoPlantillaId { get; set; }
+    public int? TurnoPlantillaId { get; set; }
 
     public DateTime? FechaAr { get; set; }
 

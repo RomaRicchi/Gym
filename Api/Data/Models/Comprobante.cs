@@ -5,9 +5,9 @@ namespace Api.Data.Models
 {
     public partial class Comprobante
     {
-        public uint Id { get; set; }
+        public int Id { get; set; }
 
-        public uint OrdenPagoId { get; set; }
+        public int OrdenPagoId { get; set; }
 
         public string FileUrl { get; set; } = string.Empty;
         

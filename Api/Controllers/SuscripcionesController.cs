@@ -33,7 +33,7 @@ namespace Api.Controllers
 
         // 🔹 GET: api/suscripciones/socio/{id}
         [HttpGet("socio/{id}")]
-        public async Task<IActionResult> GetBySocio([FromRoute] uint id, CancellationToken ct = default)
+        public async Task<IActionResult> GetBySocio([FromRoute] int id, CancellationToken ct = default)
         {
             var list = await _repo.GetBySocioAsync(id, ct);
             return Ok(list);

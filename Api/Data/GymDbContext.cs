@@ -31,6 +31,7 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<SuscripcionTurno> SuscripcionesTurno { get; set; }
     public virtual DbSet<TurnoPlantilla> TurnosPlantilla { get; set; }
     public virtual DbSet<Usuario> Usuarios { get; set; }
+    public virtual DbSet<Avatar> Avatares { get; set; } = null!;
     public virtual DbSet<VCheckinHoyAr> VCheckinHoyAr { get; set; }
     public virtual DbSet<VCupoReservado> VCupoReservado { get; set; }
     public virtual DbSet<VOcupacionHoy> VOcupacionHoy { get; set; }
@@ -41,18 +42,65 @@ public partial class GymDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // ✅ Marcar vistas sin clave
-        modelBuilder.Entity<VCupoReservado>().HasNoKey();
-        modelBuilder.Entity<VOcupacionHoy>().HasNoKey();
-        modelBuilder.Entity<VCheckinHoyAr>().HasNoKey();
-        modelBuilder.Entity<VOrdenesAr>().HasNoKey();
-        modelBuilder.Entity<VSuscripcionesAr>().HasNoKey();
+        // Mapeo explícito de todas las tablas principales
+        modelBuilder.Entity<Usuario>().ToTable("usuario");
+        modelBuilder.Entity<Rol>().ToTable("rol");
         modelBuilder.Entity<Socio>().ToTable("socio");
+        modelBuilder.Entity<Personal>().ToTable("personal");
         modelBuilder.Entity<Plan>().ToTable("plan");
-        modelBuilder.Entity<EstadoOrdenPago>().ToTable("estado_orden_pago");
-        modelBuilder.Entity<OrdenPago>().ToTable("orden_pago");
-        modelBuilder.Entity<Suscripcion>().ToTable("suscripcion");
+        modelBuilder.Entity<Sala>().ToTable("sala");
+        modelBuilder.Entity<Checkin>().ToTable("checkin");
+        modelBuilder.Entity<Ejercicio>().ToTable("ejercicio");
         modelBuilder.Entity<Comprobante>().ToTable("comprobante");
+        modelBuilder.Entity<OrdenPago>().ToTable("orden_pago");
+        modelBuilder.Entity<OrdenTurno>().ToTable("orden_turno");
+        modelBuilder.Entity<EstadoOrdenPago>().ToTable("estado_orden_pago");
+        modelBuilder.Entity<Suscripcion>().ToTable("suscripcion");
+        modelBuilder.Entity<SuscripcionTurno>().ToTable("suscripcion_turno");
+        modelBuilder.Entity<TurnoPlantilla>().ToTable("turno_plantilla");
+        modelBuilder.Entity<RutinaPlantilla>().ToTable("rutina_plantilla");
+        modelBuilder.Entity<RutinaPlantillaEjercicio>().ToTable("rutina_plantilla_ejercicio");
+        modelBuilder.Entity<RutinaAsignada>().ToTable("rutina_asignada");
+        modelBuilder.Entity<RegistroEntrenamiento>().ToTable("registro_entrenamiento");
+        modelBuilder.Entity<RegistroItem>().ToTable("registro_item");
+        modelBuilder.Entity<DiaSemana>().ToTable("dia_semana");
+        modelBuilder.Entity<Avatar>(entity =>
+        {
+            entity.ToTable("avatar");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+
+            entity.Property(e => e.Url)
+                .HasColumnName("url")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Nombre)
+                .HasColumnName("nombre")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.EsPredeterminado)
+                .HasColumnName("es_predeterminado")
+                .HasDefaultValue(false);
+
+            // Relación inversa (1 a muchos)
+            entity.HasMany(e => e.Usuarios)
+                .WithOne(u => u.Avatar)
+                .HasForeignKey(u => u.IdAvatar)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Usuario_Avatar");
+        });
+
+        // Vistas sin clave
+        modelBuilder.Entity<VCheckinHoyAr>().ToTable("v_checkin_hoy_ar").HasNoKey();
+        modelBuilder.Entity<VCupoReservado>().ToTable("v_cupo_reservado").HasNoKey();
+        modelBuilder.Entity<VOcupacionHoy>().ToTable("v_ocupacion_hoy").HasNoKey();
+        modelBuilder.Entity<VOrdenesAr>().ToTable("v_ordenes_ar").HasNoKey();
+        modelBuilder.Entity<VSuscripcionesAr>().ToTable("v_suscripciones_ar").HasNoKey();
+
 
 
         // 🔽 Mapeo automático a snake_case

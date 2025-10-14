@@ -31,7 +31,7 @@ namespace Api.Controllers
         }
 
         [HttpGet("orden/{id}")]
-        public async Task<IActionResult> GetByOrdenPago(uint id, CancellationToken ct = default)
+        public async Task<IActionResult> GetByOrdenPago(int id, CancellationToken ct = default)
         {
             var list = await _repo.GetByOrdenPagoAsync((int)id, ct);
             return Ok(list);

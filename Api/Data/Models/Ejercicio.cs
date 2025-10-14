@@ -5,7 +5,7 @@ namespace Api.Data.Models;
 
 public partial class Ejercicio
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
     public string Nombre { get; set; } = null!;
 

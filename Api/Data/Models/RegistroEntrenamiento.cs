@@ -5,9 +5,9 @@ namespace Api.Data.Models;
 
 public partial class RegistroEntrenamiento
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
-    public uint RutinaAsignadaId { get; set; }
+    public int RutinaAsignadaId { get; set; }
 
     public DateOnly Fecha { get; set; }
 

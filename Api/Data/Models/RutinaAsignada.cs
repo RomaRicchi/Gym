@@ -5,11 +5,11 @@ namespace Api.Data.Models;
 
 public partial class RutinaAsignada
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
-    public uint SocioId { get; set; }
+    public int SocioId { get; set; }
 
-    public uint RutinaId { get; set; }
+    public int RutinaId { get; set; }
 
     public DateOnly Inicio { get; set; }
 

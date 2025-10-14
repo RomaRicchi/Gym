@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Data.Models;
+using Api.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ namespace Api.Controllers
 
         // ---------- POST: Crear Orden ----------
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] OrdenPago dto, CancellationToken ct)
+        public async Task<IActionResult> Crear([FromBody] OrdenPagoCreateDto dto, CancellationToken ct)
         {
             if (!await _db.Socios.AnyAsync(s => s.Id == dto.SocioId, ct))
                 return BadRequest("El socio no existe.");
@@ -25,20 +26,26 @@ namespace Api.Controllers
             if (!await _db.EstadoOrdenPago.AnyAsync(e => e.Id == dto.EstadoId, ct))
                 return BadRequest("El estado no existe.");
 
-            // ⚠️ Evitar incluir objetos completos (Socio, Plan, Estado)
-            dto.Socio = null;
-            dto.Plan = null;
-            dto.Estado = null;
+            var entity = new OrdenPago
+            {
+                SocioId = dto.SocioId,
+                PlanId = dto.PlanId,
+                EstadoId = dto.EstadoId,
+                Monto = dto.Monto,
+                VenceEn = dto.VenceEn,
+                Notas = dto.Notas,
+                CreadoEn = DateTime.UtcNow
+            };
 
-            _db.OrdenesPago.Add(dto);
+            _db.OrdenesPago.Add(entity);
             await _db.SaveChangesAsync(ct);
 
-            return CreatedAtAction(nameof(ObtenerPorId), new { id = dto.Id }, dto);
+            return CreatedAtAction(nameof(ObtenerPorId), new { id = entity.Id }, entity);
         }
 
         // ---------- GET: Obtener por ID ----------
-        [HttpGet("{id}")]
-        public async Task<IActionResult> ObtenerPorId(uint id, CancellationToken ct)
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> ObtenerPorId(int id, CancellationToken ct)
         {
             var orden = await _db.OrdenesPago
                 .Include(o => o.Socio)
@@ -78,7 +85,7 @@ namespace Api.Controllers
         // ---------- PATCH: Aprobar Orden ----------
         public record AprobarBody(string? Notas, int? DiasVigencia);
 
-        [HttpPatch("{id}/aprobar")]
+        [HttpPatch("{id:int}/aprobar")]
         public async Task<IActionResult> Aprobar([FromRoute] int id, [FromBody] AprobarBody? body, CancellationToken ct)
         {
             var orden = await _db.OrdenesPago
@@ -131,13 +138,13 @@ namespace Api.Controllers
             }
 
             await _db.SaveChangesAsync(ct);
-            return Ok(new { ok = true, OrdenId = id });
+            return Ok(new { ok = true, ordenId = id });
         }
 
         // ---------- PATCH: Rechazar Orden ----------
         public record RechazarBody(string Motivo);
 
-        [HttpPatch("{id}/rechazar")]
+        [HttpPatch("{id:int}/rechazar")]
         public async Task<IActionResult> Rechazar([FromRoute] int id, [FromBody] RechazarBody body, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(body.Motivo))
@@ -171,7 +178,6 @@ namespace Api.Controllers
                 sus.Estado = false; // baja lógica de la suscripción
 
             await _db.SaveChangesAsync(ct);
-
             return Ok(new { ok = true, ordenId = id });
         }
 
@@ -203,6 +209,5 @@ namespace Api.Controllers
                 data = list
             });
         }
-
     }
 }

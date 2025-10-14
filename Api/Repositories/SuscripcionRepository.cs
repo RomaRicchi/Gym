@@ -34,7 +34,7 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IReadOnlyList<Suscripcion>> GetBySocioAsync(uint socioId, CancellationToken ct = default)
+        public async Task<IReadOnlyList<Suscripcion>> GetBySocioAsync(int socioId, CancellationToken ct = default)
         {
             return await _db.Suscripciones
                 .Include(s => s.Plan)
@@ -54,7 +54,7 @@ namespace Api.Repositories
         }
 
         // 🔹 Buscar suscripción activa por socio y plan
-        public async Task<Suscripcion?> GetActivaByPlanAsync(uint socioId, uint planId, CancellationToken ct = default)
+        public async Task<Suscripcion?> GetActivaByPlanAsync(int socioId, int planId, CancellationToken ct = default)
         {
             return await _db.Suscripciones
                 .Where(s => s.SocioId == socioId && s.PlanId == planId && s.Estado)

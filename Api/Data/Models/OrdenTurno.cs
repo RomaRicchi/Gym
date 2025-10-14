@@ -5,9 +5,9 @@ namespace Api.Data.Models;
 
 public partial class OrdenTurno
 {
-    public uint Id { get; set; }
-    public uint OrdenPagoId { get; set; }
-    public uint TurnoPlantillaId { get; set; }
+    public int Id { get; set; }
+    public int OrdenPagoId { get; set; }
+    public int TurnoPlantillaId { get; set; }
     public bool Activo { get; set; }
     public DateTime CreadoEn { get; set; }
 

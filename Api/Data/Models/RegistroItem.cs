@@ -5,11 +5,11 @@ namespace Api.Data.Models;
 
 public partial class RegistroItem
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
-    public uint RegistroId { get; set; }
+    public int RegistroId { get; set; }
 
-    public uint? EjercicioId { get; set; }
+    public int? EjercicioId { get; set; }
 
     public int? Series { get; set; }
 

@@ -4,7 +4,7 @@ namespace Api.Data.Models;
 
 public partial class VCupoReservado
 {
-    public uint TurnoId { get; set; }
+    public int TurnoId { get; set; }
 
     public sbyte DiaSemana { get; set; }
 

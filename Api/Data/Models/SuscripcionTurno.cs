@@ -5,11 +5,11 @@ namespace Api.Data.Models;
 
 public partial class SuscripcionTurno
 {
-    public uint Id { get; set; }
+    public int Id { get; set; }
 
-    public uint SuscripcionId { get; set; }
+    public int SuscripcionId { get; set; }
 
-    public uint TurnoPlantillaId { get; set; }
+    public int TurnoPlantillaId { get; set; }
 
     public virtual Suscripcion Suscripcion { get; set; } = null!;
 

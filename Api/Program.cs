@@ -1,6 +1,7 @@
 using Api.Data;
 using Api.Repositories.Interfaces;
 using Api.Repositories;
+using Api.Controllers;
 using Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
@@ -8,16 +9,18 @@ using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 // === ⚙️ Configuración básica ===
-builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllers()
+    .AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
 // === 🌐 CORS para el frontend React/Vite ===
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("dev", policy =>
     {
-        policy.WithOrigins("http://localhost:5144")
+        policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -33,6 +36,7 @@ builder.Services.AddDbContext<GymDbContext>(options =>
     options.UseMySql(cs, serverVersion,
         mySqlOptions => mySqlOptions.SchemaBehavior(MySqlSchemaBehavior.Ignore)));
 
+
 // === 💾 File storage local para comprobantes o avatares ===
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 // Repositories
@@ -46,6 +50,9 @@ builder.Services.AddScoped<ISalaRepository, SalaRepository>();
 builder.Services.AddScoped<ITurnoPlantillaRepository, TurnoPlantillaRepository>();
 builder.Services.AddScoped<ISuscripcionTurnoRepository, SuscripcionTurnoRepository>();
 builder.Services.AddScoped<ISuscripcionRepository, SuscripcionRepository>();
+builder.Services.AddScoped<IAvatarRepository, AvatarRepository>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IRolRepository, RolRepository>();
 
 
 var app = builder.Build();

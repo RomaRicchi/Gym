@@ -32,7 +32,7 @@ namespace Api.Repositories
         }
 
         // 🔹 Obtener por ID
-        public async Task<Personal?> GetByIdAsync(uint id, CancellationToken ct = default)
+        public async Task<Personal?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _db.Personales
                 .FirstOrDefaultAsync(p => p.Id == id, ct);
@@ -54,7 +54,7 @@ namespace Api.Repositories
         }
 
         // 🔹 Eliminar (soft delete o real delete)
-        public async Task DeleteAsync(uint id, CancellationToken ct = default)
+        public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
             var personal = await _db.Personales.FirstOrDefaultAsync(p => p.Id == id, ct);
             if (personal != null)

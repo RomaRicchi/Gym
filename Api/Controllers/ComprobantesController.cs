@@ -19,7 +19,7 @@ namespace Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Subir([FromForm] IFormFile archivo, [FromForm] uint ordenPagoId)
+        public async Task<IActionResult> Subir([FromForm] IFormFile archivo, [FromForm] int ordenPagoId)
         {
             var orden = await _db.OrdenesPago.FindAsync(ordenPagoId);
             if (orden == null)

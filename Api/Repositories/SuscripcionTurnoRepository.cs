@@ -40,7 +40,7 @@ namespace Api.Repositories
         }
 
         // 🔹 Obtener todos los turnos de una suscripción
-        public async Task<IReadOnlyList<SuscripcionTurno>> GetBySuscripcionAsync(uint suscripcionId, CancellationToken ct = default)
+        public async Task<IReadOnlyList<SuscripcionTurno>> GetBySuscripcionAsync(int suscripcionId, CancellationToken ct = default)
         {
             return await _db.SuscripcionesTurno
                 .Include(st => st.TurnoPlantilla)
@@ -52,7 +52,7 @@ namespace Api.Repositories
         }
 
         // 🔹 Obtener todos los turnos asignados a un socio (vía suscripción)
-        public async Task<IReadOnlyList<SuscripcionTurno>> GetBySocioAsync(uint socioId, CancellationToken ct = default)
+        public async Task<IReadOnlyList<SuscripcionTurno>> GetBySocioAsync(int socioId, CancellationToken ct = default)
         {
             return await _db.SuscripcionesTurno
                 .Include(st => st.Suscripcion)
