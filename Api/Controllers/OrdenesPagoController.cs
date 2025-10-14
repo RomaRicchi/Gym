@@ -83,10 +83,10 @@ namespace Api.Controllers
         }
 
         // ---------- PATCH: Aprobar Orden ----------
-        public record AprobarBody(string? Notas, int? DiasVigencia);
+        public record AprobarOrdenBody(string? Notas, int? DiasVigencia);
 
         [HttpPatch("{id:int}/aprobar")]
-        public async Task<IActionResult> Aprobar([FromRoute] int id, [FromBody] AprobarBody? body, CancellationToken ct)
+        public async Task<IActionResult> AprobarOrden([FromRoute] int id, [FromBody] AprobarOrdenBody? body, CancellationToken ct)
         {
             var orden = await _db.OrdenesPago
                 .Include(o => o.Estado)

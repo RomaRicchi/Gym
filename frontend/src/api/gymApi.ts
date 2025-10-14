@@ -1,42 +1,15 @@
 import axios from "axios";
 
-/**
- * Cliente Axios configurado para tu API del gimnasio.
- * Cambiá el puerto según el que uses en tu backend .NET.
- */
+const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5144";
+
 const gymApi = axios.create({
-  baseURL: "http://localhost:5100/api", // 👈 ajustá si tu API usa otro puerto
+  baseURL: `${baseURL}/api`,
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: false,
 });
 
-/**
- * Interceptor de solicitudes (request)
- * — agrega token JWT si está guardado
- */
-gymApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+console.log("[GymAPI] Base URL:", gymApi.defaults.baseURL);
 
-/**
- * Interceptor de respuestas (response)
- * — permite capturar errores globales (401, 500, etc.)
- */
-gymApi.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      console.warn("⚠️ Sesión expirada o no autorizada");
-      // opcional: redirigir al login
-      // window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
-
-export default gymApi;
+export default gymApi; 

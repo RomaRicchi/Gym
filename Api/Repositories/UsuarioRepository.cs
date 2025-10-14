@@ -80,5 +80,43 @@ namespace Api.Repositories
             await _db.SaveChangesAsync(ct);
             return true;
         }
+
+        public async Task<bool> UpdatePerfilAsync(int id, string? nombre, string? email, string? telefono, int? idAvatar, CancellationToken ct = default)
+        {
+            var user = await _db.Usuarios
+                .Include(u => u.Socio)
+                .Include(u => u.Personal)
+                .FirstOrDefaultAsync(u => u.Id == id, ct);
+
+            if (user is null)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(email))
+                user.Email = email.Trim();
+
+            if (idAvatar.HasValue)
+                user.IdAvatar = idAvatar.Value;
+
+            if (user.SocioId.HasValue && user.Socio != null)
+            {
+                if (!string.IsNullOrWhiteSpace(nombre))
+                    user.Socio.Nombre = nombre.Trim();
+                if (!string.IsNullOrWhiteSpace(telefono))
+                    user.Socio.Telefono = telefono.Trim();
+            }
+
+            if (user.PersonalId.HasValue && user.Personal != null)
+            {
+                if (!string.IsNullOrWhiteSpace(nombre))
+                    user.Personal.Nombre = nombre.Trim();
+                if (!string.IsNullOrWhiteSpace(telefono))
+                    user.Personal.Telefono = telefono.Trim();
+            }
+
+            await _db.SaveChangesAsync(ct);
+            return true;
+        }
+
+
     }
 }

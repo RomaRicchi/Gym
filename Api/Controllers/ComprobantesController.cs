@@ -64,10 +64,10 @@ namespace Api.Controllers
         }
 
         // ---------- PATCH: Aprobar comprobante ----------
-        public record AprobarBody(string? Notas);
+        public record AprobarComprobanteBody(string? Notas);
 
         [HttpPatch("{id}/aprobar")]
-        public async Task<IActionResult> Aprobar([FromRoute] int id, [FromBody] AprobarBody? body, CancellationToken ct)
+        public async Task<IActionResult> AprobarComprobante([FromRoute] int id, [FromBody] AprobarComprobanteBody? body, CancellationToken ct)
         {
             var comp = await _db.Comprobantes
                 .Include(c => c.OrdenPago)
@@ -95,10 +95,10 @@ namespace Api.Controllers
         }
 
         // ---------- PATCH: Rechazar comprobante ----------
-        public record RechazarBody(string Motivo);
+        public record RechazarComprobanteBody(string Motivo);
 
         [HttpPatch("{id}/rechazar")]
-        public async Task<IActionResult> Rechazar([FromRoute] int id, [FromBody] RechazarBody body, CancellationToken ct)
+        public async Task<IActionResult> RechazarComprobante([FromRoute] int id, [FromBody] RechazarComprobanteBody body, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(body.Motivo))
                 return BadRequest("Motivo requerido.");
