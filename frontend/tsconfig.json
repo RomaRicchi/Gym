@@ -11,7 +11,14 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["src", "src/Views/SociosView.tsx", "tailwind.config.ts"]
+  "include": [
+    "src",
+    "tailwind.config.ts"
+  ]
 }

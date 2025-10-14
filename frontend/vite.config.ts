@@ -1,7 +1,12 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
+// ✅ Alias para que @ apunte a /src
 export default defineConfig({
   plugins: [react()],
-  server: { proxy: { '/api': 'http://localhost:5144' } }, // si lo usás
-})
+  resolve: {
+    alias: {
+      "@": "/src",
+    },
+  },
+});
