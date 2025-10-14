@@ -53,7 +53,7 @@ builder.Services.AddScoped<ISuscripcionRepository, SuscripcionRepository>();
 builder.Services.AddScoped<IAvatarRepository, AvatarRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
-
+builder.Services.AddScoped<IPerfilRepository, PerfilRepository>();
 
 var app = builder.Build();
 

@@ -1,0 +1,27 @@
+.sidebar {
+  position: relative;
+  left: 0;
+  width: 240px;
+  height: calc(100vh - 56px);
+  background-color: #1a1a1a; /* gris oscuro */
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.sidebar .nav-link {
+  color: #ccc;
+  margin-bottom: 6px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  background-color: #ff6b00; /* naranja FitGym */
+  color: #fff !important;
+}
+
+.sidebar .text-muted {
+  color: #888 !important;
+}

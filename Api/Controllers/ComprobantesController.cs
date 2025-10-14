@@ -127,5 +127,37 @@ namespace Api.Controllers
             await _db.SaveChangesAsync(ct);
             return Ok(new { ok = true, ComprobanteId = id });
         }
+
+        // ---------- GET: Listar comprobantes ----------
+        [HttpGet]
+        public async Task<IActionResult> GetAll(CancellationToken ct)
+        {
+            var comprobantes = await _db.Comprobantes
+                .Include(c => c.OrdenPago)
+                    .ThenInclude(o => o.Estado)
+                .AsNoTracking()
+                .OrderByDescending(c => c.SubidoEn)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.FileUrl,
+                    c.MimeType,
+                    c.SubidoEn,
+                    Orden = new
+                    {
+                        c.OrdenPago.Id,
+                        c.OrdenPago.Monto,
+                        c.OrdenPago.VenceEn,
+                        c.OrdenPago.CreadoEn,
+                        c.OrdenPago.Notas,
+                        Estado = c.OrdenPago.Estado.Nombre
+                    }
+                })
+                .ToListAsync(ct);
+
+            return Ok(comprobantes);
+        }
+
+
     }
 }

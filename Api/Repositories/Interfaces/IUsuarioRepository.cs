@@ -11,7 +11,5 @@ namespace Api.Repositories.Interfaces
         Task<bool> UpdateAsync(Usuario usuario, CancellationToken ct = default);
         Task<bool> DeleteAsync(int id, CancellationToken ct = default); // baja lógica
 
-        Task<bool> UpdatePerfilAsync(int id, string? nombre, string? email, string? telefono, int? idAvatar, CancellationToken ct = default);
-
-    }
+    }       
 }

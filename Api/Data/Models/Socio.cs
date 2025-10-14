@@ -13,6 +13,8 @@ public partial class Socio
     public string Nombre { get; set; } = null!;
 
     public string Email { get; set; } = null!;
+    
+    public DateTime? FechaNacimiento { get; set; }
 
     public string? Telefono { get; set; }
 

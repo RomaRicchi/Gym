@@ -1,0 +1,44 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f4f4f4;
+  overflow: hidden;
+}
+
+/* Sidebar correctamente alineado */
+.sidebar-container {
+  background-color: #1e1e1e;
+  color: #fff;
+  transition: all 0.3s ease-in-out;
+  width: 240px;
+  z-index: 1000;
+}
+
+.sidebar-container.closed {
+  margin-left: -240px;
+}
+
+.sidebar-container.open {
+  margin-left: 0;
+}
+
+/* Contenido principal */
+main {
+  flex-grow: 1;
+  background-color: #fafafa;
+  overflow-y: auto;
+  height: calc(100vh - 56px);
+  padding: 1.5rem;
+}
+
+/* Overlay (móvil) */
+.sidebar-overlay {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 56px);
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 900;
+}

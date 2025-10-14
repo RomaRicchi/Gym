@@ -38,6 +38,8 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<VOrdenesAr> VOrdenesAr { get; set; }
     public virtual DbSet<VSuscripcionesAr> VSuscripcionesAr { get; set; }
 
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

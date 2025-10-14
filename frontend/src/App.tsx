@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import Navbar from "@/components/Navbar";
+import Layout from "@/components/Layout";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@/styles/main.css";
 
@@ -69,77 +69,71 @@ function ScrollToTop() {
   return null;
 }
 
-function App() {
+export default function App() {
   return (
     <Router>
       <ScrollToTop />
-      <Navbar />
-
-      {/* Contenedor principal */}
-      <main className="container mt-4">
-        <Routes>
-
-          {/* 🏠 DASHBOARD */}
+      <Routes>
+        {/* 🧱 Layout envuelve todas las páginas internas */}
+        <Route element={<Layout />}>
+          {/* 🏠 Dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="/dashboard" element={<Dashboard />} />
 
-          {/* 🧍 SOCIOS */}
+          {/* 🧍 Socios */}
           <Route path="/socios" element={<SociosList />} />
           <Route path="/socios/nuevo" element={<SociosCreate />} />
           <Route path="/socios/editar/:id" element={<SociosEdit />} />
 
-          {/* 💳 SUSCRIPCIONES */}
+          {/* 💳 Suscripciones */}
           <Route path="/suscripciones" element={<SuscripcionesList />} />
           <Route path="/suscripciones/nueva" element={<SuscripcionCreate />} />
           <Route path="/suscripciones/editar/:id" element={<SuscripcionEdit />} />
 
-          {/* 💰 PLANES */}
+          {/* 💰 Planes */}
           <Route path="/planes" element={<PlanesList />} />
           <Route path="/planes/nuevo" element={<PlanCreate />} />
           <Route path="/planes/editar/:id" element={<PlanEdit />} />
 
-          {/* 🏋️ SALAS */}
+          {/* 🏋️ Salas */}
           <Route path="/salas" element={<SalasList />} />
           <Route path="/salas/nueva" element={<SalaCreate />} />
           <Route path="/salas/editar/:id" element={<SalaEdit />} />
 
-          {/* 📆 TURNOS PLANTILLA */}
+          {/* 📆 Turnos Plantilla */}
           <Route path="/turnos" element={<TurnosPlantillaList />} />
           <Route path="/turnos/nuevo" element={<TurnoPlantillaCreate />} />
           <Route path="/turnos/editar/:id" element={<TurnoPlantillaEdit />} />
 
-          {/* 🧾 ÓRDENES DE PAGO */}
+          {/* 🧾 Órdenes de Pago */}
           <Route path="/ordenes" element={<OrdenesList />} />
           <Route path="/ordenes/nueva" element={<OrdenPagoCreate />} />
           <Route path="/ordenes/editar/:id" element={<OrdenPagoEdit />} />
 
-          {/* 📑 COMPROBANTES */}
+          {/* 📑 Comprobantes */}
           <Route path="/ordenes/:id/comprobantes" element={<ComprobantesList />} />
           <Route path="/ordenes/:id/subir-comprobante" element={<ComprobanteUpload />} />
 
-          {/* ⚙️ ESTADOS DE ORDEN */}
+          {/* ⚙️ Estados */}
           <Route path="/estados" element={<EstadosList />} />
           <Route path="/estados/nuevo" element={<EstadoCreate />} />
           <Route path="/estados/editar/:id" element={<EstadoEdit />} />
 
-          {/* 🔗 ORDEN - TURNOS */}
+          {/* 🔗 Orden - Turnos */}
           <Route path="/ordenes/:id/turnos" element={<OrdenTurnosList />} />
           <Route path="/ordenes/:id/asignar-turnos" element={<OrdenTurnoAssign />} />
 
-          {/* 🧩 ROLES */}
+          {/* 🧩 Roles */}
           <Route path="/roles" element={<RolesList />} />
           <Route path="/roles/nuevo" element={<RolCreate />} />
           <Route path="/roles/editar/:id" element={<RolEdit />} />
 
-          {/* 👤 USUARIOS */}
+          {/* 👤 Usuarios */}
           <Route path="/usuarios" element={<UsuariosList />} />
           <Route path="/usuarios/nuevo" element={<UsuarioCreate />} />
           <Route path="/usuarios/editar/:id" element={<UsuarioEdit />} />
-
-        </Routes>
-      </main>
+        </Route>
+      </Routes>
     </Router>
   );
 }
-
-export default App;
