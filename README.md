@@ -6,6 +6,35 @@ El sistema **Gym** es una aplicación web completa desarrollada con **ASP.NET Co
 Permite administrar **socios, profesores, planes, rutinas, comprobantes y turnos**, con autenticación por roles, subida de archivos, y comunicación API segura.
 
 ---
+flowchart TD
+
+A[👤 Registro del Socio] --> B[📋 Elección del Plan]
+B --> C[💳 Generación Automática de Orden de Pago]
+C --> D[📄 Adjuntar Comprobante (opcional)]
+C -->|Pago en efectivo| E[✅ Marcar Orden como Aprobada]
+D --> E
+E --> F[🔓 Activación de Suscripción]
+F --> G[📅 Reserva de Turnos según Plan]
+G --> H[🏋️ Check-in en el Gimnasio]
+
+%% Estados
+C --> C1{Estado de Orden de Pago}
+C1 -->|Pendiente| C
+C1 -->|Aprobada| F
+C1 -->|Rechazada| C
+
+%% Descripciones
+A:::step -->|Crea socio activo| B
+B:::step -->|Selecciona plan y monto| C
+C:::step -->|Estado inicial Pendiente| D
+D:::step -->|Sube PDF/JPG comprobante| E
+E:::step -->|Verificado o en efectivo| F
+F:::step -->|Suscripción activa| G
+G:::step -->|Control por cupos y días| H
+H:::step -->|Asistencia registrada| End([🏁 Fin del proceso])
+
+classDef step fill:#222,color:#fff,stroke:#f90,stroke-width:1px;
+
 
 ## 🧱 Arquitectura del Proyecto
 
