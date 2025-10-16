@@ -6,6 +6,81 @@ El sistema **Gym** es una aplicación web completa desarrollada con **ASP.NET Co
 Permite administrar **socios, profesores, planes, rutinas, comprobantes y turnos**, con autenticación por roles, subida de archivos, y comunicación API segura.
 
 ---
+## ⚙️ Camino Feliz Paso a Paso
+
+1️⃣ Registro del socio
+
+Se crea un registro en socio.
+
+Queda activo, pero aún no tiene suscripción.
+
+2️⃣ Elección del plan
+
+El socio elige un plan (plan_id).
+
+El sistema genera automáticamente una orden de pago (orden_pago):
+
+estado_id = Pendiente
+
+monto = plan.precio
+
+vence_en = fecha_actual + 30 días
+
+3️⃣ Generación y gestión de orden de pago
+
+La orden queda pendiente hasta su pago.
+
+Los estados válidos:
+
+Pendiente → creada sin pago.
+
+Aprobada → validada manualmente o con comprobante.
+
+Rechazada → comprobante inválido o vencido.
+
+4️⃣ Adjuntar comprobante (opcional)
+
+El socio o el admin sube un archivo (comprobante) vinculado por orden_pago_id.
+
+El backend guarda el archivo en wwwroot/uploads/comprobantes.
+
+5️⃣ Validación y aprobación del pago
+
+El administrador revisa el comprobante o registra un pago en efectivo.
+
+Cambia el estado_id de la orden a Aprobado.
+
+Puede opcionalmente registrar fecha_pago.
+
+6️⃣ Activación automática de la suscripción
+
+El sistema crea una nueva suscripcion:
+
+inicio = fecha actual
+
+fin = inicio + duración del plan
+
+estado = Activa
+
+El socio ya puede acceder a los servicios del gimnasio.
+
+7️⃣ Reserva de turnos
+
+El socio puede reservar según los días permitidos del plan.
+
+Se crean registros en orden_turno con validación de cupos y horario.
+
+8️⃣ Check-in en el gimnasio
+
+El socio realiza check-in (checkin).
+
+El sistema valida:
+
+Que la suscripcion esté activa.
+
+Que tenga turno reservado.
+
+Se actualiza el registro de asistencia.
 
 ## 🧱 Arquitectura del Proyecto
 
