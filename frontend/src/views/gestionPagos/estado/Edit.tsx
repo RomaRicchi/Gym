@@ -12,7 +12,7 @@ export default function EstadoEdit() {
   });
 
   useEffect(() => {
-    gymApi.get(`/estados-orden-pago/${id}`).then((res) => {
+    gymApi.get(`/estadosordenpago/${id}`).then((res) => {
       const e = res.data;
       setForm({
         nombre: e.nombre || "",
@@ -30,7 +30,7 @@ export default function EstadoEdit() {
     e.preventDefault();
 
     try {
-      await gymApi.put(`/estados-orden-pago/${id}`, form);
+      await gymApi.put(`/estadosordenpago/${id}`, form);
       Swal.fire("Actualizado", "Estado modificado correctamente", "success");
       navigate("/estados");
     } catch {

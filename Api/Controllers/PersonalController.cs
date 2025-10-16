@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/personal")]
     public class PersonalController : ControllerBase
     {
         private readonly GymDbContext _db;
@@ -16,55 +16,68 @@ namespace Api.Controllers
             _db = db;
         }
 
-        // 🔹 GET: /api/personal
+        // 🔹 GET /api/personal
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct = default)
         {
-            var list = await _db.Personales
+            var lista = await _db.Personales
                 .AsNoTracking()
                 .OrderBy(p => p.Nombre)
+                .Select(p => new
+                {
+                    id = p.Id,
+                    nombre = p.Nombre,
+                    email = $"{p.Nombre.Replace(" ", ".").ToLower()}@gym.com", // simulado
+                    telefono = p.Telefono,
+                    rol = p.Especialidad,
+                    activo = p.Estado
+                })
                 .ToListAsync(ct);
 
-            return Ok(list);
+            return Ok(lista);
         }
 
-        // 🔹 GET: /api/personal/activos
-        [HttpGet("activos")]
-        public async Task<IActionResult> GetActivos(CancellationToken ct = default)
-        {
-            var list = await _db.Personales
-                .AsNoTracking()
-                .Where(p => p.Estado == true)
-                .OrderBy(p => p.Nombre)
-                .ToListAsync(ct);
-
-            return Ok(list);
-        }
-
-        // 🔹 GET: /api/personal/{id}
-        [HttpGet("{id}")]
+        // 🔹 GET /api/personal/{id}
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
         {
-            var personal = await _db.Personales
+            var p = await _db.Personales
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id, ct);
+                .Where(x => x.Id == id)
+                .Select(p => new
+                {
+                    id = p.Id,
+                    nombre = p.Nombre,
+                    email = $"{p.Nombre.Replace(" ", ".").ToLower()}@gym.com",
+                    telefono = p.Telefono,
+                    rol = p.Especialidad,
+                    activo = p.Estado
+                })
+                .FirstOrDefaultAsync(ct);
 
-            if (personal is null)
-                return NotFound(new { message = "Personal no encontrado." });
-
-            return Ok(personal);
+            if (p is null) return NotFound(new { message = "Personal no encontrado." });
+            return Ok(p);
         }
 
-        // 🔹 POST: /api/personal
+        // 🔹 POST /api/personal
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] Personal dto, CancellationToken ct = default)
+        public async Task<IActionResult> Crear([FromBody] dynamic dto, CancellationToken ct = default)
         {
             try
             {
-                _db.Personales.Add(dto);
+                var nuevo = new Personal
+                {
+                    Nombre = dto.nombre,
+                    Telefono = dto.telefono,
+                    Direccion = "-",
+                    Especialidad = dto.rol,
+                    Estado = dto.activo
+                };
+
+                _db.Personales.Add(nuevo);
                 await _db.SaveChangesAsync(ct);
 
-                return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+                return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, nuevo);
             }
             catch (Exception ex)
             {
@@ -72,39 +85,35 @@ namespace Api.Controllers
             }
         }
 
-        // 🔹 PUT: /api/personal/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Actualizar(int id, [FromBody] Personal dto, CancellationToken ct = default)
+        // 🔹 PUT /api/personal/{id}
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] dynamic dto, CancellationToken ct = default)
         {
-            var personal = await _db.Personales.FirstOrDefaultAsync(p => p.Id == id, ct);
-            if (personal is null)
+            var p = await _db.Personales.FindAsync(new object[] { id }, ct);
+            if (p is null)
                 return NotFound(new { message = "Personal no encontrado." });
 
-            personal.Nombre = dto.Nombre;
-            personal.Telefono = dto.Telefono;
-            personal.Direccion = dto.Direccion;
-            personal.Especialidad = dto.Especialidad;
-            personal.Estado = dto.Estado;
+            p.Nombre = dto.nombre;
+            p.Telefono = dto.telefono;
+            p.Especialidad = dto.rol;
+            p.Estado = dto.activo;
 
             await _db.SaveChangesAsync(ct);
             return Ok(new { ok = true, message = "Personal actualizado correctamente." });
         }
 
-        // 🔹 DELETE: /api/personal/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> BajaLogica(int id, CancellationToken ct = default)
+        // 🔹 DELETE /api/personal/{id}
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Eliminar(int id, CancellationToken ct = default)
         {
-            var personal = await _db.Personales.FirstOrDefaultAsync(p => p.Id == id, ct);
-            if (personal is null)
-                return NotFound(new { message = "Personal no encontrado para eliminar." });
+            var p = await _db.Personales.FindAsync(new object[] { id }, ct);
+            if (p is null)
+                return NotFound(new { message = "Personal no encontrado." });
 
-            if (!personal.Estado)
-                return BadRequest(new { message = "El personal ya está dado de baja." });
-
-            personal.Estado = false;
+            p.Estado = false;
             await _db.SaveChangesAsync(ct);
 
-            return Ok(new { ok = true, message = "Baja lógica realizada correctamente." });
+            return Ok(new { ok = true, message = "Personal desactivado correctamente." });
         }
     }
 }

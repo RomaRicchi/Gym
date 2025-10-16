@@ -1,12 +1,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// ✅ Alias para que @ apunte a /src
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": "/src",
+      "@": "/src", 
     },
+  },
+  define: {
+    global: "window", // 👈 necesario para jQuery / Select2
+  },
+  optimizeDeps: {
+    include: ["jquery", "select2"], // 👈 asegura que Vite los procese correctamente
   },
 });

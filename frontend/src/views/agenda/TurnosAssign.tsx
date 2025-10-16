@@ -20,7 +20,7 @@ export default function TurnosAssign() {
   useEffect(() => {
     const fetchTurnos = async () => {
       try {
-        const res = await gymApi.get("/turnos-plantilla");
+        const res = await gymApi.get("/turnosplantilla");
         setTurnos(res.data.items || res.data);
       } catch {
         Swal.fire("Error", "No se pudieron cargar los turnos disponibles", "error");

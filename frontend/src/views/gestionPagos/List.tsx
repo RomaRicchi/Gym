@@ -1,115 +1,145 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Button } from "react-bootstrap";
 import Swal from "sweetalert2";
-import gymApi from "@/api/gymApi";
-
-interface OrdenPago {
-  id: number;
-  socio_id: number;
-  plan_id: number;
-  suscripcion_id: number;
-  monto: number;
-  vence_en: string;
-  estado_id: number;
-  notas?: string;
-}
-
+import { Link } from "react-router-dom";
+import gymApi from "@/api/gymApi"
+import { mostrarFormularioOrdenPago } from "./formOrdenPago";
 export default function OrdenesList() {
-  const [ordenes, setOrdenes] = useState<OrdenPago[]>([]);
+  const [ordenes, setOrdenes] = useState<any[]>([]);
+  const [estados, setEstados] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
-  const fetchOrdenes = async () => {
-    try {
-      const res = await gymApi.get("/ordenes-pago");
-      setOrdenes(res.data.items || res.data);
-    } catch {
-      Swal.fire("Error", "No se pudieron cargar las órdenes de pago", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // 🔹 Cargar estados y órdenes
   useEffect(() => {
-    fetchOrdenes();
+    const fetchData = async () => {
+      try {
+        const [resEstados, resOrdenes] = await Promise.all([
+          gymApi.get("/estados"),
+          gymApi.get("/ordenes")
+        ]);
+        setEstados(resEstados.data);
+        setOrdenes(resOrdenes.data);
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "No se pudieron cargar las órdenes de pago", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    const confirm = await Swal.fire({
+  if (loading)
+    return (
+      <div className="text-center mt-5">
+        <div className="spinner-border text-primary" role="status"></div>
+        <p className="mt-3">Cargando órdenes...</p>
+      </div>
+    );
+
+  return (
+    <div className="container mt-3">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h4>Órdenes de Pago</h4>
+        <button className="btn btn-success" onClick={mostrarFormularioOrdenPago}>
+          + Nueva Orden
+        </button>
+      </div>
+
+      <div className="table-responsive">
+        <table className="table table-striped table-bordered align-middle text-center">
+          <thead className="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Socio</th>
+              <th>Plan</th>
+              <th>Monto</th>
+              <th>Vence</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ordenes.length === 0 ? (
+              <tr>
+                <td colSpan={7}>No hay órdenes registradas</td>
+              </tr>
+            ) : (
+              ordenes.map((o) => (
+                <tr key={o.id}>
+                  <td>{o.id}</td>
+                  <td>{o.socio?.nombre || "—"}</td>
+                  <td>{o.plan?.nombre || "—"}</td>
+                  <td>${o.monto.toFixed(2)}</td>
+                  <td>{new Date(o.venceEn).toLocaleDateString()}</td>
+                  <td>
+                    <span
+                      className={`badge bg-${
+                        o.estado?.nombre === "verificado"
+                          ? "success"
+                          : o.estado?.nombre === "pendiente"
+                          ? "warning"
+                          : o.estado?.nombre === "rechazado"
+                          ? "danger"
+                          : "secondary"
+                      }`}
+                    >
+                      {o.estado?.nombre || "Sin estado"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="d-flex justify-content-center gap-2">
+                      <Link
+                        to={`/ordenes/${o.id}/comprobantes`}
+                        className="btn btn-sm btn-outline-primary"
+                      >
+                        📎 Comprobantes
+                      </Link>
+
+                      <Link
+                        to={`/ordenes/editar/${o.id}`}
+                        className="btn btn-sm btn-outline-warning"
+                      >
+                        ✏️ Editar
+                      </Link>
+
+                      <Button
+                        size="sm"
+                        variant="outline-danger"
+                        onClick={() => eliminarOrden(o.id)}
+                      >
+                        🗑️ Eliminar
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  async function eliminarOrden(id: number) {
+    const result = await Swal.fire({
       title: "¿Eliminar orden?",
       text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
-      confirmButtonColor: "#d33",
     });
 
-    if (confirm.isConfirmed) {
-      try {
-        await gymApi.delete(`/ordenes-pago/${id}`);
-        Swal.fire("Eliminada", "Orden eliminada correctamente", "success");
-        fetchOrdenes();
-      } catch {
-        Swal.fire("Error", "No se pudo eliminar la orden", "error");
-      }
+    if (!result.isConfirmed) return;
+
+    try {
+      await gymApi.delete(`/ordenes/${id}`);
+      setOrdenes((prev) => prev.filter((x) => x.id !== id));
+      Swal.fire("Eliminada", "La orden fue eliminada correctamente.", "success");
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "No se pudo eliminar la orden.", "error");
     }
-  };
-
-  if (loading) return <p>Cargando órdenes...</p>;
-
-  return (
-    <div className="mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Órdenes de Pago</h2>
-        <button onClick={() => navigate("/ordenes/nueva")} className="btn btn-success">
-          ➕ Nueva Orden
-        </button>
-      </div>
-
-      <table className="table table-striped table-hover">
-        <thead className="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Socio</th>
-            <th>Plan</th>
-            <th>Monto</th>
-            <th>Vence</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ordenes.map((o) => (
-            <tr key={o.id}>
-              <td>{o.id}</td>
-              <td>{o.socio_id}</td>
-              <td>{o.plan_id}</td>
-              <td>${o.monto.toFixed(2)}</td>
-              <td>{new Date(o.vence_en).toLocaleDateString()}</td>
-              <td>
-                {o.estado_id === 1 && <span className="text-warning">Pendiente</span>}
-                {o.estado_id === 2 && <span className="text-success">Pagada</span>}
-                {o.estado_id === 3 && <span className="text-danger">Vencida</span>}
-              </td>
-              <td>
-                <button
-                  className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => navigate(`/ordenes/editar/${o.id}`)}
-                >
-                  ✏️ Editar
-                </button>
-                <button
-                  className="btn btn-sm btn-outline-danger"
-                  onClick={() => handleDelete(o.id)}
-                >
-                  🗑️ Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  }
 }

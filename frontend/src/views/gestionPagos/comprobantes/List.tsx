@@ -1,24 +1,26 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
 interface Comprobante {
   id: number;
-  file_url: string;
-  mime_type: string;
-  subido_en: string;
+  fileUrl: string;
+  mimeType: string;
+  subidoEn: string;
 }
 
 export default function ComprobantesList() {
-  const { id } = useParams(); // ID de la orden de pago
-  const [files, setFiles] = useState<Comprobante[]>([]);
+  const { id } = useParams(); // id de la orden
+  const navigate = useNavigate();
+  const [comprobantes, setComprobantes] = useState<Comprobante[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchFiles = async () => {
+  const fetchComprobantes = async () => {
     try {
       const res = await gymApi.get(`/ordenes/${id}/comprobantes`);
-      setFiles(res.data.items || res.data);
+      console.log("Comprobantes:", res.data);
+      setComprobantes(Array.isArray(res.data) ? res.data : []);
     } catch {
       Swal.fire("Error", "No se pudieron cargar los comprobantes", "error");
     } finally {
@@ -27,25 +29,24 @@ export default function ComprobantesList() {
   };
 
   useEffect(() => {
-    fetchFiles();
+    fetchComprobantes();
   }, [id]);
 
-  const handleDelete = async (compId: number) => {
+  const handleDelete = async (cid: number) => {
     const confirm = await Swal.fire({
       title: "¿Eliminar comprobante?",
-      text: "Este archivo será eliminado permanentemente.",
+      text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
-      confirmButtonColor: "#d33",
     });
 
     if (confirm.isConfirmed) {
       try {
-        await gymApi.delete(`/comprobantes/${compId}`);
+        await gymApi.delete(`/comprobantes/${cid}`);
         Swal.fire("Eliminado", "Comprobante eliminado correctamente", "success");
-        fetchFiles();
+        fetchComprobantes();
       } catch {
         Swal.fire("Error", "No se pudo eliminar el comprobante", "error");
       }
@@ -55,38 +56,38 @@ export default function ComprobantesList() {
   if (loading) return <p>Cargando comprobantes...</p>;
 
   return (
-    <div className="mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>📑 Comprobantes de la Orden #{id}</h2>
-        <Link to={`/ordenes/${id}/subir-comprobante`} className="btn btn-success">
-          ➕ Subir Comprobante
-        </Link>
-      </div>
+    <div className="container mt-4">
+      <h2>📑 Comprobantes de la Orden #{id}</h2>
 
-      {files.length === 0 ? (
-        <p>No hay comprobantes asociados a esta orden.</p>
-      ) : (
-        <table className="table table-hover">
-          <thead className="table-dark">
-            <tr>
-              <th>ID</th>
-              <th>Archivo</th>
-              <th>Tipo</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {files.map((f) => (
+      <button
+        onClick={() => navigate(`/ordenes/${id}/subir-comprobante`)}
+        className="btn btn-success mb-3"
+      >
+        ➕ Subir nuevo comprobante
+      </button>
+
+      <table className="table table-striped table-hover">
+        <thead className="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Archivo</th>
+            <th>Tipo</th>
+            <th>Subido En</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {comprobantes.length > 0 ? (
+            comprobantes.map((f) => (
               <tr key={f.id}>
                 <td>{f.id}</td>
                 <td>
-                  <a href={f.file_url} target="_blank" rel="noopener noreferrer">
+                  <a href={`/${f.fileUrl}`} target="_blank" rel="noopener noreferrer">
                     Ver archivo
                   </a>
                 </td>
-                <td>{f.mime_type}</td>
-                <td>{new Date(f.subido_en).toLocaleString()}</td>
+                <td>{f.mimeType}</td>
+                <td>{new Date(f.subidoEn).toLocaleString()}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-outline-danger"
@@ -96,10 +97,16 @@ export default function ComprobantesList() {
                   </button>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            ))
+          ) : (
+            <tr>
+              <td colSpan={5} className="text-center text-muted">
+                No hay comprobantes cargados
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

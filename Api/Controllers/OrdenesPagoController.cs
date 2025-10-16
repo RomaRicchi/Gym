@@ -1,21 +1,71 @@
 using Api.Data;
 using Api.Data.Models;
-using Api.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/ordenes")] 
     public class OrdenesPagoController : ControllerBase
     {
         private readonly GymDbContext _db;
-        public OrdenesPagoController(GymDbContext db) => _db = db;
 
-        // ---------- POST: Crear Orden ----------
+        public OrdenesPagoController(GymDbContext db)
+        {
+            _db = db;
+        }
+
+        // 🔹 GET /api/ordenes
+        [HttpGet]
+        public async Task<IActionResult> GetAll(CancellationToken ct)
+        {
+            var lista = await _db.OrdenesPago
+                .Include(o => o.Socio)
+                .Include(o => o.Plan)
+                .Include(o => o.Estado)
+                .AsNoTracking()
+                .OrderByDescending(o => o.Id)
+                .Select(o => new
+                {
+                    o.Id,
+                    Socio = o.Socio != null ? o.Socio.Nombre : null,
+                    Plan = o.Plan != null ? o.Plan.Nombre : null,
+                    Estado = o.Estado != null ? o.Estado.Nombre : null,
+                    o.Monto,
+                })
+                .ToListAsync(ct);
+
+            return Ok(lista);
+        }
+
+        // 🔹 GET /api/ordenes/{id}
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id, CancellationToken ct)
+        {
+            var orden = await _db.OrdenesPago
+                .Include(o => o.Socio)
+                .Include(o => o.Plan)
+                .Include(o => o.Estado)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == id, ct);
+
+            if (orden == null)
+                return NotFound();
+
+            return Ok(new
+            {
+                orden.Id,
+                orden.Monto,
+                Socio = orden.Socio?.Nombre,
+                Plan = orden.Plan?.Nombre,
+                Estado = orden.Estado?.Nombre
+            });
+        }
+
+        // 🔹 POST /api/ordenes
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] OrdenPagoCreateDto dto, CancellationToken ct)
+        public async Task<IActionResult> Crear([FromBody] OrdenPago dto, CancellationToken ct)
         {
             if (!await _db.Socios.AnyAsync(s => s.Id == dto.SocioId, ct))
                 return BadRequest("El socio no existe.");
@@ -26,188 +76,63 @@ namespace Api.Controllers
             if (!await _db.EstadoOrdenPago.AnyAsync(e => e.Id == dto.EstadoId, ct))
                 return BadRequest("El estado no existe.");
 
-            var entity = new OrdenPago
-            {
-                SocioId = dto.SocioId,
-                PlanId = dto.PlanId,
-                EstadoId = dto.EstadoId,
-                Monto = dto.Monto,
-                VenceEn = dto.VenceEn,
-                Notas = dto.Notas,
-                CreadoEn = DateTime.UtcNow
-            };
+            // ✅ Estado por defecto
+            if (dto.EstadoId == 0)
+                dto.EstadoId = 1; // pendiente
 
-            _db.OrdenesPago.Add(entity);
+            dto.Socio = null;
+            dto.Plan = null;
+            dto.Estado = null;
+
+            _db.OrdenesPago.Add(dto);
             await _db.SaveChangesAsync(ct);
 
-            return CreatedAtAction(nameof(ObtenerPorId), new { id = entity.Id }, entity);
+            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
-        // ---------- GET: Obtener por ID ----------
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> ObtenerPorId(int id, CancellationToken ct)
-        {
-            var orden = await _db.OrdenesPago
-                .Include(o => o.Socio)
-                .Include(o => o.Plan)
-                .Include(o => o.Estado)
-                .FirstOrDefaultAsync(o => o.Id == id, ct);
 
-            if (orden is null)
+        // 🔹 PUT /api/ordenes/{id}
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] OrdenPago dto, CancellationToken ct)
+        {
+            var orden = await _db.OrdenesPago.FindAsync(new object[] { id }, ct);
+            if (orden == null)
                 return NotFound();
 
-            return Ok(orden);
-        }
-
-        // ---------- GET: Órdenes pendientes ----------
-        [HttpGet("pendientes")]
-        public async Task<IActionResult> GetPendientes(CancellationToken ct = default)
-        {
-            var list = await _db.OrdenesPago
-                .Include(o => o.Estado)
-                .Where(o => o.Estado.Nombre == "pendiente" || o.Estado.Nombre == "en_revision")
-                .OrderByDescending(o => o.CreadoEn)
-                .Select(o => new
-                {
-                    o.Id,
-                    o.SocioId,
-                    o.PlanId,
-                    o.Monto,
-                    Estado = o.Estado.Nombre,
-                    o.CreadoEn,
-                    o.VenceEn
-                })
-                .ToListAsync(ct);
-
-            return Ok(list);
-        }
-
-        // ---------- PATCH: Aprobar Orden ----------
-        public record AprobarOrdenBody(string? Notas, int? DiasVigencia);
-
-        [HttpPatch("{id:int}/aprobar")]
-        public async Task<IActionResult> AprobarOrden([FromRoute] int id, [FromBody] AprobarOrdenBody? body, CancellationToken ct)
-        {
-            var orden = await _db.OrdenesPago
-                .Include(o => o.Estado)
-                .FirstOrDefaultAsync(o => o.Id == id, ct);
-
-            if (orden is null)
-                return NotFound("Orden no encontrada");
-
-            if (orden.Estado.Nombre == "verificado")
-                return Conflict("Orden ya verificada");
-            if (orden.Estado.Nombre == "rechazado")
-                return Conflict("Orden rechazada");
-
-            var estadoVerificado = await _db.EstadoOrdenPago
-                .FirstOrDefaultAsync(e => e.Nombre == "verificado", ct);
-
-            if (estadoVerificado is null)
-                return BadRequest("Estado 'verificado' no definido.");
-
-            orden.EstadoId = estadoVerificado.Id;
-            orden.Notas = body?.Notas;
-
-            // Crear o reactivar suscripción
-            var dias = body?.DiasVigencia ?? 30;
-            var ahora = DateTime.UtcNow;
-            var fin = ahora.AddDays(dias);
-
-            var sus = await _db.Suscripciones.FirstOrDefaultAsync(
-                s => s.SocioId == orden.SocioId && s.PlanId == orden.PlanId && s.Estado, ct);
-
-            if (sus is null)
-            {
-                sus = new Suscripcion
-                {
-                    SocioId = orden.SocioId,
-                    PlanId = orden.PlanId,
-                    Inicio = ahora,
-                    Fin = fin,
-                    Estado = true,
-                    CreadoEn = ahora
-                };
-                _db.Suscripciones.Add(sus);
-            }
-            else
-            {
-                if (sus.Fin < fin)
-                    sus.Fin = fin;
-                sus.Estado = true;
-            }
+            orden.Monto = dto.Monto;
+            orden.PlanId = dto.PlanId;
+            orden.EstadoId = dto.EstadoId;
 
             await _db.SaveChangesAsync(ct);
-            return Ok(new { ok = true, ordenId = id });
+            return Ok(new { ok = true, message = "Orden actualizada correctamente." });
         }
 
-        // ---------- PATCH: Rechazar Orden ----------
-        public record RechazarBody(string Motivo);
-
-        [HttpPatch("{id:int}/rechazar")]
-        public async Task<IActionResult> Rechazar([FromRoute] int id, [FromBody] RechazarBody body, CancellationToken ct)
+        // 🔹 PATCH /api/ordenes/{id}/estado
+        [HttpPatch("{id:int}/estado")]
+        public async Task<IActionResult> CambiarEstado(int id, [FromBody] int nuevoEstadoId, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(body.Motivo))
-                return BadRequest("Motivo requerido.");
+            var orden = await _db.OrdenesPago.FindAsync(new object[] { id }, ct);
+            if (orden == null)
+                return NotFound();
 
-            var orden = await _db.OrdenesPago
-                .Include(o => o.Estado)
-                .FirstOrDefaultAsync(o => o.Id == id, ct);
-
-            if (orden is null)
-                return NotFound("Orden no encontrada");
-
-            if (orden.Estado.Nombre == "verificado")
-                return Conflict("Orden ya verificada");
-
-            // Buscar estado 'rechazado'
-            var estadoRechazado = await _db.EstadoOrdenPago
-                .FirstOrDefaultAsync(e => e.Nombre == "rechazado", ct);
-
-            if (estadoRechazado is null)
-                return BadRequest("Estado 'rechazado' no definido.");
-
-            orden.EstadoId = estadoRechazado.Id;
-            orden.Notas = body.Motivo;
-
-            // Buscar suscripción activa del mismo socio y plan
-            var sus = await _db.Suscripciones.FirstOrDefaultAsync(
-                s => s.SocioId == orden.SocioId && s.PlanId == orden.PlanId && s.Estado, ct);
-
-            if (sus is not null)
-                sus.Estado = false; // baja lógica de la suscripción
-
+            orden.EstadoId = nuevoEstadoId;
             await _db.SaveChangesAsync(ct);
-            return Ok(new { ok = true, ordenId = id });
+
+            return Ok(new { ok = true, message = "Estado actualizado correctamente." });
         }
 
-        // ---------- GET: Listado completo de órdenes ----------
-        [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct = default)
+        // 🔹 DELETE /api/ordenes/{id}
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
         {
-            var list = await _db.OrdenesPago
-                .Include(o => o.Socio)
-                .Include(o => o.Plan)
-                .Include(o => o.Estado)
-                .OrderByDescending(o => o.CreadoEn)
-                .Select(o => new
-                {
-                    o.Id,
-                    Socio = o.Socio.Nombre,
-                    Plan = o.Plan.Nombre,
-                    Estado = o.Estado.Nombre,
-                    o.Monto,
-                    o.VenceEn,
-                    o.Notas
-                })
-                .ToListAsync(ct);
+            var orden = await _db.OrdenesPago.FindAsync(new object[] { id }, ct);
+            if (orden == null)
+                return NotFound();
 
-            return Ok(new
-            {
-                ok = true,
-                total = list.Count,
-                data = list
-            });
+            _db.OrdenesPago.Remove(orden);
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new { ok = true, message = "Orden eliminada correctamente." });
         }
     }
 }

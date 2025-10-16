@@ -24,7 +24,7 @@ export default function EstadoCreate() {
     }
 
     try {
-      await gymApi.post("/estados-orden-pago", form);
+      await gymApi.post("/estadosordenpago", form);
       Swal.fire("Guardado", "Estado creado correctamente", "success");
       navigate("/estados");
     } catch {

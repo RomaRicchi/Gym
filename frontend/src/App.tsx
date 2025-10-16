@@ -12,6 +12,11 @@ import SociosList from "@/views/socios/List";
 import SociosCreate from "@/views/socios/Create";
 import SociosEdit from "@/views/socios/Edit";
 
+// Personal
+import PersonalList from "@/views/personal/List";
+import PersonalCreate from "@/views/personal/Create";
+import PersonalEdit from "@/views/personal/Edit";
+
 // 💳 Suscripciones
 import SuscripcionesList from "@/views/suscripciones/List";
 import SuscripcionCreate from "@/views/suscripciones/Create";
@@ -85,6 +90,11 @@ export default function App() {
           <Route path="/socios/nuevo" element={<SociosCreate />} />
           <Route path="/socios/editar/:id" element={<SociosEdit />} />
 
+          {/* Personal */}
+          <Route path="/personal" element={<PersonalList />} />
+          <Route path="/personal/nuevo" element={<PersonalCreate />} />
+          <Route path="/personal/editar/:id" element={<PersonalEdit />} />
+
           {/* 💳 Suscripciones */}
           <Route path="/suscripciones" element={<SuscripcionesList />} />
           <Route path="/suscripciones/nueva" element={<SuscripcionCreate />} />
@@ -111,6 +121,7 @@ export default function App() {
           <Route path="/ordenes/editar/:id" element={<OrdenPagoEdit />} />
 
           {/* 📑 Comprobantes */}
+          <Route path="/comprobantes" element={<ComprobantesList />} />
           <Route path="/ordenes/:id/comprobantes" element={<ComprobantesList />} />
           <Route path="/ordenes/:id/subir-comprobante" element={<ComprobanteUpload />} />
 

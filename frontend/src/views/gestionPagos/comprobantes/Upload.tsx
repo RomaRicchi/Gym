@@ -4,26 +4,27 @@ import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
 export default function ComprobanteUpload() {
-  const { id } = useParams(); // orden_pago_id
+  const { id } = useParams();
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!file) {
-      Swal.fire("Aviso", "Debe seleccionar un archivo", "info");
+      Swal.fire("Error", "Debe seleccionar un archivo", "error");
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("orden_pago_id", id || "");
+    formData.append("archivo", file);        // ✅ debe coincidir con [FromForm] IFormFile archivo
+    formData.append("ordenPagoId", id || ""); // ✅ debe coincidir con [FromForm] int ordenPagoId
 
     try {
       await gymApi.post("/comprobantes", formData, {
@@ -38,22 +39,23 @@ export default function ComprobanteUpload() {
   };
 
   return (
-    <div className="container mt-4">
-      <h2>📤 Subir Comprobante</h2>
-      <p className="text-muted">Seleccioná un archivo (PDF, JPG, PNG, etc.)</p>
-
-      <form onSubmit={handleSubmit}>
+    <div className="container mt-5">
+      <h2>📤 Subir Comprobante - Orden #{id}</h2>
+      <form onSubmit={handleSubmit} className="mt-4">
         <div className="mb-3">
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            className="form-control"
-            onChange={handleFileChange}
-          />
+          <input type="file" className="form-control" onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" />
         </div>
 
         <button type="submit" className="btn btn-primary">
-          Subir Archivo
+          Subir archivo
+        </button>
+
+        <button
+          type="button"
+          className="btn btn-secondary ms-3"
+          onClick={() => navigate(`/ordenes/${id}/comprobantes`)}
+        >
+          Volver
         </button>
       </form>
     </div>

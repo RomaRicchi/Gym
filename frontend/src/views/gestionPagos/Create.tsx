@@ -1,119 +1,212 @@
+// @ts-nocheck
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-
-interface Socio { id: number; nombre: string; }
-interface Plan { id: number; nombre: string; }
-interface Suscripcion { id: number; }
+import { useNavigate } from "react-router-dom";
+import "select2/dist/css/select2.min.css";
+import "select2/dist/js/select2.full.min.js";
 
 export default function OrdenPagoCreate() {
   const navigate = useNavigate();
+
+  const [socios, setSocios] = useState<any[]>([]);
+  const [planes, setPlanes] = useState<any[]>([]);
+  const [estados, setEstados] = useState<any[]>([]);
   const [form, setForm] = useState({
-    socio_id: "",
-    plan_id: "",
-    suscripcion_id: "",
+    socioId: "",
+    planId: "",
     monto: "",
-    vence_en: "",
-    estado_id: 1, // 1 = pendiente
+    estadoId: "",
     notas: "",
   });
 
-  const [socios, setSocios] = useState<Socio[]>([]);
-  const [planes, setPlanes] = useState<Plan[]>([]);
-  const [suscripciones, setSuscripciones] = useState<Suscripcion[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [resSocios, resPlanes, resSuscripciones] = await Promise.all([
-          gymApi.get("/socios"),
-          gymApi.get("/planes"),
-          gymApi.get("/suscripciones"),
-        ]);
-        setSocios(resSocios.data.items || resSocios.data);
-        setPlanes(resPlanes.data.items || resPlanes.data);
-        setSuscripciones(resSuscripciones.data.items || resSuscripciones.data);
-      } catch {
-        Swal.fire("Error", "No se pudieron cargar los datos", "error");
-      }
-    };
-    fetchData();
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+  // 🔹 Función segura para obtener arrays del backend
+  const safeArray = (res: any) => {
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res?.result)) return res.result;
+    if (Array.isArray(res?.data?.data)) return res.data.data;
+    return [];
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 🔹 Cargar datos desde la API
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const [sociosRes, planesRes, estadosRes] = await Promise.all([
+          gymApi.get("/socios"),
+          gymApi.get("/planes"),
+          gymApi.get("/estados"),
+        ]);
+
+        setSocios(safeArray(sociosRes.data));
+        setPlanes(safeArray(planesRes.data));
+        setEstados(safeArray(estadosRes.data));
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "No se pudieron cargar los datos.", "error");
+      }
+    };
+
+    cargarDatos();
+  }, []);
+
+  // 🔹 Inicializar Select2 cuando los datos estén listos
+  useEffect(() => {
+    if (!socios.length || !planes.length || !estados.length) return;
+
+    const $ = (window as any).$; // usar la instancia global de jQuery cargada en main.tsx
+
+    const initSelect2 = () => {
+      const $socio = $("#socioSelect");
+      const $plan = $("#planSelect");
+      const $estado = $("#estadoSelect");
+
+      // Destruir instancias previas
+      if ($socio.hasClass("select2-hidden-accessible")) $socio.select2("destroy");
+      if ($plan.hasClass("select2-hidden-accessible")) $plan.select2("destroy");
+      if ($estado.hasClass("select2-hidden-accessible")) $estado.select2("destroy");
+
+      // Inicializar Select2 con buscador
+      $socio
+        .select2({
+          placeholder: "Seleccione un socio",
+          allowClear: true,
+          width: "100%",
+        })
+        .on("change", (e: any) =>
+          setForm((prev) => ({ ...prev, socioId: e.target.value }))
+        );
+
+      $plan
+        .select2({
+          placeholder: "Seleccione un plan",
+          allowClear: true,
+          width: "100%",
+        })
+        .on("change", (e: any) => {
+          const planId = e.target.value;
+          const planSel = planes.find((p: any) => p.id == planId);
+          setForm((prev) => ({
+            ...prev,
+            planId,
+            monto: planSel ? planSel.precio : "",
+          }));
+        });
+
+      $estado
+        .select2({
+          placeholder: "Seleccione un estado",
+          allowClear: true,
+          width: "100%",
+        })
+        .on("change", (e: any) =>
+          setForm((prev) => ({ ...prev, estadoId: e.target.value }))
+        );
+    };
+
+    // ⚙️ Ejecutar cuando React haya renderizado completamente el DOM
+    const timeout = setTimeout(initSelect2, 500);
+    return () => clearTimeout(timeout);
+  }, [socios, planes, estados]);
+
+  // 🔹 Guardar orden
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
-
-    if (parseFloat(form.monto) <= 0) {
-      Swal.fire("Error", "El monto debe ser mayor a cero", "error");
-      return;
-    }
-
     try {
-      await gymApi.post("/ordenes-pago", form);
-      Swal.fire("Guardado", "Orden de pago creada correctamente", "success");
+      await gymApi.post("/ordenes", {
+        socioId: Number(form.socioId),
+        planId: Number(form.planId),
+        monto: Number(form.monto),
+        estadoId: Number(form.estadoId),
+        notas: form.notas,
+      });
+
+      Swal.fire("Éxito", "Orden de pago creada correctamente", "success");
       navigate("/ordenes");
-    } catch {
-      Swal.fire("Error", "No se pudo crear la orden", "error");
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "No se pudo crear la orden.", "error");
     }
   };
 
   return (
     <div className="container mt-4">
-      <h2>➕ Nueva Orden de Pago</h2>
-      <form onSubmit={handleSubmit} className="mt-4">
-        <div className="row mb-3">
-          <div className="col-md-4">
-            <label className="form-label">Socio</label>
-            <select name="socio_id" value={form.socio_id} onChange={handleChange} className="form-select" required>
-              <option value="">Seleccionar socio...</option>
-              {socios.map((s) => (
-                <option key={s.id} value={s.id}>{s.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-4">
-            <label className="form-label">Plan</label>
-            <select name="plan_id" value={form.plan_id} onChange={handleChange} className="form-select">
-              <option value="">Seleccionar plan...</option>
-              {planes.map((p) => (
-                <option key={p.id} value={p.id}>{p.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-4">
-            <label className="form-label">Suscripción</label>
-            <select name="suscripcion_id" value={form.suscripcion_id} onChange={handleChange} className="form-select">
-              <option value="">Seleccionar suscripción...</option>
-              {suscripciones.map((s) => (
-                <option key={s.id} value={s.id}>{s.id}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="row mb-3">
-          <div className="col-md-6">
-            <label className="form-label">Monto</label>
-            <input type="number" name="monto" value={form.monto} onChange={handleChange} className="form-control" min="0.01" step="0.01" required />
-          </div>
-          <div className="col-md-6">
-            <label className="form-label">Vence En</label>
-            <input type="date" name="vence_en" value={form.vence_en} onChange={handleChange} className="form-control" required />
-          </div>
-        </div>
-
+      <h3>Nueva Orden de Pago</h3>
+      <form onSubmit={handleSubmit}>
+        {/* SOCIO */}
         <div className="mb-3">
-          <label className="form-label">Notas</label>
-          <textarea name="notas" value={form.notas} onChange={handleChange} className="form-control" rows={3}></textarea>
+          <label>Socio</label>
+          <select id="socioSelect" className="form-select">
+            <option value="">Seleccione un socio</option>
+            {socios.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nombre} ({s.email})
+              </option>
+            ))}
+          </select>
         </div>
 
-        <button type="submit" className="btn btn-primary">Guardar</button>
+        {/* PLAN */}
+        <div className="mb-3">
+          <label>Plan</label>
+          <select id="planSelect" className="form-select">
+            <option value="">Seleccione un plan</option>
+            {planes.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombre} - ${p.precio}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* MONTO */}
+        <div className="mb-3">
+          <label>Monto</label>
+          <input
+            type="number"
+            className="form-control"
+            value={form.monto}
+            readOnly
+          />
+        </div>
+
+        {/* ESTADO */}
+        <div className="mb-3">
+          <label>Estado</label>
+          <select id="estadoSelect" className="form-select">
+            <option value="">Seleccione un estado</option>
+            {estados.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* NOTAS */}
+        <div className="mb-3">
+          <label>Notas</label>
+          <textarea
+            className="form-control"
+            value={form.notas}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, notas: e.target.value }))
+            }
+          ></textarea>
+        </div>
+
+        {/* BOTONES */}
+        <button className="btn btn-primary" type="submit">
+          Guardar
+        </button>
+        <button
+          className="btn btn-secondary ms-2"
+          type="button"
+          onClick={() => navigate("/ordenes")}
+        >
+          Cancelar
+        </button>
       </form>
     </div>
   );

@@ -1,66 +1,74 @@
+using Api.Data;
 using Api.Data.Models;
-using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/estados")]
     public class EstadoOrdenPagoController : ControllerBase
     {
-        private readonly IEstadoOrdenPagoRepository _repo;
+        private readonly GymDbContext _db;
 
-        public EstadoOrdenPagoController(IEstadoOrdenPagoRepository repo)
+        public EstadoOrdenPagoController(GymDbContext db)
         {
-            _repo = repo;
+            _db = db;
         }
 
+        // ✅ GET /api/estados
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct = default)
+        public async Task<IActionResult> GetAll(CancellationToken ct)
         {
-            var list = await _repo.GetAllAsync(ct);
-            return Ok(list);
+            var estados = await _db.EstadoOrdenPago
+                .OrderBy(e => e.Id)
+                .ToListAsync(ct);
+            return Ok(estados);
         }
 
+        // ✅ GET /api/estados/{id}
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
+        public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
-            var estado = await _repo.GetByIdAsync(id, ct);
+            var estado = await _db.EstadoOrdenPago.FindAsync(new object[] { id }, ct);
             return estado is null ? NotFound() : Ok(estado);
         }
 
-        // 🔹 Nuevo endpoint para buscar por las primeras letras del nombre
-        [HttpGet("nombre/{nombre}")]
-        public async Task<IActionResult> GetByNombre(string nombre, CancellationToken ct = default)
-        {
-            var estado = await _repo.GetByNombreAsync(nombre, ct);
-            return estado is null ? NotFound() : Ok(estado);
-        }
-
+        // ✅ POST /api/estados
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] EstadoOrdenPago dto, CancellationToken ct = default)
+        public async Task<IActionResult> Create([FromBody] EstadoOrdenPago dto, CancellationToken ct)
         {
-            var nuevo = await _repo.AddAsync(dto, ct);
-            return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, nuevo);
+            if (string.IsNullOrWhiteSpace(dto.Nombre))
+                return BadRequest("El nombre es obligatorio.");
+
+            _db.EstadoOrdenPago.Add(dto);
+            await _db.SaveChangesAsync(ct);
+            return Ok(dto);
         }
 
+        // ✅ PUT /api/estados/{id}
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Actualizar(int id, [FromBody] EstadoOrdenPago dto, CancellationToken ct = default)
+        public async Task<IActionResult> Update(int id, [FromBody] EstadoOrdenPago dto, CancellationToken ct)
         {
-            var estado = await _repo.GetByIdAsync(id, ct);
-            if (estado is null) return NotFound();
+            var estado = await _db.EstadoOrdenPago.FindAsync(new object[] { id }, ct);
+            if (estado == null) return NotFound();
 
             estado.Nombre = dto.Nombre;
             estado.Descripcion = dto.Descripcion;
 
-            await _repo.UpdateAsync(estado, ct);
-            return Ok(new { ok = true });
+            await _db.SaveChangesAsync(ct);
+            return NoContent();
         }
 
+        // ✅ DELETE /api/estados/{id}
         [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Eliminar(int id, CancellationToken ct = default)
+        public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
-            await _repo.DeleteAsync(id, ct);
+            var estado = await _db.EstadoOrdenPago.FindAsync(new object[] { id }, ct);
+            if (estado == null) return NotFound();
+
+            _db.EstadoOrdenPago.Remove(estado);
+            await _db.SaveChangesAsync(ct);
             return NoContent();
         }
     }

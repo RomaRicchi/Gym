@@ -21,7 +21,7 @@ export default function TurnosPlantillaList() {
 
   const fetchTurnos = async () => {
     try {
-      const res = await gymApi.get("/turnos-plantilla");
+      const res = await gymApi.get("/turnosplantilla");
       const data = res.data.items || res.data;
       const parsed = data.map((t: any) => ({ ...t, activo: Boolean(t.activo) }));
       setTurnos(parsed);

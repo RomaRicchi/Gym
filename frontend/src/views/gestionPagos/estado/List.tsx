@@ -16,7 +16,7 @@ export default function EstadosList() {
 
   const fetchEstados = async () => {
     try {
-      const res = await gymApi.get("/estados-orden-pago");
+      const res = await gymApi.get("/estados"); // ✅ corregido
       setEstados(res.data.items || res.data);
     } catch {
       Swal.fire("Error", "No se pudieron cargar los estados", "error");
@@ -42,7 +42,7 @@ export default function EstadosList() {
 
     if (confirm.isConfirmed) {
       try {
-        await gymApi.delete(`/estados-orden-pago/${id}`);
+        await gymApi.delete(`/estados/${id}`); // ✅ corregido
         Swal.fire("Eliminado", "Estado eliminado correctamente", "success");
         fetchEstados();
       } catch {
