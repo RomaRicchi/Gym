@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import { PersonalCreateSwal } from "@/views/personal/PersonalCreateSwal";
+import { PersonalEditSwal } from "@/views/personal/PersonalEditSwal";
 
 interface Personal {
   id: number;
@@ -16,13 +17,14 @@ export default function PersonalList() {
   const [personal, setPersonal] = useState<Personal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const fetchPersonal = async () => {
     setLoading(true);
     try {
       const res = await gymApi.get("/personal");
-      setPersonal(res.data.items || res.data);
+      const data = res.data.items || res.data;
+      setPersonal(data);
+      setError(null);
     } catch (err) {
       console.error(err);
       setError("Error al cargar el personal.");
@@ -64,15 +66,14 @@ export default function PersonalList() {
     <div className="mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Personal</h2>
-        <Link to="/personal/nuevo" className="btn btn-success">
-          ➕ Nuevo
-        </Link>
+        <button onClick={() => PersonalCreateSwal(fetchPersonal)} className="btn btn-success">
+          ➕ Nuevo Personal
+        </button>
       </div>
 
       <table className="table table-striped table-hover">
         <thead className="table-dark">
           <tr>
-            <th>ID</th>
             <th>Nombre</th>
             <th>Email</th>
             <th>Teléfono</th>
@@ -84,7 +85,6 @@ export default function PersonalList() {
         <tbody>
           {personal.map((p) => (
             <tr key={p.id}>
-              <td>{p.id}</td>
               <td>{p.nombre}</td>
               <td>{p.email}</td>
               <td>{p.telefono}</td>
@@ -93,7 +93,7 @@ export default function PersonalList() {
               <td>
                 <button
                   className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => navigate(`/personal/editar/${p.id}`)}
+                  onClick={() => PersonalEditSwal(p.id.toString(), fetchPersonal)}
                 >
                   ✏️ Editar
                 </button>

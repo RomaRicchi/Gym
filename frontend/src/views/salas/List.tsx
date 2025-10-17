@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import { SalaCreateSwal } from "@/views/salas/SalaCreateSwal"; 
+import { SalaEditSwal } from "@/views/salas/SalaEditSwal";   
 
 interface Sala {
   id: number;
@@ -13,7 +14,6 @@ interface Sala {
 export default function SalasList() {
   const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   const fetchSalas = async () => {
     try {
@@ -60,7 +60,8 @@ export default function SalasList() {
     <div className="mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Salas</h2>
-        <button onClick={() => navigate("/salas/nueva")} className="btn btn-success">
+        {/* 🟢 Botón crear usando el Swal importado */}
+        <button onClick={() => SalaCreateSwal(fetchSalas)} className="btn btn-success">
           ➕ Nueva Sala
         </button>
       </div>
@@ -83,9 +84,10 @@ export default function SalasList() {
               <td>{s.capacidad}</td>
               <td>{s.activa ? "✅ Sí" : "❌ No"}</td>
               <td>
+                {/* ✏️ Editar usando el Swal importado */}
                 <button
                   className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => navigate(`/salas/editar/${s.id}`)}
+                  onClick={() => SalaEditSwal(s.id.toString(), fetchSalas)}
                 >
                   ✏️ Editar
                 </button>

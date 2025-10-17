@@ -137,12 +137,11 @@ namespace Api.Controllers
             if (System.IO.File.Exists(filePath))
                 System.IO.File.Delete(filePath);
 
-            // 🔗 Desvincular la orden (si tenía relación)
-            if (comprobante.OrdenPago != null)
-            {
-                comprobante.OrdenPago.ComprobanteId = null;
-                _db.OrdenesPago.Update(comprobante.OrdenPago);
-            }
+            if (comprobante.OrdenPago?.ComprobanteId != null)
+                {
+                    comprobante.OrdenPago.ComprobanteId = null;
+                    _db.OrdenesPago.Update(comprobante.OrdenPago);
+                }
 
             _db.Comprobantes.Remove(comprobante);
             await _db.SaveChangesAsync(ct);

@@ -19,15 +19,17 @@ namespace Api.Repositories
                 qry = qry.Where(s => s.Nombre.Contains(q) || s.Dni.Contains(q) || s.Email.Contains(q));
 
             if (activo.HasValue)
-                qry = qry.Where(s => s.Activo == activo);
+                qry = qry.Where(s => s.Activo == activo.Value); 
 
             var total = await qry.CountAsync(ct);
             var items = await qry.OrderBy(s => s.Id)
                                 .Skip((page - 1) * pageSize)
                                 .Take(pageSize)
                                 .ToListAsync(ct);
+
             return (items, total);
         }
+
 
         public Task<Socio?> GetByIdAsync(int id, CancellationToken ct = default) =>
             _db.Socios.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);

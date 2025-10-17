@@ -11,8 +11,6 @@ import Dashboard from "@/views/Dashboard";
 import SociosList from "@/views/socios/List";
 // Personal
 import PersonalList from "@/views/personal/List";
-import PersonalCreate from "@/views/personal/Create";
-import PersonalEdit from "@/views/personal/Edit";
 
 // 💳 Suscripciones
 import SuscripcionesList from "@/views/suscripciones/List";
@@ -21,13 +19,9 @@ import SuscripcionEdit from "@/views/suscripciones/Edit";
 
 // 💰 PLANES
 import PlanesList from "@/views/suscripciones/planes/List";
-import PlanCreate from "@/views/suscripciones/planes/Create";
-import PlanEdit from "@/views/suscripciones/planes/Edit";
 
 // 🏋️ Salas
 import SalasList from "@/views/salas/List";
-import SalaCreate from "@/views/salas/Create";
-import SalaEdit from "@/views/salas/Edit";
 
 // 📆 Turnos plantilla
 import TurnosPlantillaList from "@/views/agenda/turnoPlantilla/List";
@@ -87,8 +81,6 @@ export default function App() {
 
           {/* Personal */}
           <Route path="/personal" element={<PersonalList />} />
-          <Route path="/personal/nuevo" element={<PersonalCreate />} />
-          <Route path="/personal/editar/:id" element={<PersonalEdit />} />
 
           {/* 💳 Suscripciones */}
           <Route path="/suscripciones" element={<SuscripcionesList />} />
@@ -97,13 +89,8 @@ export default function App() {
 
           {/* 💰 Planes */}
           <Route path="/planes" element={<PlanesList />} />
-          <Route path="/planes/nuevo" element={<PlanCreate />} />
-          <Route path="/planes/editar/:id" element={<PlanEdit />} />
-
           {/* 🏋️ Salas */}
           <Route path="/salas" element={<SalasList />} />
-          <Route path="/salas/nueva" element={<SalaCreate />} />
-          <Route path="/salas/editar/:id" element={<SalaEdit />} />
 
           {/* 📆 Turnos Plantilla */}
           <Route path="/turnos" element={<TurnosPlantillaList />} />

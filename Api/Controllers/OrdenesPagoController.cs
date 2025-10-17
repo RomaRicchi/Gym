@@ -108,32 +108,6 @@ namespace Api.Controllers
             return Ok(new { ok = true, message = "Comprobante asignado correctamente." });
         }
 
-        // 🔹 DELETE /api/ordenes/{id}
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
-        {
-            var orden = await _db.OrdenesPago
-                .Include(o => o.Comprobante)
-                .FirstOrDefaultAsync(o => o.Id == id, ct);
-
-            if (orden == null)
-                return NotFound("Orden no encontrada.");
-
-            // 🧹 Si tiene comprobante, eliminar el archivo y el registro
-            if (orden.Comprobante != null)
-            {
-                var filePath = Path.Combine("wwwroot", orden.Comprobante.FileUrl.Replace('/', Path.DirectorySeparatorChar));
-                if (System.IO.File.Exists(filePath))
-                    System.IO.File.Delete(filePath);
-
-                _db.Comprobantes.Remove(orden.Comprobante);
-            }
-
-            _db.OrdenesPago.Remove(orden);
-            await _db.SaveChangesAsync(ct);
-
-            return Ok(new { ok = true, message = "Orden y comprobante eliminados correctamente." });
-        }
 
         // [MÉTODO CREAR COMPLETO AQUÍ]
         [HttpPost]
@@ -275,15 +249,15 @@ namespace Api.Controllers
             if (orden == null)
                 return NotFound("Orden no encontrada.");
 
-            // 🧹 Si tiene comprobante, eliminar el archivo y el registro
-            if (orden.Comprobante != null)
+            if (orden.Comprobante is not null)
             {
-                var filePath = Path.Combine("wwwroot", orden.Comprobante.FileUrl.Replace('/', Path.DirectorySeparatorChar));
+                var filePath = Path.Combine("wwwroot", orden.Comprobante!.FileUrl.Replace('/', Path.DirectorySeparatorChar));
                 if (System.IO.File.Exists(filePath))
                     System.IO.File.Delete(filePath);
 
                 _db.Comprobantes.Remove(orden.Comprobante);
             }
+
 
             _db.OrdenesPago.Remove(orden);
             await _db.SaveChangesAsync(ct);

@@ -256,6 +256,7 @@ public class SociosController : ControllerBase
         if (activo.HasValue)
             query = query.Where(s => s.Estado == activo.Value);
 
+
         var total = await query.CountAsync(ct);
 
         var items = await query

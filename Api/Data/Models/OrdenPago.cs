@@ -32,6 +32,6 @@ namespace Api.Data.Models
 
         public virtual EstadoOrdenPago Estado { get; set; } = null!;
 
-        public virtual ICollection<Comprobante> Comprobantes { get; set; } = new List<Comprobante>();
+       
     }
 }
