@@ -11,8 +11,6 @@ namespace Api.Data.Models
 
         public int PlanId { get; set; }
 
-        public int SuscripcionId { get; set; } 
-
         public int EstadoId { get; set; }
 
         public decimal Monto { get; set; }
@@ -22,6 +20,10 @@ namespace Api.Data.Models
         public DateTime? VenceEn { get; set; }
 
         public string? Notas { get; set; }
+
+        public int? ComprobanteId { get; set; }   // puede ser null si fue pago en efectivo
+        public virtual Comprobante? Comprobante { get; set; }
+
 
         // 🔹 Relaciones
         public virtual Socio Socio { get; set; } = null!;

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Api.Controllers
 {
     [ApiController]
-    [Route("api/estados")]
+    [Route("api/estadoOrdenPago")]
     public class EstadoOrdenPagoController : ControllerBase
     {
         private readonly GymDbContext _db;

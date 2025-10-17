@@ -1,11 +1,13 @@
 namespace Api.Contracts
 {
-    public record OrdenPagoCreateDto(
-        int SocioId,
-        int PlanId,
-        int EstadoId,
-        decimal Monto,
-        DateTime? VenceEn = null,
-        string? Notas = null
-    );
+    public class OrdenPagoCreateDto
+    {
+        public int SocioId { get; set; }
+        public int PlanId { get; set; }
+        public int EstadoId { get; set; }
+        public DateTime VenceEn { get; set; }
+        public string? Notas { get; set; }
+        public int? ComprobanteId { get; set; }
+    }
 }
+

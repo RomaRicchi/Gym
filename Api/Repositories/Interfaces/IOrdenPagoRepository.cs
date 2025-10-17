@@ -10,5 +10,6 @@ namespace Api.Repositories.Interfaces
         Task<OrdenPago> AddAsync(OrdenPago entity, CancellationToken ct = default);
         Task UpdateAsync(OrdenPago entity, CancellationToken ct = default);
         Task DeleteAsync(int id, CancellationToken ct = default);
+        Task<IReadOnlyList<OrdenPago>> GetPendientesDeSuscripcionAsync(CancellationToken ct = default);
     }
 }

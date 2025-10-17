@@ -18,9 +18,11 @@ namespace Api.Data.Models
         public bool Estado { get; set; }
         public DateTime CreadoEn { get; set; }
 
+        public int? OrdenPagoId { get; set; }
+        public OrdenPago? OrdenPago { get; set; }
+
         // 🔗 Relaciones
         public virtual Plan Plan { get; set; } = null!;
         public virtual Socio Socio { get; set; } = null!;
-        public virtual ICollection<SuscripcionTurno> SuscripcionesTurno { get; set; } = new List<SuscripcionTurno>();
     }
 }

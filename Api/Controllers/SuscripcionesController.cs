@@ -40,56 +40,14 @@ namespace Api.Controllers
             return Ok(list);
         }
 
-        [HttpGet("por-plan/{planId:int:min(1)}")]
-        public async Task<IActionResult> GetByPlanPaginado(
-            [FromRoute] int planId,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            [FromQuery] bool? activo = true,
-            CancellationToken ct = default)
+        // 🔹 GET: api/suscripciones/por-orden/{ordenId}
+        [HttpGet("por-orden/{ordenId:int:min(1)}")]
+        public async Task<IActionResult> GetByOrdenPago([FromRoute] int ordenId, CancellationToken ct = default)
         {
-            if (page < 1) page = 1;
-            if (pageSize < 1) pageSize = 10;
-
-            var query = _repo.Query()
-                .Include(s => s.Socio)
-                .Include(s => s.Plan)
-                .Where(s => s.PlanId == planId);
-
-            // ✅ ahora sí, el compilador reconoce “activo”
-            if (activo.HasValue)
-                query = query.Where(s => s.Estado == activo.Value);
-
-            var total = await query.CountAsync(ct);
-
-            var items = await query
-                .OrderByDescending(s => s.CreadoEn)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(s => new
-                {
-                    s.Id,
-                    Socio = s.Socio != null ? s.Socio.Nombre : null,
-                    Plan = s.Plan != null ? s.Plan.Nombre : null,
-                    s.Inicio,
-                    s.Fin,
-                    s.Estado,
-                    s.CreadoEn
-                })
-                .ToListAsync(ct);
-
-            if (!items.Any())
-                return NotFound($"No hay suscripciones asociadas al plan con ID {planId}.");
-
-            return Ok(new
-            {
-                planId,
-                activo,
-                total,
-                page,
-                pageSize,
-                items
-            });
+            var sus = await _repo.GetByOrdenPagoAsync(ordenId, ct);
+            if (sus is null)
+                return NotFound($"No se encontró suscripción asociada a la orden #{ordenId}");
+            return Ok(sus);
         }
 
         // 🔹 GET: api/suscripciones/{id}
@@ -104,21 +62,68 @@ namespace Api.Controllers
 
         // 🔹 POST: api/suscripciones
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] Suscripcion dto, CancellationToken ct = default)
+        public async Task<IActionResult> Crear([FromBody] SuscripcionCreateDto dto, CancellationToken ct = default)
         {
             if (dto == null)
-                return BadRequest("Datos inválidos");
+                return BadRequest("Datos inválidos.");
 
-            // 🔸 Validar duplicado
+            // 🧩 Validar existencia del socio
+            var socioExiste = await _repo.Query()
+                .Include(s => s.Socio)
+                .AnyAsync(s => s.SocioId == dto.SocioId, ct);
+
+            if (!socioExiste)
+                return BadRequest($"El socio con ID {dto.SocioId} no existe.");
+
+            // 🧩 Validar existencia del plan
+            var planExiste = await _repo.Query()
+                .Include(s => s.Plan)
+                .AnyAsync(s => s.PlanId == dto.PlanId, ct);
+
+            if (!planExiste)
+                return BadRequest($"El plan con ID {dto.PlanId} no existe.");
+
+            // 🧩 Validar existencia de la orden de pago
+            if (dto.OrdenPagoId == null)
+                return BadRequest("Debe especificar una orden de pago válida.");
+
+            var orden = await _repo.Query()
+                .Select(s => s.OrdenPago)
+                .Where(o => o != null && o.Id == dto.OrdenPagoId)
+                .FirstOrDefaultAsync(ct);
+
+            if (orden == null)
+                return BadRequest($"La orden de pago #{dto.OrdenPagoId} no existe o fue eliminada.");
+
+            // 🔍 Verificar que no exista una suscripción activa para el mismo socio y plan
             var existe = await _repo.GetActivaByPlanAsync(dto.SocioId, dto.PlanId, ct);
             if (existe is not null)
                 return Conflict("Ya existe una suscripción activa para este plan.");
 
-            dto.Estado = true; // ✅ activa
-            dto.CreadoEn = DateTime.UtcNow;
+            // ✅ Crear la nueva suscripción
+            var entity = new Suscripcion
+            {
+                SocioId = dto.SocioId,
+                PlanId = dto.PlanId,
+                OrdenPagoId = dto.OrdenPagoId,
+                Inicio = dto.Inicio,
+                Fin = dto.Fin,
+                Estado = true,
+                CreadoEn = DateTime.UtcNow
+            };
 
-            var nueva = await _repo.AddAsync(dto, ct);
-            return CreatedAtAction(nameof(GetById), new { id = nueva.Id }, nueva);
+            var nueva = await _repo.AddAsync(entity, ct);
+
+            return CreatedAtAction(nameof(GetById), new { id = nueva.Id }, new
+            {
+                nueva.Id,
+                nueva.SocioId,
+                nueva.PlanId,
+                nueva.OrdenPagoId,
+                nueva.Inicio,
+                nueva.Fin,
+                nueva.Estado
+            });
         }
 
 
@@ -134,12 +139,13 @@ namespace Api.Controllers
             sus.Inicio = dto.Inicio;
             sus.Fin = dto.Fin;
             sus.Estado = dto.Estado;
+            sus.OrdenPagoId = dto.OrdenPagoId; // 🆕 actualizar vínculo
             await _repo.UpdateAsync(sus, ct);
 
             return Ok(new { ok = true, mensaje = "Suscripción actualizada correctamente" });
         }
 
-        // PATCH: api/suscripciones/{id}/estado
+        // 🔹 PATCH: api/suscripciones/{id}/estado
         [HttpPatch("{id}/estado")]
         public async Task<IActionResult> CambiarEstado([FromRoute] int id, [FromBody] bool nuevoEstado, CancellationToken ct = default)
         {
@@ -153,7 +159,6 @@ namespace Api.Controllers
             return Ok(new { ok = true, id, nuevoEstado });
         }
 
-
         // 🔹 DELETE: api/suscripciones/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Eliminar([FromRoute] int id, CancellationToken ct = default)
@@ -164,6 +169,43 @@ namespace Api.Controllers
 
             await _repo.DeleteAsync(id, ct);
             return Ok(new { ok = true, mensaje = "Suscripción eliminada correctamente" });
+        }
+
+        // 🔹 GET: api/suscripciones/vencen-semana
+        [HttpGet("vencen-semana")]
+        public async Task<IActionResult> GetSuscripcionesQueVencenEstaSemana(CancellationToken ct = default)
+        {
+            var hoy = DateTime.UtcNow;
+            var finSemana = hoy.AddDays(7);
+
+            var suscripciones = await _repo.Query()
+                .Include(s => s.Socio)
+                .Include(s => s.Plan)
+                .Where(s => s.Fin >= hoy && s.Fin <= finSemana)
+                .OrderBy(s => s.Fin)
+                .Select(s => new
+                {
+                    s.Id,
+                    Socio = s.Socio != null ? s.Socio.Nombre : null,
+                    Plan = s.Plan != null ? s.Plan.Nombre : null,
+                    s.Inicio,
+                    s.Fin,
+                    s.Estado,
+                    DiasRestantes = EF.Functions.DateDiffDay(hoy, s.Fin),
+                    s.CreadoEn
+                })
+                .ToListAsync(ct);
+
+            if (!suscripciones.Any())
+                return NotFound("No hay suscripciones que venzan esta semana.");
+
+            return Ok(new
+            {
+                Desde = hoy,
+                Hasta = finSemana,
+                Total = suscripciones.Count,
+                Suscripciones = suscripciones
+            });
         }
     }
 }

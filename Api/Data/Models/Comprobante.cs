@@ -5,16 +5,19 @@ namespace Api.Data.Models
 {
     public partial class Comprobante
     {
+        [Key]
         public int Id { get; set; }
 
-        public int OrdenPagoId { get; set; }
-
+        [Required]
+        [StringLength(500)]
         public string FileUrl { get; set; } = string.Empty;
-        
-        public string MimeType { get; set; } = string.Empty;
 
-        public DateTime SubidoEn { get; set; }
+        [StringLength(100)]
+        public string? MimeType { get; set; }
 
-        public virtual OrdenPago OrdenPago { get; set; } = null!;
+        public DateTime SubidoEn { get; set; } = DateTime.UtcNow;
+
+        // 🔹 Relación inversa 1:1 opcional con OrdenPago
+        public virtual OrdenPago? OrdenPago { get; set; }
     }
 }

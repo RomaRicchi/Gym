@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import { mostrarFormNuevoSocio } from "@/views/socios/SociosCreateSwal";
 import { mostrarFormEditarSocio } from "@/views/socios/SociosEditSwal";
-import { mostrarFormOrdenPago } from "@/views/gestionPagos/formOrdenPago";
+import { crearOrdenDePago } from "@/views/gestionPagos/formOrdenPago";
 
 import $ from "jquery";
 import "select2";
@@ -80,8 +80,8 @@ export default function SociosList() {
     setPage(1);
   };
 
-  const handleSuscribirse = async (socioId: number, nombre: string) => {
-    await mostrarFormOrdenPago(socioId, nombre);
+  const handleSuscribirse = async (id: number, nombre: string) => {
+    await crearOrdenDePago({ id, nombre });
   };
 
 
