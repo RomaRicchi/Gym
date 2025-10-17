@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Api.Controllers
 {
     [ApiController]
-    [Route("api/ordenes")] 
+    [Route("api/ordenes")]
     public class OrdenesPagoController : ControllerBase
     {
         private readonly GymDbContext _db;
@@ -133,6 +133,53 @@ namespace Api.Controllers
             await _db.SaveChangesAsync(ct);
 
             return Ok(new { ok = true, message = "Orden eliminada correctamente." });
+        }
+
+
+        [HttpGet("por-estado/{estadoId:int:min(1)}")]
+        public async Task<IActionResult> GetByEstadoId(
+            [FromRoute] int estadoId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            CancellationToken ct = default)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var query = _db.OrdenesPago
+                .AsNoTracking()
+                .Include(o => o.Socio)
+                .Include(o => o.Plan)
+                .Include(o => o.Estado)
+                .Where(o => o.EstadoId == estadoId);
+
+            var total = await query.CountAsync(ct);
+
+            var items = await query
+                .OrderByDescending(o => o.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(o => new
+                {
+                    o.Id,
+                    Socio = o.Socio != null ? o.Socio.Nombre : null,
+                    Plan = o.Plan != null ? o.Plan.Nombre : null,
+                    Estado = o.Estado != null ? o.Estado.Nombre : null,
+                    o.Monto
+                })
+                .ToListAsync(ct);
+
+            if (!items.Any())
+                return NotFound($"No hay órdenes con el estado ID {estadoId}.");
+
+            return Ok(new
+            {
+                estadoId,
+                total,
+                page,
+                pageSize,
+                items
+            });
         }
     }
 }

@@ -9,9 +9,6 @@ import Dashboard from "@/views/Dashboard";
 
 // 🧍 Socios
 import SociosList from "@/views/socios/List";
-import SociosCreate from "@/views/socios/Create";
-import SociosEdit from "@/views/socios/Edit";
-
 // Personal
 import PersonalList from "@/views/personal/List";
 import PersonalCreate from "@/views/personal/Create";
@@ -87,8 +84,6 @@ export default function App() {
 
           {/* 🧍 Socios */}
           <Route path="/socios" element={<SociosList />} />
-          <Route path="/socios/nuevo" element={<SociosCreate />} />
-          <Route path="/socios/editar/:id" element={<SociosEdit />} />
 
           {/* Personal */}
           <Route path="/personal" element={<PersonalList />} />

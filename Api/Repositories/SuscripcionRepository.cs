@@ -84,5 +84,13 @@ namespace Api.Repositories
                 await _db.SaveChangesAsync(ct);
             }
         }
+
+        public IQueryable<Suscripcion> Query()
+        {
+            return _db.Suscripciones
+                .Include(s => s.Socio)
+                .Include(s => s.Plan)
+                .AsQueryable();
+        }
     }
 }

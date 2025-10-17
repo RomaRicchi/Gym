@@ -1,6 +1,7 @@
 using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
@@ -37,6 +38,58 @@ namespace Api.Controllers
         {
             var list = await _repo.GetBySocioAsync(id, ct);
             return Ok(list);
+        }
+
+        [HttpGet("por-plan/{planId:int:min(1)}")]
+        public async Task<IActionResult> GetByPlanPaginado(
+            [FromRoute] int planId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool? activo = true,
+            CancellationToken ct = default)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var query = _repo.Query()
+                .Include(s => s.Socio)
+                .Include(s => s.Plan)
+                .Where(s => s.PlanId == planId);
+
+            // ✅ ahora sí, el compilador reconoce “activo”
+            if (activo.HasValue)
+                query = query.Where(s => s.Estado == activo.Value);
+
+            var total = await query.CountAsync(ct);
+
+            var items = await query
+                .OrderByDescending(s => s.CreadoEn)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => new
+                {
+                    s.Id,
+                    Socio = s.Socio != null ? s.Socio.Nombre : null,
+                    Plan = s.Plan != null ? s.Plan.Nombre : null,
+                    s.Inicio,
+                    s.Fin,
+                    s.Estado,
+                    s.CreadoEn
+                })
+                .ToListAsync(ct);
+
+            if (!items.Any())
+                return NotFound($"No hay suscripciones asociadas al plan con ID {planId}.");
+
+            return Ok(new
+            {
+                planId,
+                activo,
+                total,
+                page,
+                pageSize,
+                items
+            });
         }
 
         // 🔹 GET: api/suscripciones/{id}

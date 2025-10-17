@@ -12,5 +12,7 @@ namespace Api.Repositories.Interfaces
         Task UpdateAsync(Suscripcion entity, CancellationToken ct = default);
         Task DeleteAsync(int id, CancellationToken ct = default);
         Task<Suscripcion?> GetActivaByPlanAsync(int socioId, int planId, CancellationToken ct = default);
+
+        IQueryable<Suscripcion> Query();
     }
 }

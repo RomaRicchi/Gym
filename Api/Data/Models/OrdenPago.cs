@@ -11,6 +11,8 @@ namespace Api.Data.Models
 
         public int PlanId { get; set; }
 
+        public int SuscripcionId { get; set; } 
+
         public int EstadoId { get; set; }
 
         public decimal Monto { get; set; }

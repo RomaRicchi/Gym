@@ -1,0 +1,35 @@
+/* 🎨 Estilo personalizado global para SweetAlert2 */
+.swal2-popup {
+  background-color: #ffb347 !important; /* naranja suave */
+  color: #222 !important; /* texto oscuro para contraste */
+  border-radius: 1rem !important;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+.swal2-title {
+  color: #222 !important;
+  font-weight: 700;
+}
+
+.swal2-html-container {
+  color: #333 !important;
+}
+
+.swal2-confirm {
+  background-color: #ff8800 !important; /* botón principal */
+  color: white !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+}
+
+.swal2-cancel {
+  background-color: #fff !important;
+  color: #333 !important;
+  border: 1px solid #ccc !important;
+  border-radius: 0.5rem !important;
+}
+
+.swal2-icon {
+  border-color: #ff8800 !important;
+  color: #ff8800 !important;
+}

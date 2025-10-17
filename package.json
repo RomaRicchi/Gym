@@ -4,5 +4,8 @@
     "@fortawesome/react-fontawesome": "^3.1.0",
     "jquery": "^3.7.1",
     "select2": "^4.1.0-rc.0"
+  },
+  "devDependencies": {
+    "@types/jquery": "^3.5.33"
   }
 }

@@ -3,7 +3,7 @@ import { Button } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import gymApi from "@/api/gymApi"
-import { mostrarFormularioOrdenPago } from "./formOrdenPago";
+
 export default function OrdenesList() {
   const [ordenes, setOrdenes] = useState<any[]>([]);
   const [estados, setEstados] = useState<any[]>([]);
@@ -41,9 +41,7 @@ export default function OrdenesList() {
     <div className="container mt-3">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h4>Órdenes de Pago</h4>
-        <button className="btn btn-success" onClick={mostrarFormularioOrdenPago}>
-          + Nueva Orden
-        </button>
+      
       </div>
 
       <div className="table-responsive">

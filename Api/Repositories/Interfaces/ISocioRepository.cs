@@ -21,4 +21,6 @@ public interface ISocioRepository
 
     /// <summary>Baja física.</summary>
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
+
+    IQueryable<Socio> Query(); 
 }

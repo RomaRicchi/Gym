@@ -117,4 +117,39 @@ public class PlanesController : ControllerBase
 
         return ok ? NoContent() : StatusCode(500, "No se pudo dar de baja el plan.");
     }
+
+    [HttpGet("buscar")]
+    public async Task<IActionResult> BuscarPorNombre(
+        [FromQuery] string? nombre = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+            return BadRequest("Debe especificar un nombre para buscar.");
+
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+
+        // 🔎 Búsqueda parcial insensible a mayúsculas
+        var query = await _repo.GetPagedAsync(page, pageSize, nombre, null, null, ct);
+
+        // DTO de salida limpio
+        var result = new
+        {
+            total = query.total,
+            page,
+            pageSize,
+            items = query.items.Select(p => new
+            {
+                p.Id,
+                p.Nombre,
+                p.DiasPorSemana,
+                p.Precio,
+                p.Activo
+            })
+        };
+
+        return Ok(result);
+    }
 }

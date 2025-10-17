@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import { mostrarFormNuevoSocio } from "@/views/socios/SociosCreateSwal";
+import { mostrarFormEditarSocio } from "@/views/socios/SociosEditSwal";
+import { mostrarFormOrdenPago } from "@/views/gestionPagos/formOrdenPago";
 
+import $ from "jquery";
+import "select2";
 interface Socio {
   id: number;
   dni: string;
@@ -11,6 +16,8 @@ interface Socio {
   telefono: string;
   activo: boolean;
   creado_en: string;
+  fechaNacimiento?: string;
+  planActual?: string;
 }
 
 export default function SociosList() {
@@ -38,61 +45,89 @@ export default function SociosList() {
     fetchSocios();
   }, [page, search]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number, nombre: string) => {
     const result = await Swal.fire({
-      title: "¿Eliminar socio?",
-      text: "Esta acción no se puede deshacer.",
+      title: `¿Dar de baja a ${nombre}?`,
+      text: "El socio no se eliminará del sistema, solo se marcará como inactivo.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
+      confirmButtonText: "Sí, dar de baja",
       cancelButtonText: "Cancelar",
       confirmButtonColor: "#d33",
     });
 
     if (result.isConfirmed) {
       try {
-        await gymApi.delete(`/socios/${id}`);
-        Swal.fire("Eliminado", "El socio fue eliminado correctamente", "success");
+        await gymApi.patch(`/socios/${id}/bajaLogica?value=false`);
+        Swal.fire({
+          icon: "success",
+          title: "Socio dado de baja",
+          text: `${nombre} fue marcado como inactivo.`,
+          timer: 1800,
+          showConfirmButton: false,
+        });
         fetchSocios(); // recarga la lista
       } catch (err) {
         console.error(err);
-        Swal.fire("Error", "No se pudo eliminar el socio", "error");
+        Swal.fire("Error", "No se pudo dar de baja al socio.", "error");
       }
     }
   };
+
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
     setPage(1);
   };
 
+  const handleSuscribirse = async (socioId: number, nombre: string) => {
+    await mostrarFormOrdenPago(socioId, nombre);
+  };
+
+
   if (loading) return <p>Cargando socios...</p>;
 
   return (
     <div className="mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Listado de Socios</h2>
-        <Link to="/socios/nuevo" className="btn btn-success">
-          ➕ Nuevo Socio
-        </Link>
-      </div>
+      <h1
+        className="text-center fw-bold mb-4"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        SOCIOS
+      </h1>
 
-      <input
-        type="text"
-        placeholder="Buscar por nombre o DNI..."
-        value={search}
-        onChange={handleSearch}
-        className="form-control mb-3"
-      />
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        {/* Buscador (izquierda) */}
+        <div className="flex-grow-1 d-flex justify-content-start">
+          <input
+            type="text"
+            placeholder="Buscar por nombre o DNI..."
+            value={search}
+            onChange={handleSearch}
+            className="form-control"
+            style={{ width: "50%" }}
+          />
+        </div>
+
+        <button
+          className="btn btn-success ms-3"
+          onClick={async () => {
+            const creado = await mostrarFormNuevoSocio();
+            if (creado) fetchSocios();
+          }}
+        >
+          ➕ Nuevo Socio
+        </button>
+      </div>
 
       <table className="table table-striped table-hover">
         <thead className="table-dark">
           <tr>
-            <th>ID</th>
             <th>DNI</th>
             <th>Nombre</th>
             <th>Email</th>
             <th>Teléfono</th>
+            <th>Plan actual</th>
             <th>Activo</th>
             <th>Acciones</th>
           </tr>
@@ -100,22 +135,31 @@ export default function SociosList() {
         <tbody>
           {socios.map((s) => (
             <tr key={s.id}>
-              <td>{s.id}</td>
               <td>{s.dni}</td>
               <td>{s.nombre}</td>
               <td>{s.email}</td>
               <td>{s.telefono}</td>
+              <td>{s.planActual || "— Sin plan —"}</td>
               <td>{s.activo ? "✅" : "❌"}</td>
               <td>
                 <button
                   className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => navigate(`/socios/editar/${s.id}`)}
+                  onClick={async () => {
+                    const actualizado = await mostrarFormEditarSocio(s.id);
+                    if (actualizado) fetchSocios();
+                  }}
                 >
                   ✏️ Editar
                 </button>
                 <button
+                  className="btn btn-sm btn-outline-success me-2"
+                  onClick={() => handleSuscribirse(s.id, s.nombre)}
+                >
+                  💳 Suscribirse
+                </button>
+                <button
                   className="btn btn-sm btn-outline-danger"
-                  onClick={() => handleDelete(s.id)}
+                  onClick={() => handleDelete(s.id, s.nombre)}
                 >
                   🗑️ Eliminar
                 </button>
@@ -145,4 +189,5 @@ export default function SociosList() {
       </div>
     </div>
   );
+
 }
