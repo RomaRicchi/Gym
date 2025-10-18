@@ -13,6 +13,7 @@ public class SociosController : ControllerBase
 {
     private readonly ISocioRepository _repo;
     private readonly GymDbContext _db;
+
     public SociosController(ISocioRepository repo, GymDbContext db)
     {
         _repo = repo;
@@ -22,30 +23,22 @@ public class SociosController : ControllerBase
     // ✅ GET /api/socios?page=1&pageSize=10&q=roma&activo=true
     [HttpGet]
     public async Task<IActionResult> Get(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? q = null,
-        [FromQuery] bool? activo = true,
+        int page = 1,
+        int pageSize = 10,
+        string? q = null,
+        bool? activo = null,
         CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 10;
-
+        // 👇 cambio principal: usar _repo (no _repoSocio)
         var (items, total) = await _repo.GetPagedAsync(page, pageSize, q, activo, ct);
 
-        var dto = items.Select(s => new SocioListItemDto(
-            s.Id,
-            s.Dni,
-            s.Nombre,
-            s.Email,
-            s.Telefono,
-            s.Activo,
-            s.CreadoEn,
-            s.FechaNacimiento,
-            null // 🟠 PlanActual por ahora nulo
-        ));
-
-        return Ok(new { total, page, pageSize, items = dto });
+        return Ok(new
+        {
+            total,
+            page,
+            pageSize,
+            items
+        });
     }
 
     // ✅ GET /api/socios/5
@@ -64,7 +57,7 @@ public class SociosController : ControllerBase
             s.Activo,
             s.CreadoEn,
             s.FechaNacimiento,
-            null
+            s.PlanActual // 👈 muestra plan actual si lo tiene
         );
 
         return Ok(dto);
@@ -108,7 +101,7 @@ public class SociosController : ControllerBase
                 created.Activo,
                 created.CreadoEn,
                 created.FechaNacimiento,
-                null
+                created.PlanActual
             );
             return Ok(dto);
         }
@@ -125,6 +118,7 @@ public class SociosController : ControllerBase
         if (body.FechaNacimiento.HasValue && body.FechaNacimiento > DateTime.UtcNow)
             return BadRequest("La fecha de nacimiento no puede ser futura.");
 
+        // 👇 UpdateAsync ahora devuelve bool, no void
         var ok = await _repo.UpdateAsync(id, s =>
         {
             if (!string.IsNullOrWhiteSpace(body.Nombre)) s.Nombre = body.Nombre.Trim();
@@ -148,7 +142,7 @@ public class SociosController : ControllerBase
             updated.Activo,
             updated.CreadoEn,
             updated.FechaNacimiento,
-            null
+            updated.PlanActual
         );
 
         return Ok(dto);
@@ -162,7 +156,7 @@ public class SociosController : ControllerBase
         return ok ? NoContent() : NotFound();
     }
 
-    // ✅ Buscar por nombre o dni
+    // ✅ Buscar por nombre o dni (sin cambios)
     [HttpGet("buscar")]
     public async Task<IActionResult> BuscarPorNombreYDni(
         [FromQuery] string? nombre = null,
@@ -200,14 +194,14 @@ public class SociosController : ControllerBase
                 s.Activo,
                 s.CreadoEn,
                 s.FechaNacimiento,
-                null
+                s.PlanActual
             ))
             .ToListAsync(ct);
 
         return Ok(new { total, page, pageSize, items });
     }
 
-    // ✅ Cumpleaños del mes
+    // ✅ Cumpleaños del mes (sin cambios)
     [HttpGet("cumpleanios")]
     public async Task<IActionResult> GetCumpleaniosMes([FromQuery] int? mes = null, CancellationToken ct = default)
     {
@@ -235,7 +229,7 @@ public class SociosController : ControllerBase
         return Ok(new { mes = mesActual, total = socios.Count, socios });
     }
 
-    // ✅ Socios por plan (paginado)
+    // ✅ Socios por plan (sin cambios)
     [HttpGet("por-plan/{planId:int:min(1)}")]
     public async Task<IActionResult> GetByPlanPaginado(
         [FromRoute] int planId,
@@ -255,7 +249,6 @@ public class SociosController : ControllerBase
 
         if (activo.HasValue)
             query = query.Where(s => s.Estado == activo.Value);
-
 
         var total = await query.CountAsync(ct);
 

@@ -21,6 +21,9 @@ public partial class Socio
     public bool? Activo { get; set; }
 
     public DateTime CreadoEn { get; set; }
+    
+    [NotMapped]
+    public string? PlanActual { get; set; }
 
     public virtual ICollection<Checkin> Checkins { get; set; } = new List<Checkin>();
 

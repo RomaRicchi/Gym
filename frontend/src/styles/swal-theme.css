@@ -1,25 +1,70 @@
 /* 🎨 Estilo personalizado global para SweetAlert2 */
 .swal2-popup {
   background-color: #ffb347 !important; /* naranja suave */
-  color: #222 !important; /* texto oscuro para contraste */
+  color: #222 !important;
   border-radius: 1rem !important;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
+  padding: 1.5rem !important;
+  text-align: left !important; /* ✅ Alinear contenido a la izquierda */
+  max-width: 480px !important;
+  overflow-x: hidden !important; /* 🚫 Quita la barra horizontal */
 }
 
+/* 🧍 Título centrado */
 .swal2-title {
   color: #222 !important;
   font-weight: 700;
+  text-align: center !important;
+  margin-bottom: 1rem !important;
 }
 
+/* 🧾 Contenedor del formulario */
 .swal2-html-container {
   color: #333 !important;
+  text-align: left !important;
+  overflow-x: hidden !important; /* 🚫 Previene scroll horizontal */
 }
 
+/* 🏷️ Etiquetas y campos */
+.swal2-html-container label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+/* 🧱 Campos de entrada uniformes */
+.swal2-html-container input[type="text"],
+.swal2-html-container input[type="email"],
+.swal2-html-container input[type="tel"],
+.swal2-html-container input[type="number"] {
+  display: block;
+  width: 100% !important;           /* ✅ mismo ancho */
+  min-width: 100% !important;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  background-color: #fff !important; /* ✅ fondo blanco */
+  color: #222;
+  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+  box-sizing: border-box;
+}
+
+/* 🔘 Checkbox */
+.swal2-html-container .form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* 🟠 Botones */
 .swal2-confirm {
-  background-color: #ff8800 !important; /* botón principal */
+  background-color: #ff8800 !important;
   color: white !important;
   border: none !important;
   border-radius: 0.5rem !important;
+  padding: 0.6rem 1.5rem !important;
 }
 
 .swal2-cancel {
@@ -27,8 +72,10 @@
   color: #333 !important;
   border: 1px solid #ccc !important;
   border-radius: 0.5rem !important;
+  padding: 0.6rem 1.5rem !important;
 }
 
+/* 🧩 Icono */
 .swal2-icon {
   border-color: #ff8800 !important;
   color: #ff8800 !important;
