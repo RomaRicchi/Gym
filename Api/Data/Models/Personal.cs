@@ -17,10 +17,6 @@ namespace Api.Data.Models
 
         public bool Estado { get; set; }  // true = activo, false = inactivo
 
-        public int RolId { get; set; }
-        
-        public virtual Rol Rol { get; set; } = null!;
-
         public virtual Usuario? Usuario { get; set; }
 
 

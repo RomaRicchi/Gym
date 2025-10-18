@@ -1,6 +1,9 @@
+using Api.Data;
 using Api.Data.Models;
-using Api.Repositories.Interfaces;
+using Api.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Api.Repositories.Interfaces; 
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
@@ -15,57 +18,100 @@ namespace Api.Controllers
             _repo = repo;
         }
 
-        // ✅ GET: api/usuarios (solo activos)
+        // 🔹 GET: /api/usuarios
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Usuario>>> GetAll(CancellationToken ct)
+        public async Task<IActionResult> GetAll(CancellationToken ct)
         {
-            var usuarios = await _repo.GetAllAsync(ct);
-            return Ok(usuarios);
+            try
+            {
+                var usuarios = await _repo.GetAllAsync(ct);
+                return Ok(new { items = usuarios });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error en GetAll: {ex.Message}");
+                return StatusCode(500, new { error = "Error al obtener los usuarios." });
+            }
         }
 
-        // ✅ GET: api/usuarios/{id}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Usuario>> GetById(int id, CancellationToken ct)
+        // 🔹 GET: /api/usuarios/{id}
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
-            var usuario = await _repo.GetByIdAsync(id, ct);
-            if (usuario == null)
-                return NotFound($"No se encontró el usuario con ID {id}");
+            try
+            {
+                var usuario = await _repo.GetByIdAsync(id, ct);
+                if (usuario == null)
+                    return NotFound(new { message = "Usuario no encontrado." });
 
-            return Ok(usuario);
+                return Ok(usuario);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error en GetById: {ex.Message}");
+                return StatusCode(500, new { error = "Error al obtener el usuario." });
+            }
         }
 
-        // ✅ POST: api/usuarios
+        // 🔹 POST: /api/usuarios
         [HttpPost]
-        public async Task<ActionResult<Usuario>> Create([FromBody] Usuario usuario, CancellationToken ct)
+        public async Task<IActionResult> Crear([FromBody] Usuario dto, CancellationToken ct)
         {
-            var created = await _repo.AddAsync(usuario, ct);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                dto.CreadoEn = DateTime.UtcNow;
+                var nuevo = await _repo.CreateAsync(dto, ct);
+                return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, nuevo);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error en Crear: {ex.Message}");
+                return StatusCode(500, new { error = "Error al crear el usuario." });
+            }
         }
 
-        // ✅ PUT: api/usuarios/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Usuario usuario, CancellationToken ct)
+        // 🔹 PUT: /api/usuarios/{id}
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] Usuario dto, CancellationToken ct)
         {
-            if (id != usuario.Id)
-                return BadRequest("El ID del cuerpo no coincide con el de la URL.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var ok = await _repo.UpdateAsync(usuario, ct);
-            if (!ok)
-                return NotFound($"No se pudo actualizar el usuario con ID {id}");
+            try
+            {
+                var ok = await _repo.UpdateAsync(id, dto, ct);
+                if (!ok)
+                    return NotFound(new { message = "Usuario no encontrado." });
 
-            return NoContent();
+                return Ok(new { message = "Usuario actualizado correctamente." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error en Actualizar: {ex.Message}");
+                return StatusCode(500, new { error = "Error al actualizar el usuario." });
+            }
         }
 
-        // ✅ DELETE: api/usuarios/{id}
-        // 🔹 Marca el usuario como inactivo (Estado = 0)
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, CancellationToken ct)
+        // 🔹 DELETE lógico: /api/usuarios/{id}
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
         {
-            var ok = await _repo.DeleteAsync(id, ct);
-            if (!ok)
-                return NotFound($"No se encontró el usuario con ID {id}");
+            try
+            {
+                var ok = await _repo.DeleteAsync(id, ct);
+                if (!ok)
+                    return NotFound(new { message = "Usuario no encontrado." });
 
-            return Ok(new { message = $"Usuario con ID {id} dado de baja (Estado = 0)." });
+                return Ok(new { message = "Usuario eliminado correctamente." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error en Eliminar: {ex.Message}");
+                return StatusCode(500, new { error = "Error al eliminar el usuario." });
+            }
         }
     }
 }

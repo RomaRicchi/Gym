@@ -23,15 +23,15 @@ namespace Api.Data.Models
 
         public DateTime CreadoEn { get; set; }
 
-        public int? IdAvatar { get; set; }  // 🔹 nuevo campo opcional
+        public int? IdAvatar { get; set; }  
 
         // 🔹 Relaciones
-        public virtual Rol Rol { get; set; } = null!;
+        public virtual Rol? Rol { get; set; } = null!;
 
         public virtual Personal? Personal { get; set; }
 
         public virtual Socio? Socio { get; set; }
 
-        public virtual Avatar? Avatar { get; set; } // 🔹 navegación hacia Avatar
+        public virtual Avatar? Avatar { get; set; }
     }
 }

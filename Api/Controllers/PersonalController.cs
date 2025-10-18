@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Data.Models;
+using Api.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,6 +32,7 @@ namespace Api.Controllers
                     nombre = p.Nombre,
                     email = p.Usuario != null ? p.Usuario.Email : null,
                     telefono = p.Telefono,
+                    direccion = p.Direccion,
                     especialidad = p.Especialidad,
                     rol = p.Usuario != null && p.Usuario.Rol != null
                         ? p.Usuario.Rol.Nombre
@@ -57,6 +59,7 @@ namespace Api.Controllers
                     nombre = p.Nombre,
                     email = p.Usuario != null ? p.Usuario.Email : null,
                     telefono = p.Telefono,
+                    direccion = p.Direccion,
                     especialidad = p.Especialidad,
                     rolId = p.Usuario != null ? (int?)p.Usuario.RolId : null,
                     rolNombre = p.Usuario != null && p.Usuario.Rol != null
@@ -74,36 +77,42 @@ namespace Api.Controllers
 
         // 🔹 POST /api/personal
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] dynamic dto, CancellationToken ct = default)
+        public async Task<IActionResult> Crear([FromBody] PersonalCreateDto dto, CancellationToken ct = default)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
                 // 🧩 Crear registro de personal
                 var nuevo = new Personal
                 {
-                    Nombre = dto.nombre,
-                    Telefono = dto.telefono,
-                    Direccion = "-",
-                    Especialidad = dto.especialidad,
-                    Estado = dto.activo
+                    Nombre = dto.Nombre,
+                    Telefono = dto.Telefono,
+                    Direccion = dto.Direccion ?? "-",
+                    Especialidad = dto.Especialidad,
+                    Estado = dto.Activo
                 };
 
                 _db.Personales.Add(nuevo);
                 await _db.SaveChangesAsync(ct);
 
-                // 🧩 Crear usuario asociado con rol
-                var nuevoUsuario = new Usuario
+                // 🧩 Crear usuario asociado (solo si tiene email y rol)
+                if (!string.IsNullOrEmpty(dto.Email) && dto.RolId.HasValue)
                 {
-                    Email = dto.email,
-                    RolId = dto.rol_id,
-                    PersonalId = nuevo.Id,
-                    PasswordHash = "temporal",
-                    Estado = dto.activo,
-                    CreadoEn = DateTime.UtcNow
-                };
-                _db.Usuarios.Add(nuevoUsuario);
+                    var nuevoUsuario = new Usuario
+                    {
+                        Email = dto.Email,
+                        RolId = dto.RolId.Value,
+                        PersonalId = nuevo.Id,
+                        PasswordHash = "temporal",
+                        Estado = dto.Activo,
+                        CreadoEn = DateTime.UtcNow
+                    };
 
-                await _db.SaveChangesAsync(ct);
+                    _db.Usuarios.Add(nuevoUsuario);
+                    await _db.SaveChangesAsync(ct);
+                }
 
                 return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, nuevo);
             }
@@ -115,7 +124,7 @@ namespace Api.Controllers
 
         // 🔹 PUT /api/personal/{id}
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Actualizar(int id, [FromBody] dynamic dto, CancellationToken ct = default)
+        public async Task<IActionResult> Actualizar(int id, [FromBody] PersonalUpdateDto dto, CancellationToken ct = default)
         {
             var p = await _db.Personales
                 .Include(x => x.Usuario)
@@ -125,30 +134,32 @@ namespace Api.Controllers
                 return NotFound(new { message = "Personal no encontrado." });
 
             // 🧩 Actualizar datos básicos
-            p.Nombre = dto.nombre;
-            p.Telefono = dto.telefono;
-            p.Especialidad = dto.especialidad;
-            p.Estado = dto.activo;
+            p.Nombre = dto.Nombre;
+            p.Telefono = dto.Telefono;
+            p.Especialidad = dto.Especialidad;
+            p.Direccion = dto.Direccion ?? p.Direccion;
+            p.Estado = dto.Activo;
 
-            // 🧩 Si no tiene usuario → crear uno nuevo
-            if (p.Usuario == null)
+            // 🧩 Crear usuario si no existe
+            if (p.Usuario == null && !string.IsNullOrEmpty(dto.Email) && dto.RolId.HasValue)
             {
                 p.Usuario = new Usuario
                 {
-                    Email = dto.email,
-                    RolId = dto.rol_id,
+                    Email = dto.Email,
+                    RolId = dto.RolId.Value,
                     PersonalId = p.Id,
                     PasswordHash = "temporal",
-                    Estado = dto.activo,
+                    Estado = dto.Activo,
                     CreadoEn = DateTime.UtcNow
                 };
                 _db.Usuarios.Add(p.Usuario);
             }
-            else
+            else if (p.Usuario != null)
             {
-                p.Usuario.Email = dto.email;
-                p.Usuario.RolId = dto.rol_id;
-                p.Usuario.Estado = dto.activo;
+                p.Usuario.Email = dto.Email ?? p.Usuario.Email;
+                if (dto.RolId.HasValue)
+                    p.Usuario.RolId = dto.RolId.Value;
+                p.Usuario.Estado = dto.Activo;
             }
 
             await _db.SaveChangesAsync(ct);
