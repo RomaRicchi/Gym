@@ -19,7 +19,7 @@ namespace Api.Data.Models
 
         public string PasswordHash { get; set; } = null!;
 
-        public sbyte Estado { get; set; }  // 1 = activo, 0 = inactivo, -1 = eliminado    
+        public bool Estado { get; set; } // 1 = activo, 0 = inactivo, -1 = eliminado    
 
         public DateTime CreadoEn { get; set; }
 

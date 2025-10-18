@@ -22,14 +22,19 @@ namespace Api.Controllers
         {
             var lista = await _db.Personales
                 .AsNoTracking()
+                .Include(p => p.Usuario)
+                .ThenInclude(u => u.Rol)
                 .OrderBy(p => p.Nombre)
                 .Select(p => new
                 {
                     id = p.Id,
                     nombre = p.Nombre,
-                    email = $"{p.Nombre.Replace(" ", ".").ToLower()}@gym.com", // simulado
+                    email = p.Usuario != null ? p.Usuario.Email : null,
                     telefono = p.Telefono,
-                    rol = p.Especialidad,
+                    especialidad = p.Especialidad,
+                    rol = p.Usuario != null && p.Usuario.Rol != null
+                        ? p.Usuario.Rol.Nombre
+                        : "(Sin rol)",
                     activo = p.Estado
                 })
                 .ToListAsync(ct);
@@ -43,19 +48,27 @@ namespace Api.Controllers
         {
             var p = await _db.Personales
                 .AsNoTracking()
+                .Include(p => p.Usuario)
+                .ThenInclude(u => u.Rol)
                 .Where(x => x.Id == id)
                 .Select(p => new
                 {
                     id = p.Id,
                     nombre = p.Nombre,
-                    email = $"{p.Nombre.Replace(" ", ".").ToLower()}@gym.com",
+                    email = p.Usuario != null ? p.Usuario.Email : null,
                     telefono = p.Telefono,
-                    rol = p.Especialidad,
+                    especialidad = p.Especialidad,
+                    rolId = p.Usuario != null ? (int?)p.Usuario.RolId : null,
+                    rolNombre = p.Usuario != null && p.Usuario.Rol != null
+                        ? p.Usuario.Rol.Nombre
+                        : null,
                     activo = p.Estado
                 })
                 .FirstOrDefaultAsync(ct);
 
-            if (p is null) return NotFound(new { message = "Personal no encontrado." });
+            if (p is null)
+                return NotFound(new { message = "Personal no encontrado." });
+
             return Ok(p);
         }
 
@@ -65,16 +78,31 @@ namespace Api.Controllers
         {
             try
             {
+                // 🧩 Crear registro de personal
                 var nuevo = new Personal
                 {
                     Nombre = dto.nombre,
                     Telefono = dto.telefono,
                     Direccion = "-",
-                    Especialidad = dto.rol,
+                    Especialidad = dto.especialidad,
                     Estado = dto.activo
                 };
 
                 _db.Personales.Add(nuevo);
+                await _db.SaveChangesAsync(ct);
+
+                // 🧩 Crear usuario asociado con rol
+                var nuevoUsuario = new Usuario
+                {
+                    Email = dto.email,
+                    RolId = dto.rol_id,
+                    PersonalId = nuevo.Id,
+                    PasswordHash = "temporal",
+                    Estado = dto.activo,
+                    CreadoEn = DateTime.UtcNow
+                };
+                _db.Usuarios.Add(nuevoUsuario);
+
                 await _db.SaveChangesAsync(ct);
 
                 return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, nuevo);
@@ -89,14 +117,39 @@ namespace Api.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] dynamic dto, CancellationToken ct = default)
         {
-            var p = await _db.Personales.FindAsync(new object[] { id }, ct);
+            var p = await _db.Personales
+                .Include(x => x.Usuario)
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+
             if (p is null)
                 return NotFound(new { message = "Personal no encontrado." });
 
+            // 🧩 Actualizar datos básicos
             p.Nombre = dto.nombre;
             p.Telefono = dto.telefono;
-            p.Especialidad = dto.rol;
+            p.Especialidad = dto.especialidad;
             p.Estado = dto.activo;
+
+            // 🧩 Si no tiene usuario → crear uno nuevo
+            if (p.Usuario == null)
+            {
+                p.Usuario = new Usuario
+                {
+                    Email = dto.email,
+                    RolId = dto.rol_id,
+                    PersonalId = p.Id,
+                    PasswordHash = "temporal",
+                    Estado = dto.activo,
+                    CreadoEn = DateTime.UtcNow
+                };
+                _db.Usuarios.Add(p.Usuario);
+            }
+            else
+            {
+                p.Usuario.Email = dto.email;
+                p.Usuario.RolId = dto.rol_id;
+                p.Usuario.Estado = dto.activo;
+            }
 
             await _db.SaveChangesAsync(ct);
             return Ok(new { ok = true, message = "Personal actualizado correctamente." });
@@ -106,11 +159,17 @@ namespace Api.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct = default)
         {
-            var p = await _db.Personales.FindAsync(new object[] { id }, ct);
+            var p = await _db.Personales
+                .Include(x => x.Usuario)
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+
             if (p is null)
                 return NotFound(new { message = "Personal no encontrado." });
 
             p.Estado = false;
+            if (p.Usuario != null)
+                p.Usuario.Estado = false;
+
             await _db.SaveChangesAsync(ct);
 
             return Ok(new { ok = true, message = "Personal desactivado correctamente." });

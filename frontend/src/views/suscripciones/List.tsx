@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { mostrarFormEditarSuscripcion } from "@/views/suscripciones/SuscripcionEdit";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
 interface Suscripcion {
   id: number;
-  socio_id: number;
-  plan_id: number;
+  socio: string;
+  plan: string;
   inicio: string;
   fin: string;
   estado: boolean | number;
   creado_en: string;
+  orden_pago_id?: number;
 }
 
 export default function SuscripcionesList() {
@@ -23,7 +25,7 @@ export default function SuscripcionesList() {
       const res = await gymApi.get("/suscripciones");
       const data = res.data.items || res.data;
 
-      // 🔁 Convertir tinyint(1) → boolean para mostrar correctamente
+      // 🔁 Convertir tinyint(1) → boolean (por si llega 0/1)
       const parsed = data.map((s: any) => ({
         ...s,
         estado: Boolean(s.estado),
@@ -67,17 +69,17 @@ export default function SuscripcionesList() {
 
   return (
     <div className="mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Suscripciones</h2>
-        <Link to="/suscripciones/nueva" className="btn btn-success">
-          ➕ Nueva Suscripción
-        </Link>
-      </div>
+        <h1
+          className="text-center fw-bold mb-4"
+          style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+        >
+          SUSCRIPCIONES
+        </h1>
+     
 
-      <table className="table table-striped table-hover">
+      <table className="table table-striped table-hover align-middle text-center">
         <thead className="table-dark">
           <tr>
-            <th>ID</th>
             <th>Socio</th>
             <th>Plan</th>
             <th>Inicio</th>
@@ -89,16 +91,24 @@ export default function SuscripcionesList() {
         <tbody>
           {suscripciones.map((s) => (
             <tr key={s.id}>
-              <td>{s.id}</td>
-              <td>{s.socio_id}</td>
-              <td>{s.plan_id}</td>
+              <td>{s.socio}</td>
+              <td>{s.plan}</td>
               <td>{new Date(s.inicio).toLocaleDateString()}</td>
               <td>{new Date(s.fin).toLocaleDateString()}</td>
-              <td>{s.estado ? "✅ Activa" : "❌ Inactiva"}</td>
+              <td>
+                {s.estado ? (
+                  <span className="text-success fw-bold">✅ Activa</span>
+                ) : (
+                  <span className="text-danger fw-bold">❌ Inactiva</span>
+                )}
+              </td>
               <td>
                 <button
                   className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => navigate(`/suscripciones/editar/${s.id}`)}
+                  onClick={async () => {
+                    const ok = await mostrarFormEditarSuscripcion(s.id);
+                    if (ok) fetchSuscripciones(); // 🔁 refresca la lista
+                  }}
                 >
                   ✏️ Editar
                 </button>

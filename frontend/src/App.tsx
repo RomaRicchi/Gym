@@ -14,8 +14,6 @@ import PersonalList from "@/views/personal/List";
 
 // 💳 Suscripciones
 import SuscripcionesList from "@/views/suscripciones/List";
-import SuscripcionCreate from "@/views/suscripciones/Create";
-import SuscripcionEdit from "@/views/suscripciones/Edit";
 
 // 💰 PLANES
 import PlanesList from "@/views/suscripciones/planes/List";
@@ -84,8 +82,6 @@ export default function App() {
 
           {/* 💳 Suscripciones */}
           <Route path="/suscripciones" element={<SuscripcionesList />} />
-          <Route path="/suscripciones/nueva" element={<SuscripcionCreate />} />
-          <Route path="/suscripciones/editar/:id" element={<SuscripcionEdit />} />
 
           {/* 💰 Planes */}
           <Route path="/planes" element={<PlanesList />} />

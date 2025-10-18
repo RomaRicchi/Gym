@@ -15,7 +15,6 @@ public class PlanesController : ControllerBase
         _repo = repo;
     }
 
-    // GET /api/planes
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
@@ -29,8 +28,20 @@ public class PlanesController : ControllerBase
             return BadRequest("page y pageSize deben ser > 0.");
 
         var (items, total) = await _repo.GetPagedAsync(page, pageSize, q, dias, activo, ct);
-        return Ok(new { total, page, pageSize, items });
+
+        // 🔹 reconstruimos para incluir DiasPorSemana
+        var clean = items.Select(p => new
+        {
+            p.Id,
+            p.Nombre,
+            p.DiasPorSemana,   
+            p.Precio,
+            p.Activo
+        });
+
+        return Ok(new { total, page, pageSize, items = clean });
     }
+
 
     // GET /api/planes/5
     [HttpGet("{id:int}")]

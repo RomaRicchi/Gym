@@ -17,6 +17,13 @@ namespace Api.Data.Models
 
         public bool Estado { get; set; }  // true = activo, false = inactivo
 
+        public int RolId { get; set; }
+        
+        public virtual Rol Rol { get; set; } = null!;
+
+        public virtual Usuario? Usuario { get; set; }
+
+
         // 🔹 Relaciones
         public virtual ICollection<TurnoPlantilla> TurnosPlantilla { get; set; } = new List<TurnoPlantilla>();
     }

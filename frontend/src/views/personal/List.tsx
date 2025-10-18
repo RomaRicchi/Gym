@@ -9,6 +9,7 @@ interface Personal {
   nombre: string;
   email: string;
   telefono: string;
+  especialidad: string;
   rol: string;
   activo: boolean;
 }
@@ -64,8 +65,13 @@ export default function PersonalList() {
 
   return (
     <div className="mt-4">
+      <h1
+          className="text-center fw-bold mb-4"
+          style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+        >
+          PERSONAL
+        </h1>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Personal</h2>
         <button onClick={() => PersonalCreateSwal(fetchPersonal)} className="btn btn-success">
           ➕ Nuevo Personal
         </button>
@@ -77,6 +83,7 @@ export default function PersonalList() {
             <th>Nombre</th>
             <th>Email</th>
             <th>Teléfono</th>
+            <th>Especialidad</th>
             <th>Rol</th>
             <th>Activo</th>
             <th>Acciones</th>
@@ -88,6 +95,7 @@ export default function PersonalList() {
               <td>{p.nombre}</td>
               <td>{p.email}</td>
               <td>{p.telefono}</td>
+              <td>{p.especialidad}</td>
               <td>{p.rol}</td>
               <td>{p.activo ? "✅" : "❌"}</td>
               <td>

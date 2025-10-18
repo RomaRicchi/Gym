@@ -20,7 +20,23 @@ namespace Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct = default)
         {
-            var list = await _repo.GetAllAsync(ct);
+            var list = await _repo.Query()
+                .Include(s => s.Socio)
+                .Include(s => s.Plan)
+                .OrderByDescending(s => s.CreadoEn)
+                .Select(s => new
+                {
+                    s.Id,
+                    Socio = s.Socio != null ? s.Socio.Nombre : "—",
+                    Plan = s.Plan != null ? s.Plan.Nombre : "—",
+                    s.Inicio,
+                    s.Fin,
+                    s.Estado,
+                    s.CreadoEn,
+                    OrdenPagoId = s.OrdenPagoId
+                })
+                .ToListAsync(ct);
+
             return Ok(list);
         }
 

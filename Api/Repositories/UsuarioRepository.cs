@@ -14,45 +14,69 @@ namespace Api.Repositories
             _db = db;
         }
 
+        // 🔹 Obtener todos los usuarios
         public async Task<IReadOnlyList<Usuario>> GetAllAsync(CancellationToken ct = default)
         {
-            // 🔹 Solo usuarios activos
             return await _db.Usuarios
                 .Include(u => u.Rol)
-                .Include(u => u.Avatar)
-                .AsNoTracking()
-                .Where(u => u.Estado == 1)
-                .OrderBy(u => u.Id)
+                .Include(u => u.Personal)
+                .Include(u => u.Socio)
+                .OrderBy(u => u.Email)
                 .ToListAsync(ct);
         }
 
+        // 🔹 Obtener usuario por ID
         public async Task<Usuario?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _db.Usuarios
                 .Include(u => u.Rol)
-                .Include(u => u.Avatar)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == id && u.Estado == 1, ct);
+                .Include(u => u.Personal)
+                .Include(u => u.Socio)
+                .FirstOrDefaultAsync(u => u.Id == id, ct);
         }
 
+        // 🔹 Obtener usuarios activos
+        public async Task<IReadOnlyList<Usuario>> GetActivosAsync(CancellationToken ct = default)
+        {
+            return await _db.Usuarios
+                .Where(u => u.Estado == true) // ✅ bool en lugar de int
+                .Include(u => u.Rol)
+                .ToListAsync(ct);
+        }
+
+        // 🔹 Buscar usuario por email (case insensitive)
         public async Task<Usuario?> GetByEmailAsync(string email, CancellationToken ct = default)
         {
             return await _db.Usuarios
                 .Include(u => u.Rol)
-                .Include(u => u.Avatar)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Email == email && u.Estado == 1, ct);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), ct);
         }
 
+        // 🔹 Validar credenciales de login
+        public async Task<Usuario?> LoginAsync(string email, string passwordHash, CancellationToken ct = default)
+        {
+            return await _db.Usuarios
+                .Include(u => u.Rol)
+                .FirstOrDefaultAsync(
+                    u => u.Email.ToLower() == email.ToLower()
+                      && u.PasswordHash == passwordHash
+                      && u.Estado == true, // ✅ bool
+                    ct
+                );
+        }
+
+        // 🔹 Crear nuevo usuario
         public async Task<Usuario> AddAsync(Usuario usuario, CancellationToken ct = default)
         {
+            usuario.Estado = true; // ✅ bool
             usuario.CreadoEn = DateTime.UtcNow;
-            usuario.Estado = 1; // activo por defecto
+
             _db.Usuarios.Add(usuario);
             await _db.SaveChangesAsync(ct);
             return usuario;
         }
 
+        // 🔹 Actualizar usuario existente
         public async Task<bool> UpdateAsync(Usuario usuario, CancellationToken ct = default)
         {
             var existing = await _db.Usuarios.FindAsync(new object[] { usuario.Id }, ct);
@@ -63,60 +87,45 @@ namespace Api.Repositories
             existing.RolId = usuario.RolId;
             existing.PersonalId = usuario.PersonalId;
             existing.SocioId = usuario.SocioId;
-            existing.Estado = usuario.Estado;
+            existing.PasswordHash = usuario.PasswordHash;
+            existing.Estado = usuario.Estado; // ✅ bool
             existing.IdAvatar = usuario.IdAvatar;
 
             await _db.SaveChangesAsync(ct);
             return true;
         }
 
-        // 🔹 BAJA LÓGICA (Estado = 0)
+        // 🔹 Eliminar (baja lógica)
         public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         {
             var usuario = await _db.Usuarios.FindAsync(new object[] { id }, ct);
             if (usuario == null) return false;
 
-            usuario.Estado = 0;
+            usuario.Estado = false; // ✅ bool
             await _db.SaveChangesAsync(ct);
             return true;
         }
 
-        public async Task<bool> UpdatePerfilAsync(int id, string? nombre, string? email, string? telefono, int? idAvatar, CancellationToken ct = default)
+        // 🔹 Existe un usuario con ese email
+        public async Task<bool> ExistsByEmailAsync(string email, int? excludeId = null, CancellationToken ct = default)
         {
-            var user = await _db.Usuarios
-                .Include(u => u.Socio)
-                .Include(u => u.Personal)
-                .FirstOrDefaultAsync(u => u.Id == id, ct);
+            var query = _db.Usuarios.AsQueryable();
 
-            if (user is null)
-                return false;
+            if (excludeId.HasValue)
+                query = query.Where(u => u.Id != excludeId.Value);
 
-            if (!string.IsNullOrWhiteSpace(email))
-                user.Email = email.Trim();
+            return await query.AnyAsync(u => u.Email.ToLower() == email.ToLower(), ct);
+        }
 
-            if (idAvatar.HasValue)
-                user.IdAvatar = idAvatar.Value;
+        // 🔹 Cambiar estado activo/inactivo
+        public async Task<bool> CambiarEstadoAsync(int id, bool nuevoEstado, CancellationToken ct = default)
+        {
+            var usuario = await _db.Usuarios.FindAsync(new object[] { id }, ct);
+            if (usuario == null) return false;
 
-            if (user.SocioId.HasValue && user.Socio != null)
-            {
-                if (!string.IsNullOrWhiteSpace(nombre))
-                    user.Socio.Nombre = nombre.Trim();
-                if (!string.IsNullOrWhiteSpace(telefono))
-                    user.Socio.Telefono = telefono.Trim();
-            }
-
-            if (user.PersonalId.HasValue && user.Personal != null)
-            {
-                if (!string.IsNullOrWhiteSpace(nombre))
-                    user.Personal.Nombre = nombre.Trim();
-                if (!string.IsNullOrWhiteSpace(telefono))
-                    user.Personal.Telefono = telefono.Trim();
-            }
-
+            usuario.Estado = nuevoEstado; // ✅ bool
             await _db.SaveChangesAsync(ct);
             return true;
         }
-
-
     }
 }

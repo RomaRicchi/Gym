@@ -58,9 +58,13 @@ export default function SalasList() {
 
   return (
     <div className="mt-4">
+      <h1
+          className="text-center fw-bold mb-4"
+          style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+        >
+          SALAS
+        </h1>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Salas</h2>
-        {/* 🟢 Botón crear usando el Swal importado */}
         <button onClick={() => SalaCreateSwal(fetchSalas)} className="btn btn-success">
           ➕ Nueva Sala
         </button>
@@ -69,7 +73,6 @@ export default function SalasList() {
       <table className="table table-striped table-hover">
         <thead className="table-dark">
           <tr>
-            <th>ID</th>
             <th>Nombre</th>
             <th>Capacidad</th>
             <th>Activa</th>
@@ -79,7 +82,6 @@ export default function SalasList() {
         <tbody>
           {salas.map((s) => (
             <tr key={s.id}>
-              <td>{s.id}</td>
               <td>{s.nombre}</td>
               <td>{s.capacidad}</td>
               <td>{s.activa ? "✅ Sí" : "❌ No"}</td>
