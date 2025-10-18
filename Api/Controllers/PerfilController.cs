@@ -1,6 +1,7 @@
+using Api.Data;
 using Api.Data.Models;
-using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
@@ -8,139 +9,167 @@ namespace Api.Controllers
     [Route("api/perfil")]
     public class PerfilController : ControllerBase
     {
-        private readonly IPerfilRepository _repo;
+        private readonly GymDbContext _db;
+        private readonly IWebHostEnvironment _env;
 
-        public PerfilController(IPerfilRepository repo)
+        public PerfilController(GymDbContext db, IWebHostEnvironment env)
         {
-            _repo = repo;
+            _db = db;
+            _env = env;
         }
 
-        // 🔹 GET /api/perfil/{id}
+        // ✅ Obtener perfil por ID
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetPerfil(int id, CancellationToken ct)
         {
-            var user = await _repo.GetPerfilAsync(id, ct);
-            if (user is null) return NotFound();
+            var usuario = await _db.Usuarios
+                .Include(u => u.Personal)
+                .Include(u => u.Avatar)
+                .Include(u => u.Rol)
+                .FirstOrDefaultAsync(u => u.Id == id, ct);
 
-            string? nombre = null;
-            string? telefono = null;
-
-            if (user.SocioId.HasValue && user.Socio != null)
-            {
-                nombre = user.Socio.Nombre;
-                telefono = user.Socio.Telefono;
-            }
-            else if (user.PersonalId.HasValue && user.Personal != null)
-            {
-                nombre = user.Personal.Nombre;
-                telefono = user.Personal.Telefono;
-            }
+            if (usuario == null)
+                return NotFound("Usuario no encontrado");
 
             return Ok(new
             {
-                user.Id,
-                user.Email,
-                user.Alias,
-                Nombre = nombre,
-                Telefono = telefono,
-                Rol = user.Rol?.Nombre,
-                Avatar = user.Avatar is null ? null : new
-                {
-                    user.Avatar.Id,
-                    user.Avatar.Nombre,
-                    user.Avatar.Url
-                }
+                usuario.Id,
+                usuario.Alias,
+                usuario.Email,
+                Rol = usuario.Rol?.Nombre,
+                Nombre = usuario.Personal?.Nombre,
+                Telefono = usuario.Personal?.Telefono,
+                Especialidad = usuario.Personal?.Especialidad,
+                Avatar = usuario.Avatar != null
+                    ? new { usuario.Avatar.Id, usuario.Avatar.Url, usuario.Avatar.Nombre }
+                    : new { Id = 0, Url = "/images/user.png", Nombre = "avatar por defecto" }
             });
         }
 
-        // 🔹 PUT /api/perfil/{id}
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdatePerfil(
-            int id,
-            [FromBody] PerfilUpdateDto dto,
-            CancellationToken ct)
+        // ✅ Subir o reemplazar avatar
+       [HttpPost("{id:int}/avatar")]
+        public async Task<IActionResult> SubirAvatar(int id, IFormFile archivo, CancellationToken ct)
         {
-            var ok = await _repo.UpdatePerfilAsync(id, dto.Nombre, dto.Email, dto.Telefono, dto.IdAvatar, ct);
-            return ok ? NoContent() : NotFound();
-        }
+            var usuario = await _db.Usuarios
+                .Include(u => u.Avatar)
+                .FirstOrDefaultAsync(u => u.Id == id, ct);
 
-        public record PerfilUpdateDto(string? Nombre, string? Email, string? Telefono, int? IdAvatar);
+            if (usuario == null)
+                return NotFound("Usuario no encontrado");
 
-        // 🔹 GET /api/perfil/{id}/detallado
-        [HttpGet("{id:int}/detallado")]
-        public async Task<IActionResult> GetPerfilDetallado(int id, CancellationToken ct)
-        {
-            var user = await _repo.GetPerfilDetalladoAsync(id, ct);
-            if (user is null) return NotFound();
-
-            return Ok(new
+            // 🗑️ Eliminar avatar anterior si existe
+            if (usuario.Avatar != null)
             {
-                user.Id,
-                user.Alias,
-                user.Email,
-                user.Estado,
-                user.CreadoEn,
-                Rol = user.Rol?.Nombre,
-                Personal = user.Personal is null ? null : new
+                try
                 {
-                    user.Personal.Nombre,
-                    user.Personal.Telefono,
-                    user.Personal.Especialidad
-                },
-                Socio = user.Socio is null ? null : new
-                {
-                    user.Socio.Nombre,
-                    user.Socio.Telefono,
-                    user.Socio.Dni,
-                    user.Socio.FechaNacimiento
-                },
-                Avatar = user.Avatar is null ? null : new
-                {
-                    user.Avatar.Id,
-                    user.Avatar.Nombre,
-                    user.Avatar.Url
+                    var oldPath = Path.Combine(_env.WebRootPath ?? "wwwroot", usuario.Avatar.Url.TrimStart('/'));
+
+                    if (System.IO.File.Exists(oldPath))
+                    {
+                        System.IO.File.Delete(oldPath);
+                        Console.WriteLine($"🧹 Avatar anterior eliminado: {oldPath}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ Archivo de avatar anterior no encontrado en: {oldPath}");
+                    }
+
+                    // Eliminar también de la base de datos
+                    _db.Avatares.Remove(usuario.Avatar);
+                    usuario.Avatar = null;
                 }
-            });
-        }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error al eliminar avatar anterior: {ex.Message}");
+                }
+            }
 
-        // 🔹 POST /api/perfil/{id}/avatar
-        [HttpPost("{id:int}/avatar")]
-        public async Task<IActionResult> SubirAvatar(int id, [FromForm] IFormFile archivo, CancellationToken ct)
-        {
-            if (archivo == null || archivo.Length == 0)
-                return BadRequest("Debe enviar un archivo de imagen.");
+            // 📸 Guardar nuevo avatar
+            var uploadsDir = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "avatars");
+            Directory.CreateDirectory(uploadsDir);
 
-            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Avatares");
-            if (!Directory.Exists(uploadsDir))
-                Directory.CreateDirectory(uploadsDir);
-
-            var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(archivo.FileName)}";
+            var fileName = $"{Guid.NewGuid()}_{archivo.FileName}";
             var filePath = Path.Combine(uploadsDir, fileName);
 
             using (var stream = new FileStream(filePath, FileMode.Create))
-                await archivo.CopyToAsync(stream, ct);
-
-            var avatar = new Avatar
             {
-                Url = $"uploads/avatares/{fileName}",
-                Nombre = fileName,
-                EsPredeterminado = false
+                await archivo.CopyToAsync(stream);
+            }
+
+            var nuevoAvatar = new Avatar
+            {
+                Nombre = archivo.FileName,
+                Url = $"/uploads/avatars/{fileName}"
             };
 
-            var nuevoAvatar = await _repo.SubirAvatarAsync(id, avatar, ct);
-            return Ok(new { message = "Avatar actualizado correctamente.", nuevoAvatar.Url });
+            usuario.Avatar = nuevoAvatar;
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new
+            {
+                message = "✅ Avatar actualizado correctamente.",
+                nuevoAvatar
+            });
         }
 
-        public record CambiarPasswordDto(string PasswordActual, string NuevaPassword);
 
-        // 🔹 PATCH /api/perfil/{id}/password
-        [HttpPatch("{id:int}/password")]
-        public async Task<IActionResult> CambiarPassword(int id, [FromBody] CambiarPasswordDto dto, CancellationToken ct)
+        // ✅ Restablecer avatar por defecto
+        [HttpPost("{id:int}/avatar/default")]
+        public async Task<IActionResult> AsignarAvatarPorDefecto(int id, CancellationToken ct)
         {
-            var ok = await _repo.CambiarPasswordAsync(id, dto.PasswordActual, dto.NuevaPassword, ct);
-            return ok
-                ? Ok(new { ok = true, message = "Contraseña actualizada correctamente." })
-                : BadRequest(new { ok = false, message = "Contraseña actual incorrecta." });
+            var usuario = await _db.Usuarios
+                .Include(u => u.Avatar)
+                .FirstOrDefaultAsync(u => u.Id == id, ct);
+
+            if (usuario == null)
+                return NotFound("Usuario no encontrado");
+
+            // 🗑️ Eliminar avatar actual si existe
+            if (usuario.Avatar != null)
+            {
+                try
+                {
+                    var oldPath = Path.Combine(_env.WebRootPath ?? "wwwroot", usuario.Avatar.Url.TrimStart('/'));
+                    if (System.IO.File.Exists(oldPath))
+                    {
+                        System.IO.File.Delete(oldPath);
+                        Console.WriteLine($"🧹 Avatar anterior eliminado: {oldPath}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ Archivo de avatar anterior no encontrado en: {oldPath}");
+                    }
+
+                    _db.Avatares.Remove(usuario.Avatar);
+                    usuario.Avatar = null;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error al eliminar avatar anterior: {ex.Message}");
+                }
+            }
+
+            // 🧩 Asignar avatar por defecto (imagen genérica)
+            var defaultAvatar = await _db.Avatares.FirstOrDefaultAsync(a => a.Nombre == "user", ct);
+            if (defaultAvatar == null)
+            {
+                defaultAvatar = new Avatar
+                {
+                    Nombre = "user",
+                    Url = "/images/user.png"
+                };
+                _db.Avatares.Add(defaultAvatar);
+            }
+
+            usuario.Avatar = defaultAvatar;
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new
+            {
+                message = "✅ Avatar por defecto asignado correctamente.",
+                avatar = new { defaultAvatar.Id, defaultAvatar.Url }
+            });
         }
+
     }
 }

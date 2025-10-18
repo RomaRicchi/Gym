@@ -1,9 +1,11 @@
 using Api.Data;
 using Api.Data.Models;
-using Api.Repositories;
+using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Api.Repositories.Interfaces; 
 using Microsoft.EntityFrameworkCore;
+using Api.Contracts;
+using BCrypt.Net;
+using static BCrypt.Net.BCrypt; // ✅ habilita HashPassword() y Verify()
 
 namespace Api.Controllers
 {
@@ -12,106 +14,113 @@ namespace Api.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly IUsuarioRepository _repo;
+        private readonly GymDbContext _db; 
 
-        public UsuariosController(IUsuarioRepository repo)
+        public UsuariosController(IUsuarioRepository repo, GymDbContext db)
         {
             _repo = repo;
+            _db = db;
         }
 
         // 🔹 GET: /api/usuarios
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct)
         {
-            try
-            {
-                var usuarios = await _repo.GetAllAsync(ct);
-                return Ok(new { items = usuarios });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error en GetAll: {ex.Message}");
-                return StatusCode(500, new { error = "Error al obtener los usuarios." });
-            }
+            var usuarios = await _repo.GetAllAsync(ct);
+            return Ok(new { items = usuarios });
         }
 
         // 🔹 GET: /api/usuarios/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
-            try
-            {
-                var usuario = await _repo.GetByIdAsync(id, ct);
-                if (usuario == null)
-                    return NotFound(new { message = "Usuario no encontrado." });
+            var usuario = await _repo.GetByIdAsync(id, ct);
+            if (usuario == null)
+                return NotFound(new { message = "Usuario no encontrado." });
 
-                return Ok(usuario);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error en GetById: {ex.Message}");
-                return StatusCode(500, new { error = "Error al obtener el usuario." });
-            }
+            return Ok(usuario);
         }
 
         // 🔹 POST: /api/usuarios
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] Usuario dto, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            dto.CreadoEn = DateTime.UtcNow;
 
-            try
+            // ✅ Hash automático si se envía contraseña en texto plano
+            if (!string.IsNullOrWhiteSpace(dto.PasswordHash) && !dto.PasswordHash.StartsWith("$2"))
             {
-                dto.CreadoEn = DateTime.UtcNow;
-                var nuevo = await _repo.CreateAsync(dto, ct);
-                return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, nuevo);
+                dto.PasswordHash = HashPassword(dto.PasswordHash);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error en Crear: {ex.Message}");
-                return StatusCode(500, new { error = "Error al crear el usuario." });
-            }
+
+            var nuevo = await _repo.CreateAsync(dto, ct);
+            return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, nuevo);
         }
 
         // 🔹 PUT: /api/usuarios/{id}
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] Usuario dto, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var ok = await _repo.UpdateAsync(id, dto, ct);
+            if (!ok)
+                return NotFound(new { message = "Usuario no encontrado." });
 
-            try
-            {
-                var ok = await _repo.UpdateAsync(id, dto, ct);
-                if (!ok)
-                    return NotFound(new { message = "Usuario no encontrado." });
-
-                return Ok(new { message = "Usuario actualizado correctamente." });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error en Actualizar: {ex.Message}");
-                return StatusCode(500, new { error = "Error al actualizar el usuario." });
-            }
+            return Ok(new { message = "Usuario actualizado correctamente." });
         }
 
         // 🔹 DELETE lógico: /api/usuarios/{id}
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
         {
-            try
-            {
-                var ok = await _repo.DeleteAsync(id, ct);
-                if (!ok)
-                    return NotFound(new { message = "Usuario no encontrado." });
+            var ok = await _repo.DeleteAsync(id, ct);
+            if (!ok)
+                return NotFound(new { message = "Usuario no encontrado." });
 
-                return Ok(new { message = "Usuario eliminado correctamente." });
-            }
-            catch (Exception ex)
+            return Ok(new { message = "Usuario eliminado correctamente." });
+        }
+
+        // 🔹 POST: /api/usuarios/login
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest dto, CancellationToken ct)
+        {
+            var usuario = await _db.Usuarios
+                .Include(u => u.Rol)
+                .Include(u => u.Avatar)
+                .FirstOrDefaultAsync(u => u.Email == dto.Email, ct);
+
+            if (usuario == null)
+                return BadRequest(new { message = "Usuario no encontrado." });
+
+            // ⚙️ Verificación de contraseña segura
+            bool esValida = false;
+
+            if (!string.IsNullOrEmpty(usuario.PasswordHash))
             {
-                Console.WriteLine($"❌ Error en Eliminar: {ex.Message}");
-                return StatusCode(500, new { error = "Error al eliminar el usuario." });
+                // ✅ Si la contraseña está hasheada con BCrypt
+                if (usuario.PasswordHash.StartsWith("$2"))
+                    esValida = Verify(dto.Password, usuario.PasswordHash);
+                else
+                    esValida = usuario.PasswordHash == dto.Password;
             }
+
+            if (!esValida)
+                return BadRequest(new { message = "Credenciales incorrectas." });
+
+            // 🔐 Token temporal (luego reemplazar por JWT)
+            var token = "fake-jwt-token-demo";
+
+            return Ok(new
+            {
+                token,
+                usuario = new
+                {
+                    usuario.Id,
+                    usuario.Email,
+                    usuario.Alias,
+                    Rol = usuario.Rol?.Nombre,
+                    Avatar = usuario.Avatar?.Url
+                }
+            });
         }
     }
 }

@@ -10,6 +10,8 @@ import $ from "jquery";
 
 import "select2/dist/js/select2.full.min.js";
 import "select2/dist/css/select2.min.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@/styles/swal-theme.css";
 import "./styles/main.css";
 

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import { RolCreateSwal } from "@/views/usuarios/rol/RolCreateSwal";
+import { RolEditSwal } from "@/views/usuarios/rol/RolEditSwal";
 
 interface Rol {
   id: number;
@@ -10,14 +11,19 @@ interface Rol {
 
 export default function RolesList() {
   const [roles, setRoles] = useState<Rol[]>([]);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchRoles = async () => {
+    setLoading(true);
     try {
       const res = await gymApi.get("/roles");
       setRoles(res.data.items || res.data);
+      setError(null);
     } catch {
-      Swal.fire("Error", "No se pudieron cargar los roles", "error");
+      setError("Error al cargar los roles");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -26,7 +32,7 @@ export default function RolesList() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    const confirm = await Swal.fire({
+    const result = await Swal.fire({
       title: "¿Eliminar rol?",
       text: "Esta acción no se puede deshacer.",
       icon: "warning",
@@ -36,10 +42,10 @@ export default function RolesList() {
       confirmButtonColor: "#d33",
     });
 
-    if (confirm.isConfirmed) {
+    if (result.isConfirmed) {
       try {
         await gymApi.delete(`/roles/${id}`);
-        Swal.fire("Eliminado", "Rol eliminado correctamente", "success");
+        await Swal.fire("Eliminado", "Rol eliminado correctamente", "success");
         fetchRoles();
       } catch {
         Swal.fire("Error", "No se pudo eliminar el rol", "error");
@@ -47,11 +53,20 @@ export default function RolesList() {
     }
   };
 
+  if (loading) return <p>Cargando roles...</p>;
+  if (error) return <p className="text-danger">{error}</p>;
+
   return (
     <div className="mt-4">
+      <h1
+        className="text-center fw-bold mb-4"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        ROLES DEL SISTEMA
+      </h1>
+
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>🧩 Roles del Sistema</h2>
-        <button className="btn btn-success" onClick={() => navigate("/roles/nuevo")}>
+        <button className="btn btn-success" onClick={() => RolCreateSwal(fetchRoles)}>
           ➕ Nuevo Rol
         </button>
       </div>
@@ -59,7 +74,6 @@ export default function RolesList() {
       <table className="table table-striped table-hover">
         <thead className="table-dark">
           <tr>
-            <th>ID</th>
             <th>Nombre</th>
             <th>Acciones</th>
           </tr>
@@ -67,12 +81,11 @@ export default function RolesList() {
         <tbody>
           {roles.map((r) => (
             <tr key={r.id}>
-              <td>{r.id}</td>
               <td>{r.nombre}</td>
               <td>
                 <button
                   className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => navigate(`/roles/editar/${r.id}`)}
+                  onClick={() => RolEditSwal(r.id.toString(), fetchRoles)}
                 >
                   ✏️ Editar
                 </button>

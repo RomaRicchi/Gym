@@ -1,21 +1,31 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { useEffect } from "react";
 import Layout from "@/components/Layout";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@/styles/main.css";
 
 // 🧩 Vistas principales
 import Dashboard from "@/views/Dashboard";
+import Login from "@/views/usuarios/Login";
+import PerfilView from "@/views/usuarios/perfil/PerfilView";
 
 // 🧍 Socios
 import SociosList from "@/views/socios/List";
-// Personal
+
+// 👨‍🏫 Personal
 import PersonalList from "@/views/personal/List";
 
 // 💳 Suscripciones
 import SuscripcionesList from "@/views/suscripciones/List";
 
-// 💰 PLANES
+// 💰 Planes
 import PlanesList from "@/views/suscripciones/planes/List";
 
 // 🏋️ Salas
@@ -31,7 +41,7 @@ import OrdenesList from "@/views/gestionPagos/List";
 import OrdenPagoCreate from "@/views/gestionPagos/Create";
 import OrdenPagoEdit from "@/views/gestionPagos/Edit";
 
-// 📑 COMPROBANTES
+// 📑 Comprobantes
 import ComprobantesList from "@/views/gestionPagos/comprobantes/List";
 import ComprobanteUpload from "@/views/gestionPagos/comprobantes/Upload";
 
@@ -44,12 +54,10 @@ import EstadoEdit from "@/views/gestionPagos/estado/Edit";
 import OrdenTurnosList from "@/views/agenda/ordenTurno/List";
 import OrdenTurnoAssign from "@/views/agenda/ordenTurno/Assign";
 
-// 🧩 ROLES
+// 🧩 Roles
 import RolesList from "@/views/usuarios/rol/List";
-import RolCreate from "@/views/usuarios/rol/Create";
-import RolEdit from "@/views/usuarios/rol/Edit";
 
-// 👤 USUARIOS
+// 👤 Usuarios
 import UsuariosList from "@/views/usuarios/List";
 import UsuarioCreate from "@/views/usuarios/Create";
 import UsuarioEdit from "@/views/usuarios/Edit";
@@ -68,60 +76,70 @@ export default function App() {
     <Router>
       <ScrollToTop />
       <Routes>
-        {/* 🧱 Layout envuelve todas las páginas internas */}
-        <Route element={<Layout />}>
-          {/* 🏠 Dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+        {/* 🔐 Rutas protegidas: solo accesibles si hay sesión */}
+        
+          <Route element={<Layout />}>
+            {/* 🏠 Dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/dashboard" element={<Dashboard />} />
 
-          {/* 🧍 Socios */}
-          <Route path="/socios" element={<SociosList />} />
+            {/* 👤 Perfil */}
+            <Route path="/perfil" element={<PerfilView />} />
 
-          {/* Personal */}
-          <Route path="/personal" element={<PersonalList />} />
+            {/* 🧍 Socios */}
+            <Route path="/socios" element={<SociosList />} />
 
-          {/* 💳 Suscripciones */}
-          <Route path="/suscripciones" element={<SuscripcionesList />} />
+            {/* 👨‍🏫 Personal */}
+            <Route path="/personal" element={<PersonalList />} />
 
-          {/* 💰 Planes */}
-          <Route path="/planes" element={<PlanesList />} />
-          {/* 🏋️ Salas */}
-          <Route path="/salas" element={<SalasList />} />
+            {/* 💳 Suscripciones */}
+            <Route path="/suscripciones" element={<SuscripcionesList />} />
 
-          {/* 📆 Turnos Plantilla */}
-          <Route path="/turnos" element={<TurnosPlantillaList />} />
-          <Route path="/turnos/nuevo" element={<TurnoPlantillaCreate />} />
-          <Route path="/turnos/editar/:id" element={<TurnoPlantillaEdit />} />
+            {/* 💰 Planes */}
+            <Route path="/planes" element={<PlanesList />} />
 
-          {/* 🧾 Órdenes de Pago */}
-          <Route path="/ordenes" element={<OrdenesList />} />
-          <Route path="/ordenes/nueva" element={<OrdenPagoCreate />} />
-          <Route path="/ordenes/editar/:id" element={<OrdenPagoEdit />} />
+            {/* 🏋️ Salas */}
+            <Route path="/salas" element={<SalasList />} />
 
-          {/* 📑 Comprobantes */}
-          <Route path="/comprobantes" element={<ComprobantesList />} />
-          <Route path="/ordenes/:id/comprobantes" element={<ComprobantesList />} />
-          <Route path="/ordenes/:id/subir-comprobante" element={<ComprobanteUpload />} />
+            {/* 📆 Turnos Plantilla */}
+            <Route path="/turnos" element={<TurnosPlantillaList />} />
+            <Route path="/turnos/nuevo" element={<TurnoPlantillaCreate />} />
+            <Route path="/turnos/editar/:id" element={<TurnoPlantillaEdit />} />
 
-          {/* ⚙️ Estados */}
-          <Route path="/estados" element={<EstadosList />} />
-          <Route path="/estados/nuevo" element={<EstadoCreate />} />
-          <Route path="/estados/editar/:id" element={<EstadoEdit />} />
+            {/* 🧾 Órdenes de Pago */}
+            <Route path="/ordenes" element={<OrdenesList />} />
+            <Route path="/ordenes/nueva" element={<OrdenPagoCreate />} />
+            <Route path="/ordenes/editar/:id" element={<OrdenPagoEdit />} />
 
-          {/* 🔗 Orden - Turnos */}
-          <Route path="/ordenes/:id/turnos" element={<OrdenTurnosList />} />
-          <Route path="/ordenes/:id/asignar-turnos" element={<OrdenTurnoAssign />} />
+            {/* 📑 Comprobantes */}
+            <Route path="/comprobantes" element={<ComprobantesList />} />
+            <Route path="/ordenes/:id/comprobantes" element={<ComprobantesList />} />
+            <Route path="/ordenes/:id/subir-comprobante" element={<ComprobanteUpload />} />
 
-          {/* 🧩 Roles */}
-          <Route path="/roles" element={<RolesList />} />
-          <Route path="/roles/nuevo" element={<RolCreate />} />
-          <Route path="/roles/editar/:id" element={<RolEdit />} />
+            {/* ⚙️ Estados */}
+            <Route path="/estados" element={<EstadosList />} />
+            <Route path="/estados/nuevo" element={<EstadoCreate />} />
+            <Route path="/estados/editar/:id" element={<EstadoEdit />} />
 
-          {/* 👤 Usuarios */}
-          <Route path="/usuarios" element={<UsuariosList />} />
-          <Route path="/usuarios/nuevo" element={<UsuarioCreate />} />
-          <Route path="/usuarios/editar/:id" element={<UsuarioEdit />} />
-        </Route>
+            {/* 🔗 Orden - Turnos */}
+            <Route path="/ordenes/:id/turnos" element={<OrdenTurnosList />} />
+            <Route path="/ordenes/:id/asignar-turnos" element={<OrdenTurnoAssign />} />
+
+            {/* 🧩 Roles */}
+            <Route path="/roles" element={<RolesList />} />
+
+            {/* 👤 Usuarios */}
+            <Route path="/usuarios" element={<UsuariosList />} />
+            <Route path="/usuarios/nuevo" element={<UsuarioCreate />} />
+            <Route path="/usuarios/editar/:id" element={<UsuarioEdit />} />
+          </Route>
+       
+
+        {/* 🌐 Ruta pública: Login */}
+        <Route path="/login" element={<Login />} />
+
+        {/* 🚧 Redirección para rutas inexistentes */}
+        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>
   );
