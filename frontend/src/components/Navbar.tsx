@@ -13,6 +13,9 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
 
+  // 🧩 URL base del backend (usa variable VITE_API_URL si está definida)
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5144";
+
   // 🧩 Cargar usuario desde localStorage al montar
   useEffect(() => {
     const stored = localStorage.getItem("usuario");
@@ -75,8 +78,8 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
                 <img
                   src={
                     usuario.avatar?.url
-                      ? usuario.avatar.url
-                      : "/images/user.png"
+                      ? `${BASE_URL}${usuario.avatar.url}`
+                      : `${BASE_URL}/images/user.png`
                   }
                   alt="Avatar"
                   className="rounded-circle me-2"
@@ -112,7 +115,6 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
                   </button>
                 </li>
               </ul>
-
             </div>
           )}
         </div>

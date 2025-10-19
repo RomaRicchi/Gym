@@ -57,7 +57,12 @@ export default function ComprobantesList() {
 
   return (
     <div className="container mt-4">
-      <h2>📑 Comprobantes de la Orden #{id}</h2>
+      <h1
+        className="text-center fw-bold mb-4"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        COMPROBANTES
+      </h1>
 
       <button
         onClick={() => navigate(`/ordenes/${id}/subir-comprobante`)}
@@ -69,7 +74,6 @@ export default function ComprobantesList() {
       <table className="table table-striped table-hover">
         <thead className="table-dark">
           <tr>
-            <th>ID</th>
             <th>Archivo</th>
             <th>Tipo</th>
             <th>Subido En</th>
@@ -80,7 +84,6 @@ export default function ComprobantesList() {
           {comprobantes.length > 0 ? (
             comprobantes.map((f) => (
               <tr key={f.id}>
-                <td>{f.id}</td>
                 <td>
                   <a href={`/${f.fileUrl}`} target="_blank" rel="noopener noreferrer">
                     Ver archivo

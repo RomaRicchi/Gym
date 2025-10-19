@@ -55,8 +55,13 @@ export default function EstadosList() {
 
   return (
     <div className="mt-4">
+      <h1
+        className="text-center fw-bold mb-4"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        ESTADO DEL PAGO
+      </h1>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Estados de Orden de Pago</h2>
         <button onClick={() => navigate("/estados/nuevo")} className="btn btn-success">
           ➕ Nuevo Estado
         </button>
@@ -65,7 +70,6 @@ export default function EstadosList() {
       <table className="table table-striped table-hover">
         <thead className="table-dark">
           <tr>
-            <th>ID</th>
             <th>Nombre</th>
             <th>Descripción</th>
             <th>Acciones</th>
@@ -74,7 +78,6 @@ export default function EstadosList() {
         <tbody>
           {estados.map((e) => (
             <tr key={e.id}>
-              <td>{e.id}</td>
               <td>{e.nombre}</td>
               <td>{e.descripcion || "—"}</td>
               <td>

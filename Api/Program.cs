@@ -13,8 +13,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers()
-    .AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
-
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 // === 🌐 CORS para el frontend React/Vite ===
 builder.Services.AddCors(options =>
 {
@@ -22,7 +25,9 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials()
+              .WithExposedHeaders("*");
     });
 });
 
@@ -64,9 +69,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    ServeUnknownFileTypes = true, 
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+    }
+});
+
 // === 🧩 Middleware global ===
 app.UseHttpsRedirection();
-app.UseStaticFiles();
 app.UseCors("dev");
 app.UseAuthorization();
 app.MapControllers();

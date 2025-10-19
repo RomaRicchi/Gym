@@ -39,16 +39,17 @@ export default function OrdenesList() {
 
   return (
     <div className="container mt-3">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4>Órdenes de Pago</h4>
-      
-      </div>
+      <h1
+        className="text-center fw-bold mb-4"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        ORDENES DE PAGO
+      </h1>
 
       <div className="table-responsive">
         <table className="table table-striped table-bordered align-middle text-center">
           <thead className="table-dark">
             <tr>
-              <th>ID</th>
               <th>Socio</th>
               <th>Plan</th>
               <th>Monto</th>
@@ -65,7 +66,6 @@ export default function OrdenesList() {
             ) : (
               ordenes.map((o) => (
                 <tr key={o.id}>
-                  <td>{o.id}</td>
                   <td>{o.socio?.nombre || "—"}</td>
                   <td>{o.plan?.nombre || "—"}</td>
                   <td>${o.monto.toFixed(2)}</td>

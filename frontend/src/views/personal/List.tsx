@@ -108,7 +108,7 @@ export default function PersonalList() {
               <td>
                 <button
                   className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => PersonalEditSwal(p.id.toString(), fetchPersonal)}
+                  onClick={() => PersonalEditSwal(p.id.toString(),"admin", fetchPersonal)}
                 >
                   ✏️ Editar
                 </button>

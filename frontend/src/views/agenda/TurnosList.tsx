@@ -57,8 +57,15 @@ export default function TurnosList() {
 
   return (
     <div className="mt-4">
+
+      <h1
+        className="text-center fw-bold mb-4"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        TURNOS
+      </h1>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Turnos de la Suscripción #{id}</h2>
+        
         <Link to={`/suscripciones/${id}/asignar-turnos`} className="btn btn-success">
           ➕ Asignar Turnos
         </Link>

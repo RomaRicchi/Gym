@@ -53,23 +53,25 @@ export default function Login() {
   };
 
   return (
-    <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
+    <div
+      className="d-flex align-items-center justify-content-center vh-100"
+      style={{ backgroundColor: "#f8f9fa" }}
+    >
       <div
-        className="card shadow-lg p-4"
+        className="card shadow-lg p-4 text-white"
         style={{
           width: "100%",
           maxWidth: 420,
           borderRadius: "1rem",
-          background: "white",
+          backgroundColor: "#ff6b00", 
+          border: "none",
         }}
       >
-        <h3 className="text-center text-primary mb-4 fw-bold">
-          🏋️‍♂️ GYM SYSTEM LOGIN
-        </h3>
+        <h3 className="text-center mb-4 fw-bold">🏋️‍♂️ GYM SYSTEM LOGIN</h3>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3 text-start">
-            <label className="form-label fw-semibold">Email</label>
+            <label className="form-label fw-semibold text-white">Email</label>
             <input
               type="email"
               className="form-control"
@@ -77,25 +79,40 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
+              style={{
+                backgroundColor: "#fff",
+                border: "none",
+                borderRadius: "0.5rem",
+              }}
             />
           </div>
 
           <div className="mb-3 text-start">
-            <label className="form-label fw-semibold">Contraseña</label>
+            <label className="form-label fw-semibold text-white">Contraseña</label>
             <input
               type="password"
               className="form-control"
-              placeholder="••••••••"
+              placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
+              style={{
+                backgroundColor: "#fff",
+                border: "none",
+                borderRadius: "0.5rem",
+              }}
             />
           </div>
 
           <button
             type="submit"
-            className="btn btn-primary w-100 mt-3 fw-bold"
+            className="btn w-100 mt-3 fw-bold"
             disabled={loading}
+            style={{
+              backgroundColor: "#ffffff",
+              color: "#ff6b00",
+              border: "none",
+            }}
           >
             {loading ? "Iniciando..." : "Ingresar"}
           </button>
@@ -104,7 +121,7 @@ export default function Login() {
             <a
               href="#"
               onClick={() => navigate("/recuperar")}
-              className="text-decoration-none small text-muted"
+              className="text-decoration-none small text-white-50"
             >
               ¿Olvidaste tu contraseña?
             </a>

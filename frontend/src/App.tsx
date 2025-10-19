@@ -59,8 +59,6 @@ import RolesList from "@/views/usuarios/rol/List";
 
 // 👤 Usuarios
 import UsuariosList from "@/views/usuarios/List";
-import UsuarioCreate from "@/views/usuarios/Create";
-import UsuarioEdit from "@/views/usuarios/Edit";
 
 /* 🔝 Scroll automático al cambiar de ruta */
 function ScrollToTop() {
@@ -130,8 +128,6 @@ export default function App() {
 
             {/* 👤 Usuarios */}
             <Route path="/usuarios" element={<UsuariosList />} />
-            <Route path="/usuarios/nuevo" element={<UsuarioCreate />} />
-            <Route path="/usuarios/editar/:id" element={<UsuarioEdit />} />
           </Route>
        
 

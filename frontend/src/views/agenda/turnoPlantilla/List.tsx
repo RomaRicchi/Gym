@@ -64,8 +64,13 @@ export default function TurnosPlantillaList() {
 
   return (
     <div className="mt-4">
+      <h1
+        className="text-center fw-bold mb-4"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        PLANILLA DE TURNOS
+      </h1>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Turnos Plantilla</h2>
         <button onClick={() => navigate("/turnos/nuevo")} className="btn btn-success">
           ➕ Nuevo Turno
         </button>
@@ -74,7 +79,6 @@ export default function TurnosPlantillaList() {
       <table className="table table-striped table-hover">
         <thead className="table-dark">
           <tr>
-            <th>ID</th>
             <th>Sala</th>
             <th>Profesor</th>
             <th>Día</th>
@@ -88,7 +92,6 @@ export default function TurnosPlantillaList() {
         <tbody>
           {turnos.map((t) => (
             <tr key={t.id}>
-              <td>{t.id}</td>
               <td>{t.sala_id}</td>
               <td>{t.personal_id}</td>
               <td>{diasSemana[t.dia_semana_id - 1] || "-"}</td>
