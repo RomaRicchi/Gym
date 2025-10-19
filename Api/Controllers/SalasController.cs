@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
+    [Authorize(Roles = "Administrador")]
     [ApiController]
     [Route("api/[controller]")]
     public class SalasController : ControllerBase

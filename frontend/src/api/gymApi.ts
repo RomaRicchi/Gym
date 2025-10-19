@@ -10,6 +10,14 @@ const gymApi = axios.create({
   withCredentials: false,
 });
 
+gymApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 console.log("[GymAPI] Base URL:", gymApi.defaults.baseURL);
 
 export default gymApi; 

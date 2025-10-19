@@ -9,6 +9,7 @@ using BCrypt.Net;
 
 namespace Api.Controllers
 {
+    [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
     [ApiController]
     [Route("api/perfil")]
     public class PerfilController : ControllerBase

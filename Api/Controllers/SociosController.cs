@@ -7,6 +7,7 @@ using Api.Contracts;
 
 namespace Api.Controllers;
 
+[Authorize(Roles = "Administrador, Profesor, Recepcionista")]
 [ApiController]
 [Route("api/socios")]
 public class SociosController : ControllerBase

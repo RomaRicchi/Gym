@@ -26,7 +26,7 @@ namespace Api.Controllers
             _env = env;
         }
 
-        // 🔹 GET /api/comprobantes/{id}
+        [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
@@ -49,7 +49,7 @@ namespace Api.Controllers
             });
         }
 
-        // 🔹 GET /api/ordenes/{ordenId}/comprobante
+        [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
         [HttpGet("/api/ordenes/{ordenId:int}/comprobante")]
         public async Task<IActionResult> GetByOrden(int ordenId, CancellationToken ct)
         {
@@ -73,11 +73,11 @@ namespace Api.Controllers
             });
         }
 
+        [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
         [HttpPost]
-        // 🚀 CORRECCIÓN: Quitamos [FromForm(Name = "file")] para simplificar el mapeo del archivo
         public async Task<IActionResult> Subir(IFormFile? file, CancellationToken ct)
         {
-            // 🟡 Si no se envió archivo, devolvemos null
+            
             if (file == null || file.Length == 0)
                 return Ok(new { comprobanteId = (int?)null });
 
@@ -120,8 +120,8 @@ namespace Api.Controllers
                 fileUrl = comprobante.FileUrl
             });
         }
-    
-        // 🔹 DELETE /api/comprobantes/{id}
+
+        [Authorize(Roles = "Administrador")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
         {

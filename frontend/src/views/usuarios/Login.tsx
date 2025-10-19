@@ -21,9 +21,18 @@ export default function Login() {
     try {
       setLoading(true);
 
+      // 🔹 Petición al backend
       const res = await gymApi.post("/usuarios/login", { email, password });
-      const { token, usuario } = res.data;
 
+      // ✅ Compatibilidad con Token / token
+      const token = res.data.Token || res.data.token;
+      const usuario = res.data.Usuario || res.data.usuario;
+
+      if (!token) {
+        throw new Error("No se recibió el token JWT del servidor.");
+      }
+
+      // 🔹 Guardar sesión en localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("usuario", JSON.stringify(usuario));
 
@@ -35,8 +44,9 @@ export default function Login() {
         showConfirmButton: false,
       });
 
+      // 🔹 Redirigir al dashboard
       navigate("/");
-      window.location.reload();
+      window.location.reload(); // para refrescar navbar o contexto
     } catch (err: any) {
       console.error(err);
       Swal.fire(

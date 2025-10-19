@@ -1,10 +1,12 @@
 using Api.Data;
 using Api.Repositories.Interfaces;
 using Api.Repositories;
-using Api.Controllers;
 using Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +20,8 @@ builder.Services.AddControllers()
         o.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
-// === 🌐 CORS para el frontend React/Vite ===
+
+// === 🌐 CORS (para frontend React/Vite en puerto 5173) ===
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("dev", policy =>
@@ -31,21 +34,39 @@ builder.Services.AddCors(options =>
     });
 });
 
-// === 🗄️ Configuración de base de datos (MariaDB/MySQL) ===
+// === 🗄️ Base de datos MySQL/MariaDB ===
 var cs = builder.Configuration.GetConnectionString("gym_oram");
-
-// Definimos versión explícita para Pomelo (MariaDB 10.4.32)
 var serverVersion = new MariaDbServerVersion(new Version(10, 4, 32));
 
 builder.Services.AddDbContext<GymDbContext>(options =>
     options.UseMySql(cs, serverVersion,
         mySqlOptions => mySqlOptions.SchemaBehavior(MySqlSchemaBehavior.Ignore)));
 
+// === 🔐 Autenticación JWT ===
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var key = builder.Configuration["Jwt:Key"];
+        if (string.IsNullOrEmpty(key))
+            throw new Exception("❌ No se encontró Jwt:Key en appsettings.json");
 
-// === File storage local para comprobantes o avatares y reset password ===
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// === 💾 Servicios y Repositorios ===
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-// Repositories
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();
 builder.Services.AddScoped<ISocioRepository, SocioRepository>();
 builder.Services.AddScoped<IComprobanteRepository, ComprobanteRepository>();
@@ -70,19 +91,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// === 🧩 Middleware global (orden correcto) ===
+// ⚠️ Importante: CORS debe ir antes de Authentication/Authorization
+app.UseCors("dev");
 app.UseStaticFiles(new StaticFileOptions
 {
-    ServeUnknownFileTypes = true, 
+    ServeUnknownFileTypes = true,
     OnPrepareResponse = ctx =>
     {
         ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
     }
 });
 
-// === 🧩 Middleware global ===
 app.UseHttpsRedirection();
-app.UseCors("dev");
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 // === 🚀 Run ===

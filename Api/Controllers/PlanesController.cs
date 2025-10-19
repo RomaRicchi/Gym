@@ -4,6 +4,7 @@ using Api.Data.Models;
 
 namespace Api.Controllers;
 
+[Authorize(Roles = "Administrador, Profesor, Recepcionista")]
 [ApiController]
 [Route("api/planes")]
 public class PlanesController : ControllerBase

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
+    [Authorize(Roles = "Administrador")]
     [ApiController]
     [Route("api/personal")]
     public class PersonalController : ControllerBase

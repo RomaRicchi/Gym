@@ -4,6 +4,7 @@ using Api.Data.Models;
 
 namespace Api.Controllers;
 
+[Authorize(Roles = "Administrador")]
 [ApiController]
 [Route("api/roles")]
 public class RolesController : ControllerBase

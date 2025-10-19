@@ -10,6 +10,7 @@ using System.IO;
 
 namespace Api.Controllers
 {
+    [Authorize(Roles = "Administrador, Recepcionista")]
     [ApiController]
     [Route("api/ordenes")]
     public class OrdenesPagoController : ControllerBase

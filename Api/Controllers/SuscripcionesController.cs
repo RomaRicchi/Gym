@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
+    [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
     [ApiController]
     [Route("api/[controller]")]
     public class SuscripcionesController : ControllerBase

@@ -5,7 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Contracts;
 using Api.Services;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using static BCrypt.Net.BCrypt;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace Api.Controllers
 {
@@ -18,7 +24,7 @@ namespace Api.Controllers
         private readonly GymDbContext _db;
         private readonly IEmailService _emailService;
 
-        public UsuariosController(IUsuarioRepository repo,  IConfiguration config, GymDbContext db, IEmailService emailService)
+        public UsuariosController(IUsuarioRepository repo, IConfiguration config, GymDbContext db, IEmailService emailService)
         {
             _repo = repo;
             _config = config;
@@ -27,6 +33,7 @@ namespace Api.Controllers
         }
 
         // 🔹 GET: /api/usuarios
+        [Authorize(Roles = "Administrador")]
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct)
         {
@@ -51,6 +58,7 @@ namespace Api.Controllers
         }
 
         // 🔹 GET: /api/usuarios/{id}
+        [Authorize(Roles = "Administrador")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
@@ -76,6 +84,7 @@ namespace Api.Controllers
         }
 
         // 🔹 POST: /api/usuarios
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] Usuario dto, CancellationToken ct)
         {
@@ -93,6 +102,7 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> ActualizarUsuario(int id, [FromBody] UsuarioUpdateDto dto, CancellationToken ct)
         {
@@ -115,6 +125,7 @@ namespace Api.Controllers
         }
 
         // 🔹 DELETE lógico: /api/usuarios/{id}
+        [Authorize(Roles = "Administrador")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
         {
@@ -129,15 +140,14 @@ namespace Api.Controllers
         }
 
         // 🔹 POST: /api/usuarios/login
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest dto, CancellationToken ct)
         {
-            // 🔍 Buscar por alias o email indistintamente
             var usuario = await _db.Usuarios
                 .Include(u => u.Rol)
                 .Include(u => u.Avatar)
-                .FirstOrDefaultAsync(u =>
-                    u.Email == dto.Email || u.Alias == dto.Email, ct);
+                .FirstOrDefaultAsync(u => u.Email == dto.Email || u.Alias == dto.Email, ct);
 
             if (usuario == null)
                 return BadRequest(new { message = "Usuario no encontrado." });
@@ -155,23 +165,44 @@ namespace Api.Controllers
             if (!esValida)
                 return BadRequest(new { message = "Credenciales incorrectas." });
 
-            // 🔐 Token temporal (puedes luego cambiar a JWT)
-            var token = "fake-jwt-token-demo";
-
-            return Ok(new
+            // 🔐 Generar token JWT con rol
+            var claims = new List<Claim>
             {
-                token,
-                usuario = new
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                new Claim(ClaimTypes.Email, usuario.Email),
+                new Claim(ClaimTypes.Role, usuario.Rol?.Nombre ?? "Usuario")
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(8),
+                signingCredentials: creds
+            );
+
+            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+            var response = new LoginResponseDto
+            {
+                Token = jwt,
+                Usuario = new UsuarioDto
                 {
-                    usuario.Id,
-                    usuario.Email,
-                    usuario.Alias,
+                    Id = usuario.Id,
+                    Email = usuario.Email,
+                    Alias = usuario.Alias,
                     Rol = usuario.Rol?.Nombre,
                     Avatar = usuario.Avatar?.Url
                 }
-            });
+            };
+
+            return Ok(response);
         }
 
+        [AllowAnonymous]
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
@@ -198,6 +229,7 @@ namespace Api.Controllers
             return Ok("Correo de recuperación enviado.");
         }
 
+        [AllowAnonymous]
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
