@@ -3,7 +3,6 @@ import gymApi from "@/api/gymApi";
 
 export async function UsuarioEditSwal(id: number | string, onSuccess?: () => void) {
   try {
-    // 1️⃣ Obtener usuario y roles
     const [resUsuario, resRoles] = await Promise.all([
       gymApi.get(`/usuarios/${id}`),
       gymApi.get("/roles"),
@@ -12,7 +11,6 @@ export async function UsuarioEditSwal(id: number | string, onSuccess?: () => voi
     const usuario = resUsuario.data;
     const roles = resRoles.data.items || resRoles.data;
 
-    // 2️⃣ Mostrar formulario
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Usuario",
       html: `
@@ -69,13 +67,12 @@ export async function UsuarioEditSwal(id: number | string, onSuccess?: () => voi
           return false;
         }
 
-        return { email, alias, rolId, estado }; // 👈 Usa camelCase correcto
+        return { email, alias, rolId, estado }; 
       },
     });
 
     if (!formValues) return;
 
-    // 3️⃣ Enviar actualización
     await gymApi.put(`/usuarios/${id}`, formValues);
 
     await Swal.fire({

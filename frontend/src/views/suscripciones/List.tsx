@@ -97,26 +97,26 @@ export default function SuscripcionesList() {
               <td>{new Date(s.fin).toLocaleDateString()}</td>
               <td>
                 {s.estado ? (
-                  <span className="text-success fw-bold">✅ Activa</span>
+                  <span className="text-success fw-bold">✅</span>
                 ) : (
-                  <span className="text-danger fw-bold">❌ Inactiva</span>
+                  <span className="text-danger fw-bold">❌</span>
                 )}
               </td>
               <td>
                 <button
-                  className="btn btn-sm btn-outline-primary me-2"
+                  className="btn btn-sm btn-warning"
                   onClick={async () => {
                     const ok = await mostrarFormEditarSuscripcion(s.id);
-                    if (ok) fetchSuscripciones(); // 🔁 refresca la lista
+                    if (ok) fetchSuscripciones(); 
                   }}
                 >
-                  ✏️ Editar
+                  ✏️ 
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-danger"
+                  className="btn btn-sm btn-danger"
                   onClick={() => handleDelete(s.id)}
                 >
-                  🗑️ Eliminar
+                  🗑️ 
                 </button>
               </td>
             </tr>

@@ -2,6 +2,7 @@ using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {

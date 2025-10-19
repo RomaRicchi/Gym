@@ -3,13 +3,14 @@ using Api.Data;
 using Api.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Hosting; // Agregado
-using Microsoft.AspNetCore.Http; // Agregado
-using System.IO; // Agregado
+using Microsoft.AspNetCore.Hosting; 
+using System.IO; 
 using System; // Agregado para Guid, DateTime.UtcNow
-using System.Linq; // Agregado para .Contains(ext)
+using System.Linq; 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace Api.Controllers
 {
@@ -75,17 +76,18 @@ namespace Api.Controllers
 
         [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
         [HttpPost]
-        public async Task<IActionResult> Subir(IFormFile? file, CancellationToken ct)
+        public async Task<IActionResult> Subir([FromForm] IFormFile file, [FromForm] int ordenPagoId, CancellationToken ct)
         {
-            
             if (file == null || file.Length == 0)
-                return Ok(new { comprobanteId = (int?)null });
+                return BadRequest("Debe subir un archivo válido.");
 
-            // 📁 Crear carpeta destino
+            var orden = await _db.OrdenesPago.FindAsync(new object[] { ordenPagoId }, ct);
+            if (orden == null)
+                return NotFound("Orden no encontrada.");
+
             var uploads = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "comprobantes");
             Directory.CreateDirectory(uploads);
 
-            // ✅ Validar extensión y tamaño
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             var allowed = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
             if (!allowed.Contains(ext))
@@ -94,7 +96,6 @@ namespace Api.Controllers
             if (file.Length > 5 * 1024 * 1024)
                 return BadRequest("El archivo no puede superar los 5 MB.");
 
-            // 📦 Guardar archivo físico
             var fileName = $"{Guid.NewGuid()}{ext}";
             var filePath = Path.Combine(uploads, fileName);
             await using (var stream = new FileStream(filePath, FileMode.Create))
@@ -102,15 +103,19 @@ namespace Api.Controllers
                 await file.CopyToAsync(stream, ct);
             }
 
-            // 💾 Registrar en DB
             var comprobante = new Comprobante
             {
                 FileUrl = $"uploads/comprobantes/{fileName}",
                 MimeType = file.ContentType,
-                SubidoEn = DateTime.UtcNow
+                SubidoEn = DateTime.UtcNow,
             };
 
             _db.Comprobantes.Add(comprobante);
+            await _db.SaveChangesAsync(ct);
+
+            // ✅ Asociar comprobante a la orden
+            orden.ComprobanteId = comprobante.Id;
+            _db.OrdenesPago.Update(orden);
             await _db.SaveChangesAsync(ct);
 
             return Ok(new

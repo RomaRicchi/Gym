@@ -1,33 +1,157 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "react-bootstrap";
 import Swal from "sweetalert2";
-import { Link } from "react-router-dom";
-import gymApi from "@/api/gymApi"
+import gymApi from "@/api/gymApi";
+import { editarOrden } from "@/views/gestionPagos/OrdenPagoEdit";
+import $ from "jquery";
+import DataTable from "datatables.net-dt";
+import "datatables.net-dt/css/dataTables.dataTables.css";
+import "datatables.net-responsive-dt";
+import "datatables.net-responsive-dt/css/responsive.dataTables.css";
 
 export default function OrdenesList() {
   const [ordenes, setOrdenes] = useState<any[]>([]);
-  const [estados, setEstados] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
 
-  // 🔹 Cargar estados y órdenes
+  const tableRef = useRef<HTMLTableElement | null>(null);
+  const dtInstance = useRef<any>(null);
+  const fechaInicioRef = useRef("");
+  const fechaFinRef = useRef("");
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [resEstados, resOrdenes] = await Promise.all([
-          gymApi.get("/estados"),
-          gymApi.get("/ordenes")
-        ]);
-        setEstados(resEstados.data);
-        setOrdenes(resOrdenes.data);
-      } catch (err) {
-        console.error(err);
-        Swal.fire("Error", "No se pudieron cargar las órdenes de pago", "error");
-      } finally {
-        setLoading(false);
+    fechaInicioRef.current = fechaInicio;
+    fechaFinRef.current = fechaFin;
+    if (dtInstance.current) dtInstance.current.draw();
+  }, [fechaInicio, fechaFin]);
+
+  // 🔹 Cargar datos
+  const fetchOrdenes = async () => {
+    try {
+      const res = await gymApi.get("/ordenes");
+      setOrdenes(res.data || []);
+    } catch {
+      Swal.fire("Error", "No se pudieron cargar las órdenes de pago", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { fetchOrdenes(); }, []);
+
+  // 🔹 Inicializar DataTable
+  useEffect(() => {
+    if (!loading && tableRef.current && !dtInstance.current) {
+      dtInstance.current = new DataTable(tableRef.current, {
+        responsive: true,
+        pageLength: 10,
+        destroy: true,
+        order: [[6, "asc"]], // ordenar por venceISO
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+        },
+        columns: [
+          { data: "socio" },
+          { data: "plan" },
+          { data: "monto" },
+          { data: "vence" },
+          { data: "estado" },
+          { data: "acciones" },
+          { data: "venceISO", visible: false, defaultContent: "" }, // ✅ fallback seguro
+        ],
+      });
+
+      // 🔹 Filtro personalizado
+      $.fn.dataTable.ext.search.push((settings: any, data: string[]) => {
+        const desde = fechaInicioRef.current || "0000-01-01";
+        const hasta = fechaFinRef.current || "9999-12-31";
+        const venceISO = data[6] || ""; // usa columna oculta
+        if (!venceISO) return true;
+        return venceISO >= desde && venceISO <= hasta;
+      });
+    }
+
+    return () => {
+      $.fn.dataTable.ext.search.pop();
+      if (dtInstance.current) {
+        dtInstance.current.destroy(true);
+        dtInstance.current = null;
       }
     };
-    fetchData();
-  }, []);
+  }, [loading]);
+
+  // 🔹 Formateo seguro
+  const parseFecha = (fecha: any) => {
+    try {
+      const d = new Date(fecha);
+      if (isNaN(d.getTime())) return { iso: "", local: "" };
+      const iso = d.toISOString().split("T")[0];
+      const local = d.toLocaleDateString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      return { iso, local };
+    } catch {
+      return { iso: "", local: "" };
+    }
+  };
+
+  // 🔹 Cargar / refrescar filas
+  useEffect(() => {
+    if (dtInstance.current) {
+      const rows = ordenes.map((o) => {
+        const { iso, local } = parseFecha(o.venceEn || o.venceISO || null);
+
+        return {
+          socio: o.socio?.nombre || "—",
+          plan: o.plan?.nombre || "—",
+          monto: `$${o.monto?.toFixed(2) || "0.00"}`,
+          vence: local || "—",
+          venceISO: iso || "", // ✅ garantizado siempre presente
+          estado: `
+            <span class="badge ${
+              o.estado?.nombre?.toLowerCase() === "verificado"
+                ? "bg-success"
+                : o.estado?.nombre?.toLowerCase() === "pendiente"
+                ? "bg-warning text-dark"
+                : o.estado?.nombre?.toLowerCase() === "rechazado"
+                ? "bg-danger"
+                : "bg-secondary"
+            }">${o.estado?.nombre || "Sin estado"}</span>
+          `,
+          acciones: `
+            <div class="d-flex justify-content-center gap-2">
+              <button class="btn btn-primary btn-sm ver" data-id="${o.id}" title="Comprobantes">📎</button>
+              <button class="btn btn-warning btn-sm editar" data-id="${o.id}" title="Cambiar estado">✏️</button>
+              <button class="btn btn-danger btn-sm eliminar" data-id="${o.id}" title="Eliminar">🗑️</button>
+            </div>
+          `,
+        };
+      });
+
+      dtInstance.current.clear();
+      dtInstance.current.rows.add(rows).draw();
+
+      $(tableRef.current!).off("click");
+
+      $(tableRef.current!).on("click", ".editar", async function () {
+        const id = $(this).data("id");
+        const ok = await editarOrden(id);
+        if (ok) fetchOrdenes();
+      });
+
+      $(tableRef.current!).on("click", ".eliminar", function () {
+        const id = $(this).data("id");
+        eliminarOrden(id);
+      });
+
+      $(tableRef.current!).on("click", ".ver", function () {
+        const id = $(this).data("id");
+        window.location.href = `/ordenes/${id}/comprobantes`;
+      });
+    }
+  }, [ordenes]);
 
   if (loading)
     return (
@@ -46,76 +170,53 @@ export default function OrdenesList() {
         ORDENES DE PAGO
       </h1>
 
-      <div className="table-responsive">
-        <table className="table table-striped table-bordered align-middle text-center">
-          <thead className="table-dark">
-            <tr>
-              <th>Socio</th>
-              <th>Plan</th>
-              <th>Monto</th>
-              <th>Vence</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ordenes.length === 0 ? (
-              <tr>
-                <td colSpan={7}>No hay órdenes registradas</td>
-              </tr>
-            ) : (
-              ordenes.map((o) => (
-                <tr key={o.id}>
-                  <td>{o.socio?.nombre || "—"}</td>
-                  <td>{o.plan?.nombre || "—"}</td>
-                  <td>${o.monto.toFixed(2)}</td>
-                  <td>{new Date(o.venceEn).toLocaleDateString()}</td>
-                  <td>
-                    <span
-                      className={`badge bg-${
-                        o.estado?.nombre === "verificado"
-                          ? "success"
-                          : o.estado?.nombre === "pendiente"
-                          ? "warning"
-                          : o.estado?.nombre === "rechazado"
-                          ? "danger"
-                          : "secondary"
-                      }`}
-                    >
-                      {o.estado?.nombre || "Sin estado"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="d-flex justify-content-center gap-2">
-                      <Link
-                        to={`/ordenes/${o.id}/comprobantes`}
-                        className="btn btn-sm btn-outline-primary"
-                      >
-                        📎 Comprobantes
-                      </Link>
-
-                      <Link
-                        to={`/ordenes/editar/${o.id}`}
-                        className="btn btn-sm btn-outline-warning"
-                      >
-                        ✏️ Editar
-                      </Link>
-
-                      <Button
-                        size="sm"
-                        variant="outline-danger"
-                        onClick={() => eliminarOrden(o.id)}
-                      >
-                        🗑️ Eliminar
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      {/* 🔹 Filtro */}
+      <div className="d-flex flex-wrap align-items-end gap-3 mb-3">
+        <div>
+          <label className="fw-bold">Desde</label>
+          <input
+            type="date"
+            className="form-control"
+            value={fechaInicio}
+            onChange={(e) => setFechaInicio(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="fw-bold">Hasta</label>
+          <input
+            type="date"
+            className="form-control"
+            value={fechaFin}
+            onChange={(e) => setFechaFin(e.target.value)}
+          />
+        </div>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setFechaInicio("");
+            setFechaFin("");
+          }}
+        >
+          Limpiar
+        </Button>
       </div>
+
+      <table
+        ref={tableRef}
+        className="display table table-striped table-bordered align-middle text-center"
+        style={{ width: "100%" }}
+      >
+        <thead className="table-dark">
+          <tr>
+            <th>Socio</th>
+            <th>Plan</th>
+            <th>Monto</th>
+            <th>Vence</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+      </table>
     </div>
   );
 
@@ -128,15 +229,13 @@ export default function OrdenesList() {
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
     });
-
     if (!result.isConfirmed) return;
 
     try {
       await gymApi.delete(`/ordenes/${id}`);
-      setOrdenes((prev) => prev.filter((x) => x.id !== id));
       Swal.fire("Eliminada", "La orden fue eliminada correctamente.", "success");
-    } catch (err) {
-      console.error(err);
+      fetchOrdenes();
+    } catch {
       Swal.fire("Error", "No se pudo eliminar la orden.", "error");
     }
   }

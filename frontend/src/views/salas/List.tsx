@@ -88,16 +88,16 @@ export default function SalasList() {
               <td>
                 {/* ✏️ Editar usando el Swal importado */}
                 <button
-                  className="btn btn-sm btn-outline-primary me-2"
+                  className="btn btn-sm btn-warning"
                   onClick={() => SalaEditSwal(s.id.toString(), fetchSalas)}
                 >
-                  ✏️ Editar
+                  ✏️ 
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-danger"
+                  className="btn btn-sm btn-danger"
                   onClick={() => handleDelete(s.id)}
                 >
-                  🗑️ Eliminar
+                  🗑️
                 </button>
               </td>
             </tr>

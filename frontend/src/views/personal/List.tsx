@@ -107,16 +107,16 @@ export default function PersonalList() {
               <td>{p.activo ? "✅" : "❌"}</td>
               <td>
                 <button
-                  className="btn btn-sm btn-outline-primary me-2"
+                  className="btn btn-sm btn-warning"
                   onClick={() => PersonalEditSwal(p.id.toString(),"admin", fetchPersonal)}
                 >
-                  ✏️ Editar
+                  ✏️ 
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-danger"
+                  className="btn btn-sm btn-danger"
                   onClick={() => handleDelete(p.id)}
                 >
-                  🗑️ Eliminar
+                  🗑️ 
                 </button>
               </td>
             </tr>

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System; // Agregado para DateTime.UtcNow
 using System.IO; 
+using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
@@ -24,66 +25,92 @@ namespace Api.Controllers
 
         // 🔹 GET /api/ordenes
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct)
+        public async Task<IActionResult> GetAll(CancellationToken ct = default)
         {
-            var lista = await _db.OrdenesPago
-                .Include(o => o.Socio)
-                .Include(o => o.Plan)
-                .Include(o => o.Estado)
-                .Include(o => o.Comprobante) // ✅ relación 1:1 añadida
-                .AsNoTracking()
-                .OrderByDescending(o => o.Id)
-                .Select(o => new
-                {
-                    o.Id,
-                    Socio = o.Socio.Nombre,
-                    Plan = o.Plan.Nombre,
-                    Estado = o.Estado.Nombre,
-                    o.Monto,
-                    o.CreadoEn,
-                    o.VenceEn,
-                    Comprobante = o.Comprobante != null ? o.Comprobante.FileUrl : null
-                })
-                .ToListAsync(ct);
+            try
+            {
+                var ordenes = await _db.OrdenesPago
+                    .Include(o => o.Socio)
+                    .Include(o => o.Plan)
+                    .Include(o => o.Estado)
+                    .Include(o => o.Comprobante)
+                    .AsNoTracking()
+                    .OrderByDescending(o => o.CreadoEn)
+                    .Select(o => new
+                    {
+                        o.Id,
+                        Socio = o.Socio != null
+                            ? new { o.Socio.Id, o.Socio.Nombre, o.Socio.Email }
+                            : null,
+                        Plan = o.Plan != null
+                            ? new { o.Plan.Id, o.Plan.Nombre }
+                            : null,
+                        Estado = o.Estado != null
+                            ? new { o.Estado.Id, o.Estado.Nombre }
+                            : null,
+                        o.Monto,
+                        o.CreadoEn,
+                        o.VenceEn,
+                        Comprobante = o.Comprobante != null
+                            ? new { o.Comprobante.Id, o.Comprobante.FileUrl }
+                            : null
+                    })
+                    .ToListAsync(ct);
 
-            return Ok(lista);
+                return Ok(ordenes);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al obtener órdenes de pago: {ex.Message}");
+                return StatusCode(500, new { message = "Error al obtener las órdenes de pago." });
+            }
         }
+
 
         // 🔹 GET /api/ordenes/{id}
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken ct)
+        public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
         {
-            var orden = await _db.OrdenesPago
-                .Include(o => o.Socio)
-                .Include(o => o.Plan)
-                .Include(o => o.Estado)
-                .Include(o => o.Comprobante) // ✅ incluye comprobante
-                .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Id == id, ct);
-
-            if (orden == null)
-                return NotFound();
-
-            return Ok(new
+            try
             {
-                orden.Id,
-                Socio = orden.Socio.Nombre,
-                Plan = orden.Plan.Nombre,
-                Estado = orden.Estado.Nombre,
-                orden.Monto,
-                orden.CreadoEn,
-                orden.VenceEn,
-                orden.Notas,
-                Comprobante = orden.Comprobante != null
-                    ? new
+                var orden = await _db.OrdenesPago
+                    .Include(o => o.Socio)
+                    .Include(o => o.Plan)
+                    .Include(o => o.Estado)
+                    .Include(o => o.Comprobante)
+                    .AsNoTracking()
+                    .Where(o => o.Id == id)
+                    .Select(o => new
                     {
-                        orden.Comprobante.Id,
-                        orden.Comprobante.FileUrl,
-                        orden.Comprobante.MimeType,
-                        orden.Comprobante.SubidoEn
-                    }
-                    : null
-            });
+                        o.Id,
+                        Socio = o.Socio != null
+                            ? new { o.Socio.Id, o.Socio.Nombre, o.Socio.Email }
+                            : null,
+                        Plan = o.Plan != null
+                            ? new { o.Plan.Id, o.Plan.Nombre }
+                            : null,
+                        Estado = o.Estado != null
+                            ? new { o.Estado.Id, o.Estado.Nombre }
+                            : null,
+                        o.Monto,
+                        o.CreadoEn,
+                        o.VenceEn,
+                        Comprobante = o.Comprobante != null
+                            ? new { o.Comprobante.Id, o.Comprobante.FileUrl }
+                            : null
+                    })
+                    .FirstOrDefaultAsync(ct);
+
+                if (orden == null)
+                    return NotFound(new { message = "Orden de pago no encontrada." });
+
+                return Ok(orden);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al obtener orden de pago por ID: {ex.Message}");
+                return StatusCode(500, new { message = "Error al obtener la orden de pago." });
+            }
         }
 
   // 🔹 PATCH /api/ordenes/{id}/comprobante
@@ -239,7 +266,7 @@ namespace Api.Controllers
             return Ok(new { ok = true, message = "Estado actualizado correctamente." });
         }
 
-        // 🔹 DELETE /api/ordenes/{id}
+        // DELETE /api/ordenes/{id}
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
         {
@@ -265,5 +292,25 @@ namespace Api.Controllers
 
             return Ok(new { ok = true, message = "Orden y comprobante eliminados correctamente." });
         }
+
+        //  PUT /api/ordenes/{id}/estado/simple
+        [HttpPut("{id:int}/estado/simple")]
+        public async Task<IActionResult> ActualizarSoloEstado(int id, [FromBody] EstadoUpdateDto dto, CancellationToken ct)
+        {
+            var orden = await _db.OrdenesPago.FindAsync(new object[] { id }, ct);
+            if (orden == null)
+                return NotFound("Orden no encontrada.");
+
+            orden.EstadoId = dto.EstadoId;
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new { ok = true, message = "Estado actualizado correctamente (sin crear suscripción)." });
+        }
+
+        public class EstadoUpdateDto
+            {
+                public int EstadoId { get; set; }
+            }
+
     }
 }

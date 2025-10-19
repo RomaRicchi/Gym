@@ -4,6 +4,7 @@ using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Contracts;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers;
 

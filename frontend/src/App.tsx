@@ -38,8 +38,6 @@ import TurnoPlantillaEdit from "@/views/agenda/turnoPlantilla/Edit";
 
 // 🧾 Órdenes de pago
 import OrdenesList from "@/views/gestionPagos/List";
-import OrdenPagoCreate from "@/views/gestionPagos/Create";
-import OrdenPagoEdit from "@/views/gestionPagos/Edit";
 
 // 📑 Comprobantes
 import ComprobantesList from "@/views/gestionPagos/comprobantes/List";
@@ -47,8 +45,6 @@ import ComprobanteUpload from "@/views/gestionPagos/comprobantes/Upload";
 
 // ⚙️ Estados de orden de pago
 import EstadosList from "@/views/gestionPagos/estado/List";
-import EstadoCreate from "@/views/gestionPagos/estado/Create";
-import EstadoEdit from "@/views/gestionPagos/estado/Edit";
 
 // 🔗 Orden-Turno
 import OrdenTurnosList from "@/views/agenda/ordenTurno/List";
@@ -107,8 +103,6 @@ export default function App() {
 
             {/* 🧾 Órdenes de Pago */}
             <Route path="/ordenes" element={<OrdenesList />} />
-            <Route path="/ordenes/nueva" element={<OrdenPagoCreate />} />
-            <Route path="/ordenes/editar/:id" element={<OrdenPagoEdit />} />
 
             {/* 📑 Comprobantes */}
             <Route path="/comprobantes" element={<ComprobantesList />} />
@@ -117,8 +111,6 @@ export default function App() {
 
             {/* ⚙️ Estados */}
             <Route path="/estados" element={<EstadosList />} />
-            <Route path="/estados/nuevo" element={<EstadoCreate />} />
-            <Route path="/estados/editar/:id" element={<EstadoEdit />} />
 
             {/* 🔗 Orden - Turnos */}
             <Route path="/ordenes/:id/turnos" element={<OrdenTurnosList />} />

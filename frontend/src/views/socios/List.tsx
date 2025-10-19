@@ -143,25 +143,25 @@ export default function SociosList() {
               <td>{s.activo ? "✅" : "❌"}</td>
               <td>
                 <button
-                  className="btn btn-sm btn-outline-primary me-2"
+                  className="btn btn-sm btn-warning"
                   onClick={async () => {
                     const actualizado = await mostrarFormEditarSocio(s.id);
                     if (actualizado) fetchSocios();
                   }}
                 >
-                  ✏️ Editar
+                  ✏️ 
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-success me-2"
+                  className="btn btn-sm btn-success"
                   onClick={() => handleSuscribirse(s.id, s.nombre)}
                 >
-                  💳 Suscribirse
+                  💳
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-danger"
+                  className="btn btn-sm btn-danger"
                   onClick={() => handleDelete(s.id, s.nombre)}
                 >
-                  🗑️ Eliminar
+                  🗑️ 
                 </button>
               </td>
             </tr>
