@@ -9,9 +9,13 @@ export default defineConfig({
     },
   },
   define: {
-    global: "window", // 👈 necesario para jQuery / Select2
+    global: "window", 
   },
   optimizeDeps: {
-    include: ["jquery", "select2"], // 👈 asegura que Vite los procese correctamente
+    include: ["jquery", "select2"],
+  },
+  server: {
+    host: true,
+    port: 5173
   },
 });

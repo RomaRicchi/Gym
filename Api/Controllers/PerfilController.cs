@@ -3,6 +3,9 @@ using Api.Data.Models;
 using Api.Contracts; 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
+using BCrypt.Net;
 
 namespace Api.Controllers
 {
@@ -53,7 +56,7 @@ namespace Api.Controllers
                     : new { Id = 0, Url = "/images/user.png", Nombre = "avatar por defecto" }
             });
         }
-        
+
         // ✅ Subir o reemplazar avatar
         [HttpPost("{id:int}/avatar")]
         public async Task<IActionResult> SubirAvatar(int id, IFormFile archivo, CancellationToken ct)
@@ -109,6 +112,71 @@ namespace Api.Controllers
             await _db.SaveChangesAsync(ct);
 
             return Ok(new { message = "✅ Avatar actualizado correctamente.", nuevoAvatar });
+        }
+
+        [HttpPatch("{id}/password")]
+        public async Task<IActionResult> CambiarPassword(int id, [FromBody] PasswordUpdateDto dto, CancellationToken ct)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Actual) || string.IsNullOrWhiteSpace(dto.Nueva))
+                return BadRequest(new { message = "Debe completar todos los campos." });
+
+            var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Id == id, ct);
+            if (usuario == null)
+                return NotFound(new { message = "Usuario no encontrado." });
+
+            bool isVerified = false;
+            string storedHash = usuario.PasswordHash ?? string.Empty;
+
+            if (storedHash.StartsWith("$2") && storedHash.Length > 20) 
+            {
+                try
+                {
+                    if (BCrypt.Net.BCrypt.Verify(dto.Actual, storedHash))
+                    {
+                        isVerified = true;
+                    }
+                }
+                catch (BCrypt.Net.SaltParseException)
+                {
+                    
+                }
+            }
+
+            if (!isVerified)
+            {
+                if (VerificarPassword(dto.Actual, storedHash))
+                {
+                    isVerified = true;
+                }
+                else if (dto.Actual == storedHash) 
+                {
+                    isVerified = true;
+                }
+            }
+
+
+            if (!isVerified)
+                return BadRequest(new { message = "La contraseña actual es incorrecta." });
+
+            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Nueva);
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new { message = "Contraseña actualizada correctamente." });
+        }
+
+        private static bool VerificarPassword(string password, string hash)
+        {
+            using var sha = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(password);
+            var hashInput = Convert.ToBase64String(sha.ComputeHash(bytes));
+            return hashInput == hash;
+        }
+
+        private static string HashearPassword(string password)
+        {
+            using var sha = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(password);
+            return Convert.ToBase64String(sha.ComputeHash(bytes));
         }
 
     }

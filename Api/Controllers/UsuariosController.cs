@@ -109,8 +109,6 @@ namespace Api.Controllers
             return Ok(new { message = "✅ Usuario actualizado correctamente." });
         }
 
-
-
         // 🔹 DELETE lógico: /api/usuarios/{id}
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
@@ -123,23 +121,6 @@ namespace Api.Controllers
             await _db.SaveChangesAsync(ct);
 
             return Ok(new { message = "🗑️ Usuario marcado como inactivo." });
-        }
-
-        // 🔹 PATCH: /api/usuarios/{id}/password
-        [HttpPatch("{id:int}/password")]
-        public async Task<IActionResult> CambiarPassword(int id, [FromBody] CambiarPasswordRequest dto, CancellationToken ct)
-        {
-            var usuario = await _db.Usuarios.FindAsync(new object[] { id }, ct);
-            if (usuario == null)
-                return NotFound(new { message = "Usuario no encontrado." });
-
-            if (!Verify(dto.Actual, usuario.PasswordHash))
-                return BadRequest(new { message = "La contraseña actual es incorrecta." });
-
-            usuario.PasswordHash = HashPassword(dto.Nueva);
-            await _db.SaveChangesAsync(ct);
-
-            return Ok(new { message = "🔒 Contraseña actualizada correctamente." });
         }
 
         // 🔹 POST: /api/usuarios/login
@@ -185,18 +166,5 @@ namespace Api.Controllers
                 }
             });
         }
-    }
-
-    // 📦 Modelos auxiliares del contrato
-    public class LoginRequest
-    {
-        public string Email { get; set; } = string.Empty; // puede ser email o alias
-        public string Password { get; set; } = string.Empty;
-    }
-
-    public class CambiarPasswordRequest
-    {
-        public string Actual { get; set; } = string.Empty;
-        public string Nueva { get; set; } = string.Empty;
     }
 }

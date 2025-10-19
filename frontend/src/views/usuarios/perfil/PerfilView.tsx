@@ -131,12 +131,12 @@ export default function PerfilView() {
         </div>
 
         <div className="d-grid gap-2 mt-3">
-          <button onClick={handleAvatarUpload} className="btn btn-info text-black fw-semibold">
+          <button onClick={handleAvatarUpload} className="btn btn-warning text-black fw-semibold">
             📸 Cambiar Avatar
           </button>
           <button
             onClick={() => PasswordEditSwal(userId)}
-            className="btn btn-info fw-semibold"
+            className="btn btn-warning fw-semibold"
           >
             🔒 Cambiar Contraseña
           </button>

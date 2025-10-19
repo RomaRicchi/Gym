@@ -84,16 +84,16 @@ export default function RolesList() {
               <td>{r.nombre}</td>
               <td>
                 <button
-                  className="btn btn-sm btn-outline-primary me-2"
+                  className="btn btn-sm btn-warning me-2"
                   onClick={() => RolEditSwal(r.id.toString(), fetchRoles)}
                 >
-                  ✏️ Editar
+                  ✏️
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-danger"
+                  className="btn btn-sm btn-danger"
                   onClick={() => handleDelete(r.id)}
                 >
-                  🗑️ Eliminar
+                  🗑️
                 </button>
               </td>
             </tr>
