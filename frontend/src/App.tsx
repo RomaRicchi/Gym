@@ -59,6 +59,7 @@ import RolesList from "@/views/usuarios/rol/List";
 
 // 👤 Usuarios
 import UsuariosList from "@/views/usuarios/List";
+import ResetPassword from "@/views/usuarios/ResetPassword";
 
 /* 🔝 Scroll automático al cambiar de ruta */
 function ScrollToTop() {
@@ -133,7 +134,7 @@ export default function App() {
 
         {/* 🌐 Ruta pública: Login */}
         <Route path="/login" element={<Login />} />
-
+        <Route path="/reset-password" element={<ResetPassword/>} />
         {/* 🚧 Redirección para rutas inexistentes */}
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>

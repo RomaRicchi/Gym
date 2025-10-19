@@ -42,8 +42,9 @@ builder.Services.AddDbContext<GymDbContext>(options =>
         mySqlOptions => mySqlOptions.SchemaBehavior(MySqlSchemaBehavior.Ignore)));
 
 
-// === 💾 File storage local para comprobantes o avatares ===
+// === File storage local para comprobantes o avatares y reset password ===
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 // Repositories
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();
 builder.Services.AddScoped<ISocioRepository, SocioRepository>();

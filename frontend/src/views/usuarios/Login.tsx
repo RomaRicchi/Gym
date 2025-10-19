@@ -21,11 +21,9 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // 🔹 Petición al backend
       const res = await gymApi.post("/usuarios/login", { email, password });
       const { token, usuario } = res.data;
 
-      // 🔹 Guardar sesión en localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("usuario", JSON.stringify(usuario));
 
@@ -37,9 +35,8 @@ export default function Login() {
         showConfirmButton: false,
       });
 
-      // 🔹 Redirigir al inicio o dashboard
       navigate("/");
-      window.location.reload(); // para actualizar el navbar con el nombre
+      window.location.reload();
     } catch (err: any) {
       console.error(err);
       Swal.fire(
@@ -49,6 +46,40 @@ export default function Login() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔹 Swal de recuperación de contraseña
+  const handleForgotPassword = async () => {
+    const { value: email } = await Swal.fire<string>({
+      title: "Recuperar contraseña",
+      input: "email",
+      inputPlaceholder: "correo@ejemplo.com",
+      confirmButtonText: "Enviar enlace",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      preConfirm: (value) => {
+        if (!value) Swal.showValidationMessage("El email es obligatorio");
+        return value;
+      },
+    });
+
+    if (email) {
+      try {
+        await gymApi.post("/usuarios/forgot-password", { email });
+        Swal.fire(
+          "📧 Correo enviado",
+          "Revisa tu bandeja de entrada para continuar con el restablecimiento.",
+          "success"
+        );
+      } catch (err: any) {
+        console.error(err);
+        Swal.fire(
+          "Error",
+          err.response?.data || "No se pudo enviar el correo. Verifica el email.",
+          "error"
+        );
+      }
     }
   };
 
@@ -63,7 +94,7 @@ export default function Login() {
           width: "100%",
           maxWidth: 420,
           borderRadius: "1rem",
-          backgroundColor: "#ff6b00", 
+          backgroundColor: "#ff6b00",
           border: "none",
         }}
       >
@@ -120,7 +151,7 @@ export default function Login() {
           <div className="text-center mt-3">
             <a
               href="#"
-              onClick={() => navigate("/recuperar")}
+              onClick={handleForgotPassword}
               className="text-decoration-none small text-white-50"
             >
               ¿Olvidaste tu contraseña?

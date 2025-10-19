@@ -37,7 +37,7 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<VOcupacionHoy> VOcupacionHoy { get; set; }
     public virtual DbSet<VOrdenesAr> VOrdenesAr { get; set; }
     public virtual DbSet<VSuscripcionesAr> VSuscripcionesAr { get; set; }
-
+    public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -66,29 +66,28 @@ public partial class GymDbContext : DbContext
         modelBuilder.Entity<RegistroEntrenamiento>().ToTable("registro_entrenamiento");
         modelBuilder.Entity<RegistroItem>().ToTable("registro_item");
         modelBuilder.Entity<DiaSemana>().ToTable("dia_semana");
+        modelBuilder.Entity<PasswordResetToken>().ToTable("password_reset_tokens");
+        modelBuilder.Entity<PasswordResetToken>()
+            .HasOne(p => p.Usuario)
+            .WithMany()
+            .HasForeignKey(p => p.UsuarioId)
+            .OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<Avatar>(entity =>
         {
             entity.ToTable("avatar");
-
             entity.HasKey(e => e.Id);
-
             entity.Property(e => e.Id)
                 .HasColumnName("id");
-
             entity.Property(e => e.Url)
                 .HasColumnName("url")
                 .HasMaxLength(255)
                 .IsRequired();
-
             entity.Property(e => e.Nombre)
                 .HasColumnName("nombre")
                 .HasMaxLength(100);
-
             entity.Property(e => e.EsPredeterminado)
                 .HasColumnName("es_predeterminado")
                 .HasDefaultValue(false);
-
-            // Relación inversa (1 a muchos)
             entity.HasMany(e => e.Usuarios)
                 .WithOne(u => u.Avatar)
                 .HasForeignKey(u => u.IdAvatar)

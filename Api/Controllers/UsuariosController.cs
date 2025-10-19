@@ -4,6 +4,7 @@ using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Contracts;
+using Api.Services;
 using static BCrypt.Net.BCrypt;
 
 namespace Api.Controllers
@@ -13,12 +14,16 @@ namespace Api.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly IUsuarioRepository _repo;
+        private readonly IConfiguration _config;
         private readonly GymDbContext _db;
+        private readonly IEmailService _emailService;
 
-        public UsuariosController(IUsuarioRepository repo, GymDbContext db)
+        public UsuariosController(IUsuarioRepository repo,  IConfiguration config, GymDbContext db, IEmailService emailService)
         {
             _repo = repo;
+            _config = config;
             _db = db;
+            _emailService = emailService;
         }
 
         // 🔹 GET: /api/usuarios
@@ -165,6 +170,48 @@ namespace Api.Controllers
                     Avatar = usuario.Avatar?.Url
                 }
             });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            if (user == null) return NotFound("No existe un usuario con ese correo.");
+
+            var token = Guid.NewGuid().ToString();
+            var reset = new PasswordResetToken
+            {
+                UsuarioId = user.Id,
+                Token = token,
+                Expira = DateTime.UtcNow.AddHours(1)
+            };
+
+            _db.PasswordResetTokens.Add(reset);
+            await _db.SaveChangesAsync();
+
+            // ✉️ Enviar correo con el token
+            var frontendUrl = _config["FrontendUrl"];
+            var resetLink = $"{frontendUrl}/reset-password?token={token}";
+            await _emailService.SendEmailAsync(user.Email, "Recuperar contraseña",
+                $"Haz clic en el siguiente enlace para restablecer tu contraseña:<br><a href='{resetLink}'>Restablecer contraseña</a>");
+
+            return Ok("Correo de recuperación enviado.");
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var reset = await _db.PasswordResetTokens
+                .Include(x => x.Usuario)
+                .FirstOrDefaultAsync(x => x.Token == dto.Token && x.Expira > DateTime.UtcNow);
+
+            if (reset == null) return BadRequest("Token inválido o expirado.");
+
+            reset.Usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            _db.PasswordResetTokens.Remove(reset);
+            await _db.SaveChangesAsync();
+
+            return Ok("Contraseña restablecida correctamente.");
         }
     }
 }
