@@ -4,7 +4,7 @@ import gymApi from "@/api/gymApi";
 
 export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
   try {
-    // 1️⃣ Traer planes y estados de orden
+    // 1️⃣ Traer planes y estados
     const [{ data: planesResponse }, { data: estados }] = await Promise.all([
       gymApi.get("/planes"),
       gymApi.get("/estadoOrdenPago"),
@@ -12,7 +12,7 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
 
     const planes = planesResponse.items || planesResponse;
 
-    // 2️⃣ Generar selects
+    // 2️⃣ Opciones para selects
     const opcionesPlanes = planes
       .map(
         (p: any) =>
@@ -31,43 +31,37 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
       )
       .join("");
 
-    // 3️⃣ Mostrar formulario SweetAlert2 con campos alineados
+    // 3️⃣ Formulario visual con SweetAlert2
     const { value: formValues } = await Swal.fire({
       title: "🧾 Nueva orden de pago",
       html: `
-        <div style="text-align:left;overflow-x:hidden;max-width:100%;display:flex;flex-direction:column;gap:10px;">
+        <div style="text-align:left;display:flex;flex-direction:column;gap:10px;max-width:100%;">
           <p style="margin:0;"><strong>Socio:</strong> ${socio.nombre}</p>
           <hr style="margin:4px 0 8px 0;">
 
           <label>Seleccionar plan</label>
-          <select id="plan" 
-            style="background:#fff;color:#000;border:1px solid #ccc;
-                   border-radius:6px;padding:6px;width:100%;">
+          <select id="plan"
+            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;">
             ${opcionesPlanes}
           </select>
 
           <label>Fecha de inicio</label>
           <input type="date" id="inicio"
-            style="background:#fff;color:#000;border:1px solid #ccc;
-                   border-radius:6px;padding:6px;width:100%;" />
+            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;" />
 
           <label>Estado</label>
           <select id="estado"
-            style="background:#fff;color:#000;border:1px solid #ccc;
-                   border-radius:6px;padding:6px;width:100%;">
+            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;">
             ${opcionesEstados}
           </select>
 
           <label>Comprobante (PDF o imagen)</label>
           <input type="file" id="comprobante" accept=".pdf,image/*"
-            style="background:#fff;color:#000;border:1px solid #ccc;
-                   border-radius:6px;padding:6px;width:100%;" />
+            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;" />
 
           <label>Notas</label>
           <textarea id="notas" placeholder="Observaciones opcionales..."
-            style="background:#fff;color:#000;border:1px solid #ccc;
-                   border-radius:6px;padding:6px;width:100%;height:80px;
-                   resize:none;"></textarea>
+            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;height:80px;resize:none;"></textarea>
         </div>
       `,
       focusConfirm: false,
@@ -85,6 +79,7 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
 
         if (!planId || !inicio || !estadoId) {
           Swal.showValidationMessage("⚠️ Debe completar los campos obligatorios.");
+          return false;
         }
 
         return { planId: Number(planId), inicio, estadoId: Number(estadoId), notas, file };
@@ -94,51 +89,40 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
     if (!formValues) return;
 
     const { planId, inicio, estadoId, notas, file } = formValues;
-    const fechaInicio = new Date(inicio);
-    const fechaFin = new Date(fechaInicio);
-    fechaFin.setDate(fechaFin.getDate() + 30);
 
-    // 4️⃣ Crear la orden
-    const ordenData = {
-      socioId: socio.id,
-      planId,
-      estadoId,
-      venceEn: fechaFin.toISOString(),
-      notas: notas || null,
-    };
+    // 4️⃣ Construir FormData para enviar al backend
+    const formData = new FormData();
+    formData.append("SocioId", socio.id.toString());
+    formData.append("PlanId", planId.toString());
+    formData.append("EstadoId", estadoId.toString());
+    formData.append("Notas", notas || "");
 
-    const { data: orden } = await gymApi.post("/ordenes", ordenData);
+    // ✅ Fecha en formato ISO para ASP.NET (importante)
+    const fechaInicioISO = new Date(inicio).toISOString();
+    formData.append("FechaInicio", fechaInicioISO);
 
-    // 5️⃣ Si se adjuntó comprobante, subirlo
-    let comprobanteUrl = null;
     if (file) {
-      const formData = new FormData();
-      // formData.append("ordenPagoId", orden.id); // ❌ ¡ESTA ERA LA LÍNEA QUE CAUSABA EL ERROR 400!
-      formData.append("file", file); // ✅ Solo enviamos el archivo
-
-      const { data: comp } = await gymApi.post("/comprobantes", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      comprobanteUrl = comp.fileUrl || comp.FileUrl || null;
-      
-      // 5.1️⃣ Asignar el ID del comprobante a la orden recién creada (NUEVO PASO)
-      if (comp.comprobanteId) {
-        await gymApi.patch(`/ordenes/${orden.id}/comprobante`, { 
-            comprobanteId: comp.comprobanteId 
-        });
-      }
+      formData.append("file", file);
     }
 
-    // 6️⃣ Confirmación visual
+    // 5️⃣ Enviar al endpoint correcto (una sola request)
+    const { data: orden } = await gymApi.post("/ordenes", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    // 6️⃣ Mostrar confirmación
+    const plan = planes.find((p: any) => p.id === planId);
+    const estado = estados.find((e: any) => e.id === estadoId);
+    const comprobanteUrl = orden?.comprobanteId ? `uploads/comprobantes/${orden.comprobanteId}` : null;
+
     Swal.fire({
       icon: "success",
       title: "Orden creada correctamente",
       html: `
         <p><strong>Socio:</strong> ${socio.nombre}</p>
-        <p><strong>Plan:</strong> ${planes.find((p: any) => p.id === planId)?.nombre}</p>
-        <p><strong>Monto:</strong> 💰 $${planes.find((p: any) => p.id === planId)?.precio}</p>
-        <p><strong>Estado:</strong> ${estados.find((e: any) => e.id === estadoId)?.nombre}</p>
+        <p><strong>Plan:</strong> ${plan?.nombre}</p>
+        <p><strong>Monto:</strong> 💰 $${plan?.precio}</p>
+        <p><strong>Estado:</strong> ${estado?.nombre}</p>
         ${
           comprobanteUrl
             ? `<p><strong>Comprobante:</strong> <a href="http://localhost:5144/${comprobanteUrl}" target="_blank">Ver archivo</a></p>`

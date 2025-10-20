@@ -121,8 +121,17 @@ export default function OrdenesList() {
             }">${o.estado?.nombre || "Sin estado"}</span>
           `,
           acciones: `
-            <div class="d-flex justify-content-center gap-2">
-              <button class="btn btn-primary btn-sm ver" data-id="${o.id}" title="Comprobantes">📎</button>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn ${
+                  o.comprobante && o.comprobante.id
+                    ? "btn-primary"
+                    : "btn-secondary disabled"
+                } btn-sm ver"
+                  data-id="${o.id}"
+                  ${!o.comprobante ? "disabled" : ""}
+                  title="Comprobantes">
+                  📎
+                </button>
               <button class="btn btn-warning btn-sm editar" data-id="${o.id}" title="Cambiar estado">✏️</button>
               <button class="btn btn-danger btn-sm eliminar" data-id="${o.id}" title="Eliminar">🗑️</button>
             </div>
