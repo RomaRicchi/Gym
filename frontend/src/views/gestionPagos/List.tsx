@@ -97,7 +97,7 @@ export default function OrdenesList() {
     }
   };
 
-  // 🔹 Cargar / refrescar filas
+  //  Cargar / refrescar filas
   useEffect(() => {
     if (dtInstance.current) {
       const rows = ordenes.map((o) => {
@@ -155,10 +155,43 @@ export default function OrdenesList() {
         eliminarOrden(id);
       });
 
-      $(tableRef.current!).on("click", ".ver", function () {
+      $(tableRef.current!).on("click", ".ver", async function () {
         const id = $(this).data("id");
-        window.location.href = `/ordenes/${id}/comprobantes`;
+
+        try {
+          const { data } = await gymApi.get(`/ordenes/${id}`);
+          const fileUrl = data?.comprobante?.fileUrl;
+
+          if (!fileUrl) {
+            Swal.fire("Sin comprobante", "Esta orden no tiene archivo cargado.", "info");
+            return;
+          }
+
+          // 🧩 Construimos la URL completa con el backend
+          const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5144";
+          const fullUrl = `${baseUrl}/${fileUrl}`; 
+          if (fileUrl.toLowerCase().endsWith(".pdf")) {
+            Swal.fire({
+              title: "Comprobante PDF",
+              html: `<iframe src="${fullUrl}" width="100%" height="500px"></iframe>`,
+              width: "80%",
+              confirmButtonText: "Cerrar",
+            });
+          } else {
+            Swal.fire({
+              title: "Comprobante",
+              imageUrl: fullUrl,
+              imageAlt: "Comprobante de pago",
+              width: "60%",
+              confirmButtonText: "Cerrar",
+            });
+          }
+        } catch (err) {
+          Swal.fire("Error", "No se pudo cargar el comprobante.", "error");
+        }
       });
+
+
     }
   }, [ordenes]);
 

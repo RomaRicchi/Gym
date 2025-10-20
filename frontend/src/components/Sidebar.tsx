@@ -156,18 +156,6 @@ export default function Sidebar() {
           </NavLink>
         </li>
 
-        <li className="nav-item">
-          <NavLink
-            to="/comprobantes"
-            className={({ isActive }) =>
-              `nav-link ${isActive ? "active-link" : ""}`
-            }
-          >
-            <FontAwesomeIcon icon={faFileLines} className="me-2" />
-            Comprobantes
-          </NavLink>
-        </li>
-
         <hr className="sidebar-divider" />
 
         {/* Usuarios */}
