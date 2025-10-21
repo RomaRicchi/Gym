@@ -1,14 +1,17 @@
 /* 🎨 Estilo personalizado global para SweetAlert2 */
+/* 🎨 Estilo personalizado global para SweetAlert2 */
 .swal2-popup {
   background-color: #ffb347 !important; /* naranja suave */
   color: #222 !important;
   border-radius: 1rem !important;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
   padding: 1.5rem !important;
-  text-align: left !important; /* ✅ Alinear contenido a la izquierda */
-  max-width: 480px !important;
-  overflow-x: hidden !important; /* 🚫 Quita la barra horizontal */
+  text-align: left !important;
+  max-width: 90vw !important;         /* 🔸 responsivo */
+  overflow-y: auto !important;        /* ✅ scroll interno */
+  overflow-x: hidden !important;
 }
+
 
 /* 🧍 Título centrado */
 .swal2-title {

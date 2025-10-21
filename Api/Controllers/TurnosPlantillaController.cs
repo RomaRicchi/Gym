@@ -8,7 +8,7 @@ namespace Api.Controllers
 {
     [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/turnosplantilla")] 
     public class TurnosPlantillaController : ControllerBase
     {
         private readonly ITurnoPlantillaRepository _repo;

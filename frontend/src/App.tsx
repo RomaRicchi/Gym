@@ -35,6 +35,9 @@ import SalasList from "@/views/salas/List";
 import TurnosPlantillaList from "@/views/agenda/turnoPlantilla/List";
 import TurnoPlantillaCreate from "@/views/agenda/turnoPlantilla/Create";
 import TurnoPlantillaEdit from "@/views/agenda/turnoPlantilla/Edit";
+import TurnosAssign from "@/views/agenda/suscripcionTurno/TurnosAssign";
+import TurnosList from "@/views/agenda/suscripcionTurno/TurnosList";
+import AgendaCalendar from "@/views/agenda/AgendaCalendar";
 
 // 🧾 Órdenes de pago
 import OrdenesList from "@/views/gestionPagos/List";
@@ -96,10 +99,22 @@ export default function App() {
             {/* 🏋️ Salas */}
             <Route path="/salas" element={<SalasList />} />
 
-            {/* 📆 Turnos Plantilla */}
+            {/* 🗓️ Agenda y Turnos */}
+            <Route path="/agenda/calendario" element={<AgendaCalendar />} />
+
+            {/* Turnos plantilla */}
             <Route path="/turnos" element={<TurnosPlantillaList />} />
             <Route path="/turnos/nuevo" element={<TurnoPlantillaCreate />} />
             <Route path="/turnos/editar/:id" element={<TurnoPlantillaEdit />} />
+
+            {/* Turnos por suscripción */}
+            <Route path="/suscripciones/:id/asignar-turnos" element={<TurnosAssign />} />
+            <Route path="/suscripciones/turnos" element={<TurnosList />} />
+
+            {/* Turnos por orden */}
+            <Route path="/ordenes/:id/turnos" element={<OrdenTurnosList />} />
+            <Route path="/ordenes/:id/asignar-turnos" element={<OrdenTurnoAssign />} />
+
 
             {/* 🧾 Órdenes de Pago */}
             <Route path="/ordenes" element={<OrdenesList />} />

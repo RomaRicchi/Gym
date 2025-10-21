@@ -20,12 +20,13 @@ export default function SuscripcionesList() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // 🔹 Cargar lista
   const fetchSuscripciones = async () => {
     try {
       const res = await gymApi.get("/suscripciones");
       const data = res.data.items || res.data;
 
-      // 🔁 Convertir tinyint(1) → boolean (por si llega 0/1)
+      // tinyint(1) → boolean
       const parsed = data.map((s: any) => ({
         ...s,
         estado: Boolean(s.estado),
@@ -43,6 +44,7 @@ export default function SuscripcionesList() {
     fetchSuscripciones();
   }, []);
 
+  // 🔹 Eliminar
   const handleDelete = async (id: number) => {
     const result = await Swal.fire({
       title: "¿Eliminar suscripción?",
@@ -69,13 +71,12 @@ export default function SuscripcionesList() {
 
   return (
     <div className="mt-4">
-        <h1
-          className="text-center fw-bold mb-4"
-          style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
-        >
-          SUSCRIPCIONES
-        </h1>
-     
+      <h1
+        className="text-center fw-bold mb-4"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        SUSCRIPCIONES
+      </h1>
 
       <table className="table table-striped table-hover align-middle text-center">
         <thead className="table-dark">
@@ -103,21 +104,35 @@ export default function SuscripcionesList() {
                 )}
               </td>
               <td>
-                <button
-                  className="btn btn-sm btn-warning"
-                  onClick={async () => {
-                    const ok = await mostrarFormEditarSuscripcion(s.id);
-                    if (ok) fetchSuscripciones(); 
-                  }}
-                >
-                  ✏️ 
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={() => handleDelete(s.id)}
-                >
-                  🗑️ 
-                </button>
+                <div className="d-flex justify-content-center gap-2">
+                  {/* ✏️ Editar */}
+                  <button
+                    className="btn btn-sm btn-warning"
+                    onClick={async () => {
+                      const ok = await mostrarFormEditarSuscripcion(s.id);
+                      if (ok) fetchSuscripciones();
+                    }}
+                  >
+                    ✏️
+                  </button>
+
+                  {/* 🗑️ Eliminar */}
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDelete(s.id)}
+                  >
+                    🗑️
+                  </button>
+
+                  {/* 🗓️ Asignar Turnos */}
+                  <button
+                    className="btn btn-sm btn-primary"
+                    title="Asignar turnos al socio"
+                    onClick={() => navigate(`/suscripciones/${s.id}/asignar-turnos`)}
+                  >
+                    🗓️
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

@@ -19,7 +19,9 @@ builder.Services.AddControllers()
     {
         o.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase; 
     });
+
 
 // === 🌐 CORS (para frontend React/Vite en puerto 5173) ===
 builder.Services.AddCors(options =>

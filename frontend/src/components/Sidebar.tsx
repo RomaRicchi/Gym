@@ -10,9 +10,10 @@ import {
   faUserTie,
   faFileInvoice,
   faGears,
-  faFileLines,
   faPuzzlePiece,
   faUser,
+  faListCheck,      // ✅ nuevo ícono para “Listado de turnos”
+  faCalendarCheck,  // ✅ nuevo ícono para “Asignar turnos”
 } from "@fortawesome/free-solid-svg-icons";
 import "@/styles/Sidebar.css";
 
@@ -77,9 +78,21 @@ export default function Sidebar() {
 
         <hr className="sidebar-divider" />
 
-        {/* Agenda */}
+        {/* 🗓️ Agenda */}
         <li className="nav-section">
           <span className="text-uppercase small text-muted">Agenda</span>
+        </li>
+
+        <li className="nav-item">
+          <NavLink
+            to="/agenda/calendario"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? "active-link" : ""}`
+            }
+          >
+            <FontAwesomeIcon icon={faCalendarDays} className="me-2" />
+            Calendario
+          </NavLink>
         </li>
 
         <li className="nav-item">
@@ -89,8 +102,20 @@ export default function Sidebar() {
               `nav-link ${isActive ? "active-link" : ""}`
             }
           >
-            <FontAwesomeIcon icon={faCalendarDays} className="me-2" />
-            Turnos
+            <FontAwesomeIcon icon={faListCheck} className="me-2" />
+            Turnos Plantilla
+          </NavLink>
+        </li>
+
+        <li className="nav-item">
+          <NavLink
+            to="/suscripciones/turnos"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? "active-link" : ""}`
+            }
+          >
+            <FontAwesomeIcon icon={faCalendarCheck} className="me-2" />
+            Turnos por Socio
           </NavLink>
         </li>
 
