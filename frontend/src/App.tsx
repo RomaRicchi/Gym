@@ -33,8 +33,6 @@ import SalasList from "@/views/salas/List";
 
 // 📆 Turnos plantilla
 import TurnosPlantillaList from "@/views/agenda/turnoPlantilla/List";
-import TurnoPlantillaCreate from "@/views/agenda/turnoPlantilla/Create";
-import TurnoPlantillaEdit from "@/views/agenda/turnoPlantilla/Edit";
 import TurnosAssign from "@/views/agenda/suscripcionTurno/TurnosAssign";
 import TurnosList from "@/views/agenda/suscripcionTurno/TurnosList";
 import AgendaCalendar from "@/views/agenda/AgendaCalendar";
@@ -48,10 +46,6 @@ import ComprobanteUpload from "@/views/gestionPagos/comprobantes/Upload";
 
 // ⚙️ Estados de orden de pago
 import EstadosList from "@/views/gestionPagos/estado/List";
-
-// 🔗 Orden-Turno
-import OrdenTurnosList from "@/views/agenda/ordenTurno/List";
-import OrdenTurnoAssign from "@/views/agenda/ordenTurno/Assign";
 
 // 🧩 Roles
 import RolesList from "@/views/usuarios/rol/List";
@@ -104,17 +98,10 @@ export default function App() {
 
             {/* Turnos plantilla */}
             <Route path="/turnos" element={<TurnosPlantillaList />} />
-            <Route path="/turnos/nuevo" element={<TurnoPlantillaCreate />} />
-            <Route path="/turnos/editar/:id" element={<TurnoPlantillaEdit />} />
-
+           
             {/* Turnos por suscripción */}
             <Route path="/suscripciones/:id/asignar-turnos" element={<TurnosAssign />} />
             <Route path="/suscripciones/turnos" element={<TurnosList />} />
-
-            {/* Turnos por orden */}
-            <Route path="/ordenes/:id/turnos" element={<OrdenTurnosList />} />
-            <Route path="/ordenes/:id/asignar-turnos" element={<OrdenTurnoAssign />} />
-
 
             {/* 🧾 Órdenes de Pago */}
             <Route path="/ordenes" element={<OrdenesList />} />
@@ -126,10 +113,6 @@ export default function App() {
 
             {/* ⚙️ Estados */}
             <Route path="/estados" element={<EstadosList />} />
-
-            {/* 🔗 Orden - Turnos */}
-            <Route path="/ordenes/:id/turnos" element={<OrdenTurnosList />} />
-            <Route path="/ordenes/:id/asignar-turnos" element={<OrdenTurnoAssign />} />
 
             {/* 🧩 Roles */}
             <Route path="/roles" element={<RolesList />} />

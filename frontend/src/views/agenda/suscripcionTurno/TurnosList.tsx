@@ -1,24 +1,29 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
 interface Turno {
   id: number;
-  turno_plantilla_id: number;
-  dia: string;
-  hora_inicio: string;
-  hora_fin: string;
+  turnoPlantilla?: {
+    hora_inicio: string;
+    duracion_min: number;
+    dia_semana?: { nombre: string };
+    sala?: { nombre: string };
+    personal?: { nombre: string };
+  };
 }
 
 export default function TurnosList() {
   const { id } = useParams(); // id de la suscripción
+  const navigate = useNavigate();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchTurnos = async () => {
+    setLoading(true);
     try {
-      const res = await gymApi.get(`/suscripciones/${id}/turnos`);
+      const res = await gymApi.get(`/SuscripcionesTurno/suscripcion/${id}`);
       setTurnos(res.data.items || res.data);
     } catch (err) {
       console.error(err);
@@ -33,19 +38,20 @@ export default function TurnosList() {
   }, [id]);
 
   const handleDelete = async (turnoId: number) => {
-    const result = await Swal.fire({
+    const confirm = await Swal.fire({
       title: "¿Eliminar turno?",
-      text: "Esto quitará el turno de la suscripción.",
+      text: "Esta acción quitará el turno de la suscripción.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
+      confirmButtonColor: "#d33",
     });
 
-    if (result.isConfirmed) {
+    if (confirm.isConfirmed) {
       try {
-        await gymApi.delete(`/suscripcion-turnos/${turnoId}`);
-        Swal.fire("Eliminado", "Turno quitado correctamente", "success");
+        await gymApi.delete(`/SuscripcionesTurno/${turnoId}`);
+        Swal.fire("Eliminado", "Turno eliminado correctamente", "success");
         fetchTurnos();
       } catch {
         Swal.fire("Error", "No se pudo eliminar el turno", "error");
@@ -53,35 +59,39 @@ export default function TurnosList() {
     }
   };
 
-  if (loading) return <p>Cargando turnos...</p>;
+  const handleAssign = () => {
+    navigate(`/suscripciones/${id}/asignar-turnos`);
+  };
+
+  if (loading) return <p className="text-center mt-4">Cargando turnos...</p>;
 
   return (
-    <div className="mt-4">
-
-      <h1
-        className="text-center fw-bold mb-4"
-        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
-      >
-        TURNOS
+    <div className="container mt-4">
+      <h1 className="text-center fw-bold mb-4" style={{ color: "#ff6600" }}>
+        🧾 Turnos de la Suscripción #{id}
       </h1>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        
-        <Link to={`/suscripciones/${id}/asignar-turnos`} className="btn btn-success">
-          ➕ Asignar Turnos
-        </Link>
+
+      <div className="d-flex justify-content-between mb-3">
+        <button className="btn btn-success" onClick={handleAssign}>
+          ➕ Asignar nuevos turnos
+        </button>
+        <button className="btn btn-outline-secondary" onClick={() => navigate("/suscripciones")}>
+          ⬅️ Volver a suscripciones
+        </button>
       </div>
 
       {turnos.length === 0 ? (
-        <p>No hay turnos asignados.</p>
+        <p className="text-center">No hay turnos asignados.</p>
       ) : (
-        <table className="table table-striped table-hover">
+        <table className="table table-striped table-hover text-center align-middle">
           <thead className="table-dark">
             <tr>
-              <th>ID</th>
-              <th>Plantilla</th>
+              <th>#</th>
               <th>Día</th>
-              <th>Hora Inicio</th>
-              <th>Hora Fin</th>
+              <th>Hora</th>
+              <th>Sala</th>
+              <th>Profesor</th>
+              <th>Duración</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -89,10 +99,11 @@ export default function TurnosList() {
             {turnos.map((t) => (
               <tr key={t.id}>
                 <td>{t.id}</td>
-                <td>{t.turno_plantilla_id}</td>
-                <td>{t.dia || "—"}</td>
-                <td>{t.hora_inicio || "—"}</td>
-                <td>{t.hora_fin || "—"}</td>
+                <td>{t.turnoPlantilla?.dia_semana?.nombre || "—"}</td>
+                <td>{t.turnoPlantilla?.hora_inicio || "—"}</td>
+                <td>{t.turnoPlantilla?.sala?.nombre || "—"}</td>
+                <td>{t.turnoPlantilla?.personal?.nombre || "—"}</td>
+                <td>{t.turnoPlantilla?.duracion_min || "—"} min</td>
                 <td>
                   <button
                     className="btn btn-sm btn-outline-danger"

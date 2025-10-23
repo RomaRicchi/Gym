@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { crearTurnoPlantilla } from "./TurnoPlantillaCreate";
+import { editarTurnoPlantilla } from "./TurnoPlantillaEdit";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
@@ -194,7 +195,7 @@ export default function TurnosPlantillaList() {
             Limpiar Filtros
           </button>
           <button
-            className="btn btn-primary"
+            className="btn btn-success"
             onClick={() => crearTurnoPlantilla()}
           >
             ➕ Nuevo Turno
@@ -228,16 +229,16 @@ export default function TurnosPlantillaList() {
               <td>{t.activo ? "✅" : "❌"}</td>
               <td>
                 <button
-                  className="btn btn-sm btn-primary me-2"
-                  onClick={() => navigate(`/turnos/editar/${t.id}`)}
+                  className="btn btn-warning"
+                  onClick={() => editarTurnoPlantilla(t.id, fetchTurnos)}
                 >
-                  ✏️ Editar
+                  ✏️ 
                 </button>
                 <button
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-danger"
                   onClick={() => handleDelete(t.id)}
                 >
-                  🗑️ Eliminar
+                  🗑️ 
                 </button>
               </td>
             </tr>

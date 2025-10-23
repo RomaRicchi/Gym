@@ -1,8 +1,14 @@
+using Api.Data;
 using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+
 
 namespace Api.Controllers
 {
@@ -12,10 +18,12 @@ namespace Api.Controllers
     public class TurnosPlantillaController : ControllerBase
     {
         private readonly ITurnoPlantillaRepository _repo;
+         private readonly GymDbContext _db;
 
-        public TurnosPlantillaController(ITurnoPlantillaRepository repo)
+        public TurnosPlantillaController(ITurnoPlantillaRepository repo, GymDbContext db)
         {
             _repo = repo;
+            _db = db;
         }
 
         [HttpGet]
@@ -88,5 +96,42 @@ namespace Api.Controllers
             await _repo.DeleteAsync(id, ct);
             return Ok(new { ok = true });
         }
+
+        [HttpGet("dia/{id:int}")]
+        public async Task<IActionResult> GetByDia(int id, CancellationToken ct = default)
+        {
+            var turnos = await _db.TurnosPlantilla
+                .Include(t => t.Sala)
+                .Include(t => t.Personal)
+                .Include(t => t.DiaSemana)
+                .Where(t => t.DiaSemanaId == id && t.Activo)
+                .OrderBy(t => t.HoraInicio)
+                .Select(t => new
+                {
+                    t.Id,
+                    Sala = t.Sala != null ? t.Sala.Nombre : "(sin sala)",
+                    Profesor = t.Personal != null ? t.Personal.Nombre : "(sin profesor)",
+                    Dia = t.DiaSemana.Nombre,
+                    t.HoraInicio,
+                    t.DuracionMin,
+                    t.Cupo,
+                    // Si tenés la vista v_cupo_reservado:
+                    Reservados = _db.VCupoReservado
+                        .Where(v => v.TurnoId == t.Id)
+                        .Select(v => (int?)v.Reservados)
+                        .FirstOrDefault() ?? 0,
+                    Disponibles = t.Cupo - (
+                        _db.VCupoReservado
+                            .Where(v => v.TurnoId == t.Id)
+                            .Select(v => (int?)v.Reservados)
+                            .FirstOrDefault() ?? 0
+                    )
+                })
+                .Where(t => t.Disponibles > 0)
+                .ToListAsync(ct);
+
+            return Ok(turnos);
+        }
+
     }
 }

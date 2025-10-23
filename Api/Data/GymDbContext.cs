@@ -14,7 +14,6 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<Comprobante> Comprobantes { get; set; }
     public virtual DbSet<Ejercicio> Ejercicios { get; set; }
     public virtual DbSet<OrdenPago> OrdenesPago { get; set; }= null!;
-    public virtual DbSet<OrdenTurno> OrdenesTurno { get; set; }
     public virtual DbSet<EstadoOrdenPago> EstadoOrdenPago { get; set; }= null!;
     public virtual DbSet<Rol> Roles { get; set; }
     public virtual DbSet<DiaSemana> DiasSemana { get; set; }
@@ -28,7 +27,7 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<Sala> Salas { get; set; }
     public virtual DbSet<Socio> Socios { get; set; }= null!;
     public virtual DbSet<Suscripcion> Suscripciones { get; set; }
-    public virtual DbSet<SuscripcionTurno> SuscripcionesTurno { get; set; }
+    public DbSet<SuscripcionTurno> SuscripcionTurnos { get; set; }
     public virtual DbSet<TurnoPlantilla> TurnosPlantilla { get; set; }
     public virtual DbSet<Usuario> Usuarios { get; set; }
     public virtual DbSet<Avatar> Avatares { get; set; } = null!;
@@ -55,7 +54,6 @@ public partial class GymDbContext : DbContext
         modelBuilder.Entity<Ejercicio>().ToTable("ejercicio");
         modelBuilder.Entity<Comprobante>().ToTable("comprobante");
         modelBuilder.Entity<OrdenPago>().ToTable("orden_pago");
-        modelBuilder.Entity<OrdenTurno>().ToTable("orden_turno");
         modelBuilder.Entity<EstadoOrdenPago>().ToTable("estado_orden_pago");
         modelBuilder.Entity<Suscripcion>().ToTable("suscripcion");
         modelBuilder.Entity<SuscripcionTurno>().ToTable("suscripcion_turno");
