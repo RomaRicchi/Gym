@@ -1,17 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Api.Data.Models;
-
-public partial class SuscripcionTurno
+namespace Api.Data.Models
 {
-    public int Id { get; set; }
+    [Table("suscripcion_turno")]
+    public class SuscripcionTurno
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
 
-    public int SuscripcionId { get; set; }
+        [Required]
+        [Column("suscripcion_id")]
+        public int SuscripcionId { get; set; }
 
-    public int TurnoPlantillaId { get; set; }
+        [ForeignKey(nameof(SuscripcionId))]
+        public Suscripcion Suscripcion { get; set; } = null!;
 
-    public virtual Suscripcion Suscripcion { get; set; } = null!;
+        [Required]
+        [Column("turno_plantilla_id")]
+        public int TurnoPlantillaId { get; set; }
 
-    public virtual TurnoPlantilla TurnoPlantilla { get; set; } = null!;
+        [ForeignKey(nameof(TurnoPlantillaId))]
+        public TurnoPlantilla TurnoPlantilla { get; set; } = null!;
+    }
 }

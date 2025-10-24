@@ -33,7 +33,6 @@ import SalasList from "@/views/salas/List";
 
 // 📆 Turnos plantilla
 import TurnosPlantillaList from "@/views/agenda/turnoPlantilla/List";
-import TurnosAssign from "@/views/agenda/suscripcionTurno/TurnosAssign";
 import TurnosList from "@/views/agenda/suscripcionTurno/TurnosList";
 import AgendaCalendar from "@/views/agenda/AgendaCalendar";
 
@@ -100,7 +99,6 @@ export default function App() {
             <Route path="/turnos" element={<TurnosPlantillaList />} />
            
             {/* Turnos por suscripción */}
-            <Route path="/suscripciones/:id/asignar-turnos" element={<TurnosAssign />} />
             <Route path="/suscripciones/turnos" element={<TurnosList />} />
 
             {/* 🧾 Órdenes de Pago */}

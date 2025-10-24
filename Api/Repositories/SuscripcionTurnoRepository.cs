@@ -14,71 +14,120 @@ namespace Api.Repositories
             _db = db;
         }
 
-        // 🔹 Obtener todos los turnos asignados
-        public async Task<IReadOnlyList<SuscripcionTurno>> GetAllAsync(CancellationToken ct = default)
+        public async Task<List<object>> GetAllWithCheckinAsync(CancellationToken ct = default)
         {
-            return await _db.SuscripcionTurnos
-                .Include(st => st.Suscripcion)
-                    .ThenInclude(s => s.Plan)
+            var data = await _db.SuscripcionTurnos
+                .AsNoTracking()
                 .Include(st => st.Suscripcion)
                     .ThenInclude(s => s.Socio)
                 .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.Sala)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.Personal)
+                .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.DiaSemana)
+                .Select(st => new
+                {
+                    st.Id,
+                    Suscripcion = new
+                    {
+                        Socio = new
+                        {
+                            st.Suscripcion.Socio.Id,
+                            st.Suscripcion.Socio.Nombre
+                        }
+                    },
+                    TurnoPlantilla = new
+                    {
+                        st.TurnoPlantilla.Id,
+                        st.TurnoPlantilla.HoraInicio,
+                        st.TurnoPlantilla.DuracionMin,
+                        st.TurnoPlantilla.Cupo,
+                        Sala = new { st.TurnoPlantilla.Sala.Nombre },
+                        Personal = new { st.TurnoPlantilla.Personal.Nombre },
+                        DiaSemana = new { st.TurnoPlantilla.DiaSemana.Nombre }
+                    },
+                    // 👇 Calcula si ya hizo check-in hoy
+                    CheckinHecho = _db.Checkins.Any(c =>
+                        c.SocioId == st.Suscripcion.Socio.Id &&
+                        c.TurnoPlantillaId == st.TurnoPlantillaId &&
+                        c.FechaHora.Date == DateTime.UtcNow.Date)
+                })
+                .OrderBy(st => st.Suscripcion.Socio.Nombre)
+                .ToListAsync(ct);
+
+            return data.Cast<object>().ToList();
+        }
+
+        // 🔹 Obtener todos los turnos asignados (para todos los socios)
+
+        public async Task<List<SuscripcionTurno>> GetAllAsync(CancellationToken ct = default)
+        {
+            return await _db.SuscripcionTurnos
+                .AsNoTracking()
+                .Include(st => st.Suscripcion)
+                    .ThenInclude(s => s.Socio)
                 .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.Sala)
                 .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.Personal)
-                .AsNoTracking()
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.DiaSemana)
+                .OrderBy(st => st.Suscripcion.Socio.Nombre)
                 .ToListAsync(ct);
         }
 
-        // 🔹 Obtener turnos por suscripción
-        public async Task<IReadOnlyList<SuscripcionTurno>> GetBySuscripcionAsync(int suscripcionId, CancellationToken ct = default)
+        // 🔹 Obtener por ID
+        public async Task<SuscripcionTurno?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _db.SuscripcionTurnos
-                .Where(st => st.SuscripcionId == suscripcionId)
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.DiaSemana)
+                .AsNoTracking()
+                .Include(st => st.Suscripcion)
+                    .ThenInclude(s => s.Socio)
                 .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.Sala)
                 .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.Personal)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.DiaSemana)
+                .FirstOrDefaultAsync(st => st.Id == id, ct);
+        }
+
+        // 🔹 Obtener turnos por suscripción
+        public async Task<List<SuscripcionTurno>> GetBySuscripcionAsync(int suscripcionId, CancellationToken ct = default)
+        {
+            return await _db.SuscripcionTurnos
+                .Where(st => st.SuscripcionId == suscripcionId)
+                .Include(st => st.Suscripcion)
+                    .ThenInclude(s => s.Socio)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.Sala)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.Personal)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.DiaSemana)
                 .AsNoTracking()
                 .ToListAsync(ct);
         }
 
         // 🔹 Obtener turnos por socio
-        public async Task<IReadOnlyList<SuscripcionTurno>> GetBySocioAsync(int socioId, CancellationToken ct = default)
+        public async Task<List<SuscripcionTurno>> GetBySocioAsync(int socioId, CancellationToken ct = default)
         {
             return await _db.SuscripcionTurnos
                 .Where(st => st.Suscripcion.SocioId == socioId)
                 .Include(st => st.Suscripcion)
                     .ThenInclude(s => s.Plan)
                 .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.DiaSemana)
-                .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.Sala)
                 .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.Personal)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.DiaSemana)
                 .AsNoTracking()
                 .ToListAsync(ct);
         }
 
-        // 🔹 Obtener un turno específico por ID
-        public async Task<SuscripcionTurno?> GetByIdAsync(int id, CancellationToken ct = default)
-        {
-            return await _db.SuscripcionTurnos
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.DiaSemana)
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.Sala)
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.Personal)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(st => st.Id == id, ct);
-        }
-
-        // 🔹 Crear nuevo registro
+        // 🔹 Crear
         public async Task<SuscripcionTurno> AddAsync(SuscripcionTurno entity, CancellationToken ct = default)
         {
             _db.SuscripcionTurnos.Add(entity);
@@ -86,17 +135,17 @@ namespace Api.Repositories
             return entity;
         }
 
-        // 🔹 Actualizar un registro existente
+        // 🔹 Actualizar
         public async Task UpdateAsync(SuscripcionTurno entity, CancellationToken ct = default)
         {
             _db.SuscripcionTurnos.Update(entity);
             await _db.SaveChangesAsync(ct);
         }
 
-        // 🔹 Eliminar un registro por ID
+        // 🔹 Eliminar
         public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
-            var entity = await _db.SuscripcionTurnos.FindAsync(id);
+            var entity = await _db.SuscripcionTurnos.FindAsync(new object?[] { id }, ct);
             if (entity != null)
             {
                 _db.SuscripcionTurnos.Remove(entity);

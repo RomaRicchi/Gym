@@ -100,7 +100,7 @@ public partial class GymDbContext : DbContext
         modelBuilder.Entity<VOrdenesAr>().ToTable("v_ordenes_ar").HasNoKey();
         modelBuilder.Entity<VSuscripcionesAr>().ToTable("v_suscripciones_ar").HasNoKey();
 
-
+        
 
         // 🔽 Mapeo automático a snake_case
         foreach (var entity in modelBuilder.Model.GetEntityTypes())

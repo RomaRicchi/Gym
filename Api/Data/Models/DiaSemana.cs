@@ -15,7 +15,6 @@ namespace Api.Data.Models
         [StringLength(20)]
         public string Nombre { get; set; } = string.Empty;
 
-        // Relación inversa opcional
-        public ICollection<TurnoPlantilla>? TurnosPlantilla { get; set; }
+       
     }
 }
