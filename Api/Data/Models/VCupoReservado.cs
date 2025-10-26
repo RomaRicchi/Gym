@@ -6,7 +6,7 @@ public partial class VCupoReservado
 {
     public int TurnoId { get; set; }
 
-    public sbyte DiaSemana { get; set; }
+    public byte DiaSemana { get; set; }
 
     public TimeOnly HoraInicio { get; set; }
 

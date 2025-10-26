@@ -39,7 +39,7 @@ export default function Login() {
       await Swal.fire({
         icon: "success",
         title: "Bienvenido",
-        text: `Hola ${usuario?.Alias || usuario?.Email}!`,
+        text: `Hola ${usuario?.alias || usuario?.email}!`,
         timer: 1500,
         showConfirmButton: false,
       });
@@ -108,7 +108,7 @@ export default function Login() {
           border: "none",
         }}
       >
-        <h3 className="text-center mb-4 fw-bold">🏋️‍♂️ GYM SYSTEM LOGIN</h3>
+        <h3 className="text-center mb-4 fw-bold">🏋️‍♂️ FITGYM SYSTEM LOGIN</h3>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3 text-start">

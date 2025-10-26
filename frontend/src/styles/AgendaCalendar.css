@@ -1,0 +1,85 @@
+.agenda-calendar-container {
+  margin-top: 1.5rem;
+  padding: 1rem;
+}
+
+.agenda-title {
+  text-align: center;
+  color: #ff6600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1.5rem;
+}
+
+.agenda-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* 🔶 Estilo FullCalendar */
+.fc .fc-toolbar-title {
+  color: #ff6600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* 🔹 Forzar color negro en encabezados de días y horas */
+.fc .fc-col-header-cell,
+.fc .fc-timegrid-slot-label {
+  background-color: #ff6600 !important;
+  color: #000 !important;
+  font-weight: 700;
+  border: 1px solid #e65100;
+}
+
+/* 🔹 Forzar color negro en los enlaces de los días */
+.fc .fc-col-header-cell a {
+  color: #000 !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+}
+
+/* 🔹 Al pasar el mouse, que no cambie a azul */
+.fc .fc-col-header-cell a:hover {
+  color: #111 !important;
+}
+
+.fc .fc-timegrid-slot {
+  border-color: #ffe0b2;
+}
+
+.fc .fc-scrollgrid {
+  border-color: #ffb74d;
+}
+
+.fc-event {
+  border-radius: 8px !important;
+  background-color: #ff9800 !important;
+  border: 1px solid #e65100 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 6px rgba(255, 102, 0, 0.4);
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.fc-event:hover {
+  transform: scale(1.03);
+  filter: brightness(1.05);
+}
+
+.fc .fc-toolbar-chunk button {
+  background-color: #ff6600 !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+
+.fc .fc-toolbar-chunk button:hover {
+  background-color: #e65100 !important;
+}

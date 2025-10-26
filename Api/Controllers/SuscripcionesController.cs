@@ -1,3 +1,4 @@
+using Api.Data;
 using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace Api.Controllers
     public class SuscripcionesController : ControllerBase
     {
         private readonly ISuscripcionRepository _repo;
+        private readonly GymDbContext _db;
 
-        public SuscripcionesController(ISuscripcionRepository repo)
+        public SuscripcionesController(ISuscripcionRepository repo, GymDbContext db)
         {
             _repo = repo;
+            _db = db;
         }
 
         // 🔹 GET: api/suscripciones
@@ -52,11 +55,26 @@ namespace Api.Controllers
 
         // 🔹 GET: api/suscripciones/socio/{id}
         [HttpGet("socio/{id}")]
-        public async Task<IActionResult> GetBySocio([FromRoute] int id, CancellationToken ct = default)
+        // ✅ GET /api/suscripciones?socioId=5
+        public async Task<IActionResult> GetBySocio([FromQuery] int socioId, CancellationToken ct)
         {
-            var list = await _repo.GetBySocioAsync(id, ct);
-            return Ok(list);
+            var suscripciones = await _db.Suscripciones
+                .Include(s => s.Plan)
+                .Where(s => s.SocioId == socioId)
+                .OrderByDescending(s => s.CreadoEn)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Inicio,
+                    s.Fin,
+                    s.Estado,
+                    Plan = new { s.Plan.Id, s.Plan.Nombre }
+                })
+                .ToListAsync(ct);
+
+            return Ok(suscripciones);
         }
+
 
         // 🔹 GET: api/suscripciones/por-orden/{ordenId}
         [HttpGet("por-orden/{ordenId:int:min(1)}")]

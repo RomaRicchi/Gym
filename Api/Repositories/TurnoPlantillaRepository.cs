@@ -41,15 +41,18 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
-        // 🔹 Obtener por día
-        public async Task<IReadOnlyList<TurnoPlantilla>> GetByDiaSemanaAsync(sbyte diaSemana, CancellationToken ct = default)
+        // 🔹 Obtener por día — corregido (usa byte)
+        public async Task<IReadOnlyList<TurnoPlantilla>> GetByDiaSemanaAsync(byte diaSemana, CancellationToken ct = default)
         {
+            Console.WriteLine($"📅 [Repo] Buscando turnos por dia_semana_id={diaSemana}");
+
+            // Se realiza el cast a (byte) ya que DiaSemanaId en el modelo es 'byte' (unsigned tinyint)
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
                 .Include(t => t.DiaSemana)
                 .AsNoTracking()
-                .Where(t => t.DiaSemanaId == diaSemana && t.Activo)
+                .Where(t => t.DiaSemanaId == (byte)diaSemana && t.Activo)
                 .OrderBy(t => t.HoraInicio)
                 .ToListAsync(ct);
         }
@@ -57,6 +60,8 @@ namespace Api.Repositories
         // 🔹 Obtener por personal
         public async Task<IReadOnlyList<TurnoPlantilla>> GetByPersonalAsync(int personalId, CancellationToken ct = default)
         {
+            Console.WriteLine($"👤 [Repo] Buscando turnos por personal_id={personalId}");
+
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.DiaSemana)
@@ -70,6 +75,8 @@ namespace Api.Repositories
         // 🔹 Obtener por ID
         public async Task<TurnoPlantilla?> GetByIdAsync(int id, CancellationToken ct = default)
         {
+            Console.WriteLine($"🔎 [Repo] Buscando turno_plantilla id={id}");
+
             return await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
@@ -78,19 +85,44 @@ namespace Api.Repositories
                 .FirstOrDefaultAsync(t => t.Id == id, ct);
         }
 
-        // 🔹 Crear
+        // 🔹 Crear — log detallado
         public async Task<TurnoPlantilla> AddAsync(TurnoPlantilla turno, CancellationToken ct = default)
         {
-            _db.TurnosPlantilla.Add(turno);
-            await _db.SaveChangesAsync(ct);
-            return turno;
+            try
+            {
+                Console.WriteLine($"➡️ [ADD] Recibido para insertar:");
+                Console.WriteLine($"   SalaId={turno.SalaId}, PersonalId={turno.PersonalId}, DiaSemanaId={turno.DiaSemanaId}");
+                Console.WriteLine($"   HoraInicio={turno.HoraInicio}, DuracionMin={turno.DuracionMin}, Cupo={turno.Cupo}, Activo={turno.Activo}");
+
+                _db.TurnosPlantilla.Add(turno);
+                await _db.SaveChangesAsync(ct);
+
+                Console.WriteLine($"✅ [ADD] Turno guardado correctamente con ID={turno.Id}");
+                return turno;
+            }
+            catch (DbUpdateException dbEx)
+            {
+                Console.WriteLine("❌ [DB ERROR] " + (dbEx.InnerException?.Message ?? dbEx.Message));
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ [GENERAL ERROR] " + ex.Message);
+                throw;
+            }
         }
 
         // 🔹 Actualizar
         public async Task<bool> UpdateAsync(TurnoPlantilla updated, CancellationToken ct = default)
         {
+            Console.WriteLine($"✏️ [UPDATE] Intentando actualizar ID={updated.Id}");
+
             var turno = await _db.TurnosPlantilla.FindAsync(new object[] { updated.Id }, ct);
-            if (turno == null) return false;
+            if (turno == null)
+            {
+                Console.WriteLine("⚠️ [UPDATE] Turno no encontrado");
+                return false;
+            }
 
             turno.SalaId = updated.SalaId;
             turno.PersonalId = updated.PersonalId;
@@ -101,17 +133,25 @@ namespace Api.Repositories
             turno.Activo = updated.Activo;
 
             await _db.SaveChangesAsync(ct);
+            Console.WriteLine("✅ [UPDATE] Actualizado correctamente");
             return true;
         }
 
         // 🔹 Eliminar
         public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         {
+            Console.WriteLine($"🗑 [DELETE] Eliminando turno id={id}");
+
             var turno = await _db.TurnosPlantilla.FindAsync(new object[] { id }, ct);
-            if (turno == null) return false;
+            if (turno == null)
+            {
+                Console.WriteLine("⚠️ [DELETE] Turno no encontrado");
+                return false;
+            }
 
             _db.TurnosPlantilla.Remove(turno);
             await _db.SaveChangesAsync(ct);
+            Console.WriteLine("✅ [DELETE] Turno eliminado correctamente");
             return true;
         }
 

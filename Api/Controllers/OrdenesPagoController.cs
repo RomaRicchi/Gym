@@ -27,40 +27,33 @@ namespace Api.Controllers
 
         // 🔹 GET /api/ordenes
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct = default)
+         public async Task<IActionResult> GetAll(CancellationToken ct = default)
         {
-            try
-            {
-                var ordenes = await _db.OrdenesPago
-                    .Include(o => o.Socio)
-                    .Include(o => o.Plan)
-                    .Include(o => o.Estado)
-                    .Include(o => o.Comprobante)
-                    .AsNoTracking()
-                    .OrderByDescending(o => o.CreadoEn)
-                    .Select(o => new
-                    {
-                        o.Id,
-                        Socio = o.Socio != null ? new { o.Socio.Id, o.Socio.Nombre, o.Socio.Email } : null,
-                        Plan = o.Plan != null ? new { o.Plan.Id, o.Plan.Nombre } : null,
-                        Estado = o.Estado != null ? new { o.Estado.Id, o.Estado.Nombre } : null,
-                        o.Monto,
-                        o.CreadoEn,
-                        o.VenceEn,
-                        Comprobante = o.Comprobante != null
-                            ? new { o.Comprobante.Id, o.Comprobante.FileUrl }
-                            : null
-                    })
-                    .ToListAsync(ct);
+            var ordenes = await _db.OrdenesPago
+                .Include(o => o.Socio)
+                .Include(o => o.Plan)
+                .Include(o => o.Estado)
+                .Include(o => o.Comprobante)
+                .AsNoTracking()
+                .OrderByDescending(o => o.CreadoEn)
+                .Select(o => new
+                {
+                    o.Id,
+                    Socio = o.Socio != null ? new { o.Socio.Id, o.Socio.Nombre, o.Socio.Email } : null,
+                    Plan = o.Plan != null ? new { o.Plan.Id, o.Plan.Nombre } : null,
+                    Estado = o.Estado != null ? new { o.Estado.Id, o.Estado.Nombre } : null,
+                    o.Monto,
+                    o.CreadoEn,
+                    o.VenceEn,
+                    Comprobante = o.Comprobante != null
+                        ? new { o.Comprobante.Id, o.Comprobante.FileUrl }
+                        : null
+                })
+                .ToListAsync(ct);
 
-                return Ok(ordenes);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error al obtener órdenes de pago: {ex.Message}");
-                return StatusCode(500, new { message = "Error al obtener las órdenes de pago." });
-            }
+            return Ok(ordenes);
         }
+
 
         // 🔹 GET /api/ordenes/{id}
         [HttpGet("{id:int}")]
@@ -122,89 +115,122 @@ namespace Api.Controllers
 
         // 🔹 POST /api/ordenes
         [Authorize(Roles = "Administrador, Recepcionista, Profesor")]
-        [HttpPost]
-        public async Task<IActionResult> Crear([FromForm] OrdenPagoCreateDto dto, [FromForm] IFormFile? file, CancellationToken ct)
+[Authorize(Roles = "Administrador, Recepcionista, Profesor")]
+[HttpPost]
+public async Task<IActionResult> Crear([FromForm] OrdenPagoCreateDto dto, [FromForm] IFormFile? file, CancellationToken ct)
+{
+    try
+    {
+        if (dto == null)
+            return BadRequest("Datos inválidos.");
+
+        // 🔹 Validaciones básicas
+        var socio = await _db.Socios.FindAsync(new object[] { dto.SocioId }, ct);
+        if (socio == null)
+            return BadRequest("El socio no existe.");
+
+        var plan = await _db.Planes.FindAsync(new object[] { dto.PlanId }, ct);
+        if (plan == null)
+            return BadRequest("El plan no existe.");
+
+        var estado = await _db.EstadoOrdenPago.FindAsync(new object[] { dto.EstadoId }, ct);
+        if (estado == null)
+            return BadRequest("El estado no existe.");
+
+        // 🔹 Crear la orden base
+        var fechaInicio = dto.FechaInicio;
+        var orden = new OrdenPago
         {
-            try
+            SocioId = dto.SocioId,
+            PlanId = dto.PlanId,
+            EstadoId = dto.EstadoId == 0 ? 1 : dto.EstadoId,
+            Monto = plan.Precio,
+            CreadoEn = DateTime.UtcNow,
+            VenceEn = fechaInicio.AddMonths(1),
+            Notas = dto.Notas
+        };
+
+        _db.OrdenesPago.Add(orden);
+        await _db.SaveChangesAsync(ct);
+
+        // 🔹 Si hay archivo, subir comprobante
+        if (file != null && file.Length > 0)
+        {
+            var uploads = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "comprobantes");
+            Directory.CreateDirectory(uploads);
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var allowed = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+            if (!allowed.Contains(ext))
+                return BadRequest("Solo se permiten archivos PDF o imágenes (.jpg, .png).");
+
+            var fileName = $"{Guid.NewGuid()}{ext}";
+            var filePath = Path.Combine(uploads, fileName);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+                await file.CopyToAsync(stream, ct);
+
+            var comprobante = new Comprobante
             {
-                if (dto == null)
-                    return BadRequest("Datos inválidos.");
+                FileUrl = $"uploads/comprobantes/{fileName}",
+                MimeType = file.ContentType,
+                SubidoEn = DateTime.UtcNow
+            };
 
-                var socio = await _db.Socios.FindAsync(new object[] { dto.SocioId }, ct);
-                if (socio == null)
-                    return BadRequest("El socio no existe.");
+            _db.Comprobantes.Add(comprobante);
+            await _db.SaveChangesAsync(ct);
 
-                var plan = await _db.Planes.FindAsync(new object[] { dto.PlanId }, ct);
-                if (plan == null)
-                    return BadRequest("El plan no existe.");
-
-                var estado = await _db.EstadoOrdenPago.FindAsync(new object[] { dto.EstadoId }, ct);
-                if (estado == null)
-                    return BadRequest("El estado no existe.");
-
-                // 🧩 Crear la orden base con cálculo de vencimiento automático
-                var orden = new OrdenPago
-                {
-                    SocioId = dto.SocioId,
-                    PlanId = dto.PlanId,
-                    EstadoId = dto.EstadoId == 0 ? 1 : dto.EstadoId,
-                    Monto = plan.Precio,
-                    CreadoEn = DateTime.UtcNow,
-                    VenceEn = dto.FechaInicio.AddMonths(1),
-                    Notas = dto.Notas
-                };
-
-                _db.OrdenesPago.Add(orden);
-                await _db.SaveChangesAsync(ct);
-
-                // 🔹 Si hay archivo, lo subimos y lo asociamos
-                if (file != null && file.Length > 0)
-                {
-                    var uploads = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "comprobantes");
-                    Directory.CreateDirectory(uploads);
-
-                    var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-                    var allowed = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
-                    if (!allowed.Contains(ext))
-                        return BadRequest("Solo se permiten archivos PDF o imágenes (.jpg, .png).");
-
-                    var fileName = $"{Guid.NewGuid()}{ext}";
-                    var filePath = Path.Combine(uploads, fileName);
-
-                    await using (var stream = new FileStream(filePath, FileMode.Create))
-                        await file.CopyToAsync(stream, ct);
-
-                    var comprobante = new Comprobante
-                    {
-                        FileUrl = $"uploads/comprobantes/{fileName}",
-                        MimeType = file.ContentType,
-                        SubidoEn = DateTime.UtcNow
-                    };
-
-                    _db.Comprobantes.Add(comprobante);
-                    await _db.SaveChangesAsync(ct);
-
-                    // Asociar comprobante a la orden
-                    orden.ComprobanteId = comprobante.Id;
-                    _db.OrdenesPago.Update(orden);
-                    await _db.SaveChangesAsync(ct);
-                }
-
-                return CreatedAtAction(nameof(GetById), new { id = orden.Id }, new
-                {
-                    orden.Id,
-                    orden.Monto,
-                    orden.EstadoId,
-                    orden.VenceEn,
-                    orden.ComprobanteId
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ERROR Crear Orden] {ex.Message}");
-                return StatusCode(500, new { message = ex.Message });
-            }
+            orden.ComprobanteId = comprobante.Id;
+            _db.OrdenesPago.Update(orden);
+            await _db.SaveChangesAsync(ct);
         }
+
+        // 🔹 Si la orden fue creada como "Verificada" (EstadoId == 3) → crear suscripción
+        if (orden.EstadoId == 3)
+        {
+            var inicio = dto.FechaInicio;
+            var fin = inicio.AddDays(30);
+
+            var suscripcion = new Suscripcion
+            {
+                SocioId = orden.SocioId,
+                PlanId = orden.PlanId,
+                Inicio = inicio,
+                Fin = fin,
+                Estado = true,
+                CreadoEn = DateTime.UtcNow,
+                OrdenPagoId = orden.Id
+            };
+
+            _db.Suscripciones.Add(suscripcion);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        // 🔹 Recuperar comprobante para devolver al frontend
+        var comprobanteData = orden.ComprobanteId.HasValue
+            ? await _db.Comprobantes
+                .Where(c => c.Id == orden.ComprobanteId)
+                .Select(c => new { c.Id, c.FileUrl, c.MimeType })
+                .FirstOrDefaultAsync(ct)
+            : null;
+
+        // ✅ Devolver respuesta lista para el SweetAlert
+        return CreatedAtAction(nameof(GetById), new { id = orden.Id }, new
+        {
+            orden.Id,
+            orden.Monto,
+            orden.EstadoId,
+            orden.VenceEn,
+            comprobante = comprobanteData // 👈 clave en minúscula
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[ERROR Crear Orden] {ex.Message}");
+        return StatusCode(500, new { message = ex.Message });
+    }
+}
+
 
         // 🔹 PUT /api/ordenes/{id}
         [HttpPut("{id:int}")]
@@ -239,7 +265,7 @@ namespace Api.Controllers
             orden.EstadoId = nuevoEstadoId;
             await _db.SaveChangesAsync(ct);
 
-            // Si se verifica, crear suscripción
+            // ✅ Si se verifica, crear suscripción
             if (nuevoEstadoId == 3)
             {
                 var inicio = DateTime.UtcNow;
@@ -289,7 +315,7 @@ namespace Api.Controllers
             return Ok(new { ok = true, message = "Orden y comprobante eliminados correctamente." });
         }
 
-        // 🔹 PUT /api/ordenes/{id}/estado/simple
+        // 🔹 PUT /api/ordenes/{id}/estado/simple 
         [HttpPut("{id:int}/estado/simple")]
         public async Task<IActionResult> ActualizarSoloEstado(int id, [FromBody] EstadoUpdateDto dto, CancellationToken ct)
         {
@@ -300,7 +326,28 @@ namespace Api.Controllers
             orden.EstadoId = dto.EstadoId;
             await _db.SaveChangesAsync(ct);
 
-            return Ok(new { ok = true, message = "Estado actualizado correctamente (sin crear suscripción)." });
+            // ✅ Si el estado pasa a Verificada → crear suscripción
+            if (dto.EstadoId == 3)
+            {
+                var inicio = DateTime.UtcNow;
+                var fin = inicio.AddDays(30);
+
+                var suscripcion = new Suscripcion
+                {
+                    SocioId = orden.SocioId,
+                    PlanId = orden.PlanId,
+                    Inicio = inicio,
+                    Fin = fin,
+                    Estado = true,
+                    CreadoEn = DateTime.UtcNow,
+                    OrdenPagoId = orden.Id
+                };
+
+                _db.Suscripciones.Add(suscripcion);
+                await _db.SaveChangesAsync(ct);
+            }
+
+            return Ok(new { ok = true, message = "Estado actualizado correctamente (con creación de suscripción)." });
         }
 
         public class EstadoUpdateDto

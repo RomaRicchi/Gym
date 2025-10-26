@@ -796,7 +796,7 @@ namespace Api.Migrations
                         .HasColumnType("int")
                         .HasColumnName("cupo");
 
-                    b.Property<sbyte>("DiaSemana")
+                    b.Property<byte>("DiaSemana")
                         .HasColumnType("tinyint")
                         .HasColumnName("dia_semana");
 

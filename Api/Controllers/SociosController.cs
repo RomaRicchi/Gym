@@ -31,9 +31,50 @@ public class SociosController : ControllerBase
         bool? activo = null,
         CancellationToken ct = default)
     {
-        // 👇 cambio principal: usar _repo (no _repoSocio)
-        var (items, total) = await _repo.GetPagedAsync(page, pageSize, q, activo, ct);
+        // 🧩 Base query
+        var query = _db.Socios
+            .AsNoTracking()
+            .OrderBy(s => s.Nombre)
+            .AsQueryable();
 
+        // 🔍 Filtro de búsqueda
+        if (!string.IsNullOrWhiteSpace(q))
+            query = query.Where(s =>
+                EF.Functions.Like(s.Nombre, $"%{q}%") ||
+                EF.Functions.Like(s.Dni, $"%{q}%"));
+
+        // ✅ Filtro de activo/inactivo
+        if (activo.HasValue)
+            query = query.Where(s => s.Activo == activo.Value);
+
+        // 📊 Total de registros antes de paginar
+        var total = await query.CountAsync(ct);
+
+        // 📦 Paginación + cálculo del plan actual
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(s => new
+            {
+                s.Id,
+                s.Dni,
+                s.Nombre,
+                s.Email,
+                s.Telefono,
+                s.Activo,
+                s.CreadoEn,
+                s.FechaNacimiento,
+
+                // 🧩 Trae el nombre del plan activo más reciente
+                PlanActual = _db.Suscripciones
+                    .Where(sub => sub.SocioId == s.Id && sub.Estado == true)
+                    .OrderByDescending(sub => sub.CreadoEn)
+                    .Select(sub => sub.Plan.Nombre)
+                    .FirstOrDefault()
+            })
+            .ToListAsync(ct);
+
+        // ✅ Devuelve el formato esperado
         return Ok(new
         {
             total,

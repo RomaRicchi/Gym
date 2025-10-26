@@ -3,6 +3,7 @@ using Api.Repositories.Interfaces;
 using Api.Repositories;
 using Api.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -100,6 +101,10 @@ if (app.Environment.IsDevelopment())
 app.UseCors("dev");
 app.UseStaticFiles(new StaticFileOptions
 {
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")
+    ),
+    RequestPath = "",
     ServeUnknownFileTypes = true,
     OnPrepareResponse = ctx =>
     {

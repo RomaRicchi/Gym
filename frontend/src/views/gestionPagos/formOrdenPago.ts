@@ -1,4 +1,3 @@
-// fileName: formOrdenPago.ts
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
@@ -105,7 +104,7 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
       formData.append("file", file);
     }
 
-    // 5️⃣ Enviar al endpoint correcto (una sola request)
+    // 5️⃣ Enviar al endpoint correcto
     const { data: orden } = await gymApi.post("/ordenes", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
@@ -113,24 +112,77 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
     // 6️⃣ Mostrar confirmación
     const plan = planes.find((p: any) => p.id === planId);
     const estado = estados.find((e: any) => e.id === estadoId);
-    const comprobanteUrl = orden?.comprobanteId ? `uploads/comprobantes/${orden.comprobanteId}` : null;
+    const comprobanteUrl = orden?.comprobante?.fileUrl || null;
+    const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5144";
+    const fullUrl = comprobanteUrl ? `${baseUrl}/${comprobanteUrl}` : null;
 
-    Swal.fire({
+    // 🔹 Generar HTML dinámico
+    let contenidoHtml = `
+      <p><strong>Socio:</strong> ${socio.nombre}</p>
+      <p><strong>Plan:</strong> ${plan?.nombre}</p>
+      <p><strong>Monto:</strong> 💰 $${plan?.precio}</p>
+      <p><strong>Estado:</strong> ${estado?.nombre}</p>
+    `;
+
+    if (fullUrl) {
+      if (fullUrl.toLowerCase().endsWith(".pdf")) {
+        contenidoHtml += `
+          <hr>
+          <p><strong>Comprobante (PDF):</strong></p>
+          <iframe src="${fullUrl}" width="100%" height="400px"></iframe>
+        `;
+      } else {
+        contenidoHtml += `
+          <hr>
+          <p><strong>Comprobante (imagen):</strong></p>
+          <img src="${fullUrl}" alt="Comprobante" style="max-width:100%;border-radius:8px;">
+        `;
+      }
+    } else {
+      contenidoHtml += `<p><em>Pago sin comprobante (efectivo)</em></p>`;
+    }
+
+    // 🔹 Mostrar Swal final
+    await Swal.fire({
       icon: "success",
       title: "Orden creada correctamente",
-      html: `
-        <p><strong>Socio:</strong> ${socio.nombre}</p>
-        <p><strong>Plan:</strong> ${plan?.nombre}</p>
-        <p><strong>Monto:</strong> 💰 $${plan?.precio}</p>
-        <p><strong>Estado:</strong> ${estado?.nombre}</p>
-        ${
-          comprobanteUrl
-            ? `<p><strong>Comprobante:</strong> <a href="http://localhost:5144/${comprobanteUrl}" target="_blank">Ver archivo</a></p>`
-            : `<p><em>Pago sin comprobante (efectivo)</em></p>`
-        }
-      `,
+      html: contenidoHtml,
+      width: fullUrl ? "80%" : "40%",
       confirmButtonColor: "#ff6600",
+      confirmButtonText: "Cerrar",
     });
+
+    // ✅ Actualizar plan del socio y mostrar notificación
+    try {
+      const { data: subs } = await gymApi.get(`/suscripciones?socioId=${socio.id}`);
+      const ultima = subs?.length ? subs[0] : null;
+
+      if (ultima?.plan?.nombre) {
+        const fila = document.querySelector(`tr td:nth-child(2):contains("${socio.nombre}")`)?.parentElement;
+        const celdaPlan = fila?.querySelector("td:nth-child(5)");
+        if (celdaPlan) celdaPlan.textContent = ultima.plan.nombre;
+      }
+
+      // 🔔 Mini toast de confirmación
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Suscripción activa creada",
+        showConfirmButton: false,
+        timer: 2500,
+        timerProgressBar: true,
+        background: "#198754",
+        color: "#fff",
+        didOpen: (toast) => {
+          toast.style.opacity = "0";
+          setTimeout(() => (toast.style.opacity = "1"), 100);
+          setTimeout(() => (toast.style.opacity = "0"), 2300);
+        },
+      });
+    } catch (e) {
+      console.warn("⚠️ No se pudo actualizar la vista del plan del socio:", e);
+    }
   } catch (err) {
     console.error("Error al crear orden:", err);
     Swal.fire({

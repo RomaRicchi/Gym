@@ -4,6 +4,7 @@ import gymApi from "@/api/gymApi";
 
 interface Turno {
   id: number;
+  turnoPlantillaId?: number;
   suscripcion?: {
     socio?: {
       id: number;
@@ -48,11 +49,11 @@ export default function TurnosList() {
   // 🔹 Registrar check-in
   const handleCheckin = async (socioId: number, turnoPlantillaId: number) => {
     try {
-      await gymApi.post("/Checkin", {
-        socioId,
-        turnoPlantillaId,
-        origen: "recepcion",
-      });
+      // ✅ Enviar los nombres exactos que el backend espera
+      const payload = { socioId, turnoPlantillaId };
+      console.log("📤 Enviando payload:", payload);
+
+      await gymApi.post("/Checkin", payload);
 
       Swal.fire({
         title: "✅ Check-in registrado",
@@ -134,7 +135,7 @@ export default function TurnosList() {
               const socio = t.suscripcion?.socio?.nombre || "—";
               const socioId = t.suscripcion?.socio?.id;
               const turno = t.turnoPlantilla;
-              const turnoId = turno?.id;
+              const turnoId = t.turnoPlantillaId ?? turno?.id;
               const dia = turno?.diaSemana?.nombre || "—";
               const hora = turno?.horaInicio
                 ? turno.horaInicio.slice(0, 5)
@@ -144,7 +145,11 @@ export default function TurnosList() {
               const duracion = turno?.duracionMin || 0;
               const cupo = turno?.cupo ?? 0;
               const cupoColor =
-                cupo > 5 ? "text-success" : cupo > 0 ? "text-warning" : "text-danger";
+                cupo > 5
+                  ? "text-success"
+                  : cupo > 0
+                  ? "text-warning"
+                  : "text-danger";
               const checkinHecho = t.checkinHecho ?? false;
 
               return (

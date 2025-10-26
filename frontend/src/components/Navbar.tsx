@@ -9,18 +9,33 @@ interface Usuario {
   avatar?: { url?: string };
 }
 
-export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
+export default function Navbar({
+  onToggleSidebar,
+}: {
+  onToggleSidebar?: () => void;
+}) {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
 
   // 🧩 URL base del backend (usa variable VITE_API_URL si está definida)
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5144";
 
-  // 🧩 Cargar usuario desde localStorage al montar
   useEffect(() => {
-    const stored = localStorage.getItem("usuario");
-    if (stored) setUsuario(JSON.parse(stored));
+    const loadUser = () => {
+      const stored = localStorage.getItem("usuario");
+      setUsuario(stored ? JSON.parse(stored) : null);
+    };
+
+    loadUser();
+
+    // Escucha cambios de sesión (login/logout/avatar actualizado)
+    window.addEventListener("authChange", loadUser);
+
+    return () => {
+      window.removeEventListener("authChange", loadUser);
+    };
   }, []);
+
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -34,7 +49,7 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
     });
 
     if (result.isConfirmed) {
-      localStorage.removeItem("authToken");
+      localStorage.removeItem("token"); 
       localStorage.removeItem("usuario");
       setUsuario(null);
       navigate("/login");
@@ -43,7 +58,10 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
   };
 
   return (
-    <nav className="navbar px-4 shadow-sm" style={{ backgroundColor: "#ff6b00" }}>
+    <nav
+      className="navbar px-4 shadow-sm"
+      style={{ backgroundColor: "#ff6b00" }}
+    >
       <div className="d-flex align-items-center w-100 justify-content-between">
         {/* 🔹 Lado izquierdo */}
         <div className="d-flex align-items-center gap-3">
@@ -54,7 +72,19 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
             <i className="fa fa-bars"></i>
           </button>
 
-          <h3 className="text-white fw-bold m-0">FitGym</h3>
+          <div className="d-flex align-items-center">
+            <img
+              src="/logo.png"
+              alt="Logo FitGym"
+              style={{
+                width: 42,
+                height: 42,
+                objectFit: "contain",
+                marginRight: "10px",
+              }}
+            />
+            <h3 className="text-white fw-bold m-0">FitGym</h3>
+          </div>
         </div>
 
         {/* 🔹 Lado derecho */}
@@ -78,8 +108,8 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
                 <img
                   src={
                     usuario.avatar?.url
-                      ? `${BASE_URL}${usuario.avatar.url}`
-                      : `${BASE_URL}/images/user.png`
+                      ? `${BASE_URL}/uploads/avatars/${usuario.avatar.url}`
+                      : "/images/user.png"
                   }
                   alt="Avatar"
                   className="rounded-circle me-2"

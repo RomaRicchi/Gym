@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Data.Models;
+using Api.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,38 +21,30 @@ namespace Api.Controllers
 
         // 🔹 POST: api/Checkin
         [HttpPost]
-        public async Task<IActionResult> Registrar([FromBody] Checkin dto, CancellationToken ct = default)
-        {
-            if (dto == null)
-                return BadRequest(new { message = "Datos inválidos." });
+public async Task<IActionResult> Registrar([FromBody] CheckinDto dto, CancellationToken ct = default)
+{
+    if (dto == null)
+        return BadRequest(new { message = "Datos inválidos." });
 
-            // 🔸 Validar existencia de socio y turno
-            bool socioExiste = await _db.Socios.AnyAsync(s => s.Id == dto.SocioId, ct);
-            bool turnoExiste = await _db.TurnosPlantilla.AnyAsync(t => t.Id == dto.TurnoPlantillaId, ct);
+    bool socioExiste = await _db.Socios.AnyAsync(s => s.Id == dto.SocioId, ct);
+    bool turnoExiste = await _db.TurnosPlantilla.AnyAsync(t => t.Id == dto.TurnoPlantillaId, ct);
 
-            if (!socioExiste || !turnoExiste)
-                return BadRequest(new { message = "Socio o turno no válidos." });
+    if (!socioExiste || !turnoExiste)
+        return BadRequest(new { message = "Socio o turno no válidos." });
 
-            // 🔸 Evitar duplicados en el mismo día
-            var yaRegistrado = await _db.Checkins.AnyAsync(
-                c => c.SocioId == dto.SocioId
-                   && c.TurnoPlantillaId == dto.TurnoPlantillaId
-                   && c.FechaHora.Date == DateTime.UtcNow.Date,
-                ct
-            );
+    // Crear nuevo registro
+    var checkin = new Checkin
+    {
+        SocioId = dto.SocioId,
+        TurnoPlantillaId = dto.TurnoPlantillaId,
+        FechaHora = DateTime.UtcNow
+    };
 
-            if (yaRegistrado)
-                return Conflict(new { message = "El check-in ya fue registrado hoy." });
+    _db.Checkins.Add(checkin);
+    await _db.SaveChangesAsync(ct);
 
-            // 🔸 Registrar check-in
-            dto.FechaHora = DateTime.UtcNow;
-            dto.Origen ??= "recepcion"; // por defecto si no viene especificado
-
-            _db.Checkins.Add(dto);
-            await _db.SaveChangesAsync(ct);
-
-            return Ok(new { ok = true, message = "✅ Check-in registrado correctamente." });
-        }
+    return Ok(new { ok = true, message = "✅ Check-in registrado correctamente." });
+}
 
         // 🔹 GET: api/Checkin/socio/{id}
         [HttpGet("socio/{id:int}")]

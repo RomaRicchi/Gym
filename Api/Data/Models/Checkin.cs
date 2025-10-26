@@ -19,9 +19,6 @@ namespace Api.Data.Models
         [Column("fecha_hora")]
         public DateTime FechaHora { get; set; }
 
-        [Column("origen")]
-        public string Origen { get; set; } = "recepcion";
-
         [ForeignKey(nameof(SocioId))]
         public virtual Socio Socio { get; set; } = null!;
 

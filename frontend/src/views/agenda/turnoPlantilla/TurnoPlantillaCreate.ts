@@ -110,33 +110,34 @@ export async function crearTurnoPlantilla(onSuccess?: () => void) {
       cancelButtonText: "Cancelar",
       focusConfirm: false,
       preConfirm: () => {
-         const form = {
-            SalaId: Number((document.getElementById("sala_id") as HTMLSelectElement).value),
-            PersonalId: Number((document.getElementById("personal_id") as HTMLSelectElement).value),
-            DiaSemanaId: Number((document.getElementById("dia_semana_id") as HTMLSelectElement).value),
-            HoraInicio: (document.getElementById("hora_inicio") as HTMLInputElement).value,
-            DuracionMin: Number((document.getElementById("duracion_min") as HTMLInputElement).value),
-            Cupo: Number((document.getElementById("cupo") as HTMLInputElement).value),
-            Activo: (document.getElementById("activo") as HTMLInputElement).checked,
+        const form = {
+          sala_id: Number((document.getElementById("sala_id") as HTMLSelectElement).value),
+          personal_id: Number((document.getElementById("personal_id") as HTMLSelectElement).value),
+          dia_semana_id: Number((document.getElementById("dia_semana_id") as HTMLSelectElement).value),
+          hora_inicio: (document.getElementById("hora_inicio") as HTMLInputElement).value + ":00",
+          duracion_min: Number((document.getElementById("duracion_min") as HTMLInputElement).value),
+          cupo: Number((document.getElementById("cupo") as HTMLInputElement).value),
+          activo: (document.getElementById("activo") as HTMLInputElement).checked,
         };
 
-        if (!form.SalaId || !form.PersonalId || !form.DiaSemanaId)
-            return Swal.showValidationMessage("Complete todos los campos obligatorios");
-        if (!form.HoraInicio)
-            return Swal.showValidationMessage("Debe especificar la hora de inicio");
-        if (form.DuracionMin <= 0)
-            return Swal.showValidationMessage("La duración debe ser mayor que 0");
-        if (form.Cupo <= 0)
-            return Swal.showValidationMessage("El cupo debe ser mayor que 0");
+        if (!form.sala_id || !form.personal_id || !form.dia_semana_id)
+          return Swal.showValidationMessage("Complete todos los campos obligatorios");
+        if (!form.hora_inicio)
+          return Swal.showValidationMessage("Debe especificar la hora de inicio");
+        if (form.duracion_min <= 0)
+          return Swal.showValidationMessage("La duración debe ser mayor que 0");
+        if (form.cupo <= 0)
+          return Swal.showValidationMessage("El cupo debe ser mayor que 0");
 
+        console.log("📤 Enviando turno:", form);
         return form;
-        },
-
+      }
     });
 
     if (!formValues) return;
+console.log("📤 Enviando turno:", formValues);
 
-    await gymApi.post("/turnosplantilla", formValues);
+    await gymApi.post("/turnosplantilla/crear", formValues);
     await Swal.fire("✅ Guardado", "Turno creado correctamente", "success");
     if (onSuccess) onSuccess();
 

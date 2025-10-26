@@ -31,7 +31,6 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<TurnoPlantilla> TurnosPlantilla { get; set; }
     public virtual DbSet<Usuario> Usuarios { get; set; }
     public virtual DbSet<Avatar> Avatares { get; set; } = null!;
-    public virtual DbSet<VCheckinHoyAr> VCheckinHoyAr { get; set; }
     public virtual DbSet<VCupoReservado> VCupoReservado { get; set; }
     public virtual DbSet<VOcupacionHoy> VOcupacionHoy { get; set; }
     public virtual DbSet<VOrdenesAr> VOrdenesAr { get; set; }
@@ -94,7 +93,7 @@ public partial class GymDbContext : DbContext
         });
 
         // Vistas sin clave
-        modelBuilder.Entity<VCheckinHoyAr>().ToTable("v_checkin_hoy_ar").HasNoKey();
+       
         modelBuilder.Entity<VCupoReservado>().ToTable("v_cupo_reservado").HasNoKey();
         modelBuilder.Entity<VOcupacionHoy>().ToTable("v_ocupacion_hoy").HasNoKey();
         modelBuilder.Entity<VOrdenesAr>().ToTable("v_ordenes_ar").HasNoKey();

@@ -220,7 +220,7 @@ namespace Api.Migrations
                 columns: table => new
                 {
                     turno_id = table.Column<int>(type: "int", nullable: false),
-                    dia_semana = table.Column<sbyte>(type: "tinyint", nullable: false),
+                    dia_semana = table.Column<byte>(type: "tinyint", nullable: false),
                     hora_inicio = table.Column<TimeOnly>(type: "time(6)", nullable: false),
                     cupo = table.Column<int>(type: "int", nullable: false),
                     reservados = table.Column<long>(type: "bigint", nullable: false)
