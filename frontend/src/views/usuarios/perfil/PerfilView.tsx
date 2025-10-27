@@ -4,7 +4,6 @@ import gymApi from "@/api/gymApi";
 import { PersonalEditSwal } from "@/views/personal/PersonalEditSwal";
 import { PasswordEditSwal } from "@/views/usuarios/perfil/CambiarContraseña";
 
-
 interface Avatar {
   id: number;
   url: string;
@@ -77,11 +76,34 @@ export default function PerfilView() {
       const res = await gymApi.post(`/perfil/${userId}/avatar`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      Swal.fire("✅ Avatar actualizado", res.data.message, "success");
-      fetchPerfil();
-    } catch {
+
+      // 🔹 Espera breve para asegurar que el archivo ya esté accesible
+      await new Promise((r) => setTimeout(r, 500));
+
+      const newUrl = res.data.url; // "/uploads/avatars/xxxx.jpg"
+      Swal.fire("✅ Avatar actualizado", "Tu nuevo avatar se aplicará al instante", "success");
+
+      // 🧠 Actualiza el perfil en la vista actual
+      await fetchPerfil();
+
+      // 🔐 Sincroniza el usuario del localStorage con la nueva URL
+      const stored = localStorage.getItem("usuario");
+      if (stored) {
+        const user = JSON.parse(stored);
+        user.avatar = { url: res.data.url || res.data.Url || "" };
+        localStorage.setItem("usuario", JSON.stringify(user));
+      }
+
+      // 🚀 Dispara evento global con un pequeño delay (para evitar race condition)
+      setTimeout(() => {
+        window.dispatchEvent(new Event("authChange"));
+      }, 200);
+
+    } catch (err) {
       Swal.fire("Error", "No se pudo subir el avatar", "error");
+      console.error(err);
     }
+
   };
 
   if (loading) return <p className="text-center mt-5">Cargando perfil...</p>;
@@ -92,7 +114,7 @@ export default function PerfilView() {
   return (
     <div className="container mt-4 text-center">
       <div
-        className="card mx-auto shadow p-4 text-white"
+        className="card mx-auto shadow p-4 text-white position-relative"
         style={{
           maxWidth: 420,
           backgroundColor: "#ff6b00",
@@ -100,6 +122,7 @@ export default function PerfilView() {
           borderRadius: "1rem",
         }}
       >
+        {/* Avatar */}
         <img
           src={
             perfil.avatar?.url
@@ -113,25 +136,41 @@ export default function PerfilView() {
 
         <h4 className="fw-bold">{perfil.alias}</h4>
         <p className="text-light">{perfil.email}</p>
-        <p><strong>Rol:</strong> {perfil.rol}</p>
+        <p>
+          <strong>Rol:</strong> {perfil.rol}
+        </p>
 
         {/* Datos personales */}
-        <div className="text-start text-dark rounded p-3 mt-3">
-            <button
-              onClick={() => PersonalEditSwal(userId, "perfil", fetchPerfil)}
-              className="btn btn-sm btn-outline-dark position-absolute top-0 end-0 m-2"
-            >
-              ✏️
-            </button>
-          <p><strong>Nombre:</strong> {personal.nombre || "—"}</p>
-          <p><strong>Teléfono:</strong> {personal.telefono || "—"}</p>
-          <p><strong>Dirección:</strong> {personal.direccion || "—"}</p>
-          <p><strong>Especialidad:</strong> {personal.especialidad || "—"}</p>
-          <p><strong>Estado:</strong> {personal.estado === 1 ? "Inactivo" : "Activo"}</p>
+        <div className="text-start text-dark rounded p-3 mt-3 position-relative bg-light bg-opacity-25">
+          <button
+            onClick={() => PersonalEditSwal(userId, "perfil", fetchPerfil)}
+            className="btn btn-sm btn-outline-dark position-absolute top-0 end-0 m-2"
+          >
+            ✏️
+          </button>
+          <p>
+            <strong>Nombre:</strong> {personal.nombre || "—"}
+          </p>
+          <p>
+            <strong>Teléfono:</strong> {personal.telefono || "—"}
+          </p>
+          <p>
+            <strong>Dirección:</strong> {personal.direccion || "—"}
+          </p>
+          <p>
+            <strong>Especialidad:</strong> {personal.especialidad || "—"}
+          </p>
+          <p>
+            <strong>Estado:</strong> {personal.estado === 1 ? "Inactivo" : "Activo"}
+          </p>
         </div>
 
+        {/* Botones */}
         <div className="d-grid gap-2 mt-3">
-          <button onClick={handleAvatarUpload} className="btn btn-warning text-black fw-semibold">
+          <button
+            onClick={handleAvatarUpload}
+            className="btn btn-warning text-black fw-semibold"
+          >
             📸 Cambiar Avatar
           </button>
           <button

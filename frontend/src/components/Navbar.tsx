@@ -6,7 +6,7 @@ interface Usuario {
   id: number;
   alias?: string;
   email: string;
-  avatar?: { url?: string };
+  avatar?: { url?: string } | string;
 }
 
 export default function Navbar({
@@ -17,9 +17,9 @@ export default function Navbar({
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
 
-  // 🧩 URL base del backend (usa variable VITE_API_URL si está definida)
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5144";
 
+  // 🔹 Cargar usuario al montar y escuchar cambios globales
   useEffect(() => {
     const loadUser = () => {
       const stored = localStorage.getItem("usuario");
@@ -27,16 +27,11 @@ export default function Navbar({
     };
 
     loadUser();
-
-    // Escucha cambios de sesión (login/logout/avatar actualizado)
     window.addEventListener("authChange", loadUser);
-
-    return () => {
-      window.removeEventListener("authChange", loadUser);
-    };
+    return () => window.removeEventListener("authChange", loadUser);
   }, []);
 
-
+  // 🔹 Cerrar sesión
   const handleLogout = async () => {
     const result = await Swal.fire({
       title: "¿Cerrar sesión?",
@@ -49,7 +44,7 @@ export default function Navbar({
     });
 
     if (result.isConfirmed) {
-      localStorage.removeItem("token"); 
+      localStorage.removeItem("token");
       localStorage.removeItem("usuario");
       setUsuario(null);
       navigate("/login");
@@ -57,11 +52,21 @@ export default function Navbar({
     }
   };
 
+  // 🧩 Determinar URL del avatar (acepta string o { url })
+  const avatarUrlRaw =
+    typeof usuario?.avatar === "string"
+      ? usuario.avatar
+      : usuario?.avatar?.url;
+
+  const avatarUrl =
+    avatarUrlRaw && avatarUrlRaw.trim() !== ""
+      ? `${BASE_URL.replace(/\/+$/, "")}/${avatarUrlRaw
+          .replace(/^\/+/, "")
+          .toLowerCase()}?v=${Date.now()}&id=${usuario?.id || ""}`
+      : `${BASE_URL.replace(/\/+$/, "")}/images/user.png`;
+
   return (
-    <nav
-      className="navbar px-4 shadow-sm"
-      style={{ backgroundColor: "#ff6b00" }}
-    >
+    <nav className="navbar px-4 shadow-sm" style={{ backgroundColor: "#ff6b00" }}>
       <div className="d-flex align-items-center w-100 justify-content-between">
         {/* 🔹 Lado izquierdo */}
         <div className="d-flex align-items-center gap-3">
@@ -106,11 +111,8 @@ export default function Navbar({
                 style={{ borderColor: "white" }}
               >
                 <img
-                  src={
-                    usuario.avatar?.url
-                      ? `${BASE_URL}/uploads/avatars/${usuario.avatar.url}`
-                      : "/images/user.png"
-                  }
+                  key={avatarUrl}
+                  src={avatarUrl}
                   alt="Avatar"
                   className="rounded-circle me-2"
                   style={{
@@ -118,6 +120,14 @@ export default function Navbar({
                     height: 36,
                     objectFit: "cover",
                     border: "2px solid white",
+                  }}
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.dataset.fallback) {
+                      console.warn("⚠️ Avatar no encontrado, usando fallback:", img.src);
+                      img.src = `${BASE_URL}/images/user.png`;
+                      img.dataset.fallback = "true";
+                    }
                   }}
                 />
                 <span>{usuario.alias || usuario.email}</span>

@@ -59,7 +59,7 @@ namespace Api.Controllers
             });
         }
 
-        // ✅ Subir o reemplazar avatar
+        // Subir o reemplazar avatar
         [HttpPost("{id:int}/avatar")]
         public async Task<IActionResult> SubirAvatar(int id, IFormFile archivo, CancellationToken ct)
         {
@@ -76,7 +76,7 @@ namespace Api.Controllers
             if (!allowed.Contains(ext))
                 return BadRequest("Formato de imagen no permitido.");
 
-            // 🗑️ Eliminar avatar anterior si existe
+            //  Eliminar avatar anterior si existe
             if (usuario.Avatar != null)
             {
                 try
@@ -90,11 +90,11 @@ namespace Api.Controllers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Error al eliminar avatar anterior: {ex.Message}");
+                    Console.WriteLine($" Error al eliminar avatar anterior: {ex.Message}");
                 }
             }
 
-            // 📸 Guardar nuevo avatar
+            // Guardar nuevo avatar
             var uploadsDir = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "avatars");
             Directory.CreateDirectory(uploadsDir);
 
@@ -113,8 +113,13 @@ namespace Api.Controllers
             usuario.Avatar = nuevoAvatar;
             await _db.SaveChangesAsync(ct);
 
-            return Ok(new { message = "✅ Avatar actualizado correctamente.", nuevoAvatar });
+            // Devolver respuesta compacta y clara para el frontend
+            return Ok(new
+            {
+                url = nuevoAvatar.Url
+            });
         }
+
 
         [HttpPatch("{id}/password")]
         public async Task<IActionResult> CambiarPassword(int id, [FromBody] PasswordUpdateDto dto, CancellationToken ct)
