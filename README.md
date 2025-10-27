@@ -207,9 +207,7 @@ Exportar la colección desde Postman: docs/GymAPI.postman_collection.json
 | Rol           | Email                                 | Contraseña |
 | ------------- | ------------------------------------- | ---------- |
 | Administrador | [admin@gym.com](mailto:admin@gym.com) | admin123   |
-| Profesor      | [profe@gym.com](mailto:profe@gym.com) | profe123   |
-| Socio         | [socio@gym.com](mailto:socio@gym.com) | socio123   |
-| Recepcionista | [@gmail.com](mailto:goyo@gmail.com)   | recep123   |
+| Recepcionista | [rece@gym.com](mailto:rece@gym.com)   | rece123    |
 
 ## ✅ Cumplimiento de los Requerimientos
 
@@ -262,5 +260,8 @@ Tecnicatura Universitaria en Desarrollo de Software — Universidad de La Punta 
 
 <img width="1913" height="869" alt="image" src="https://github.com/user-attachments/assets/1e1b197c-4d4a-45c3-9736-2970085feec3" />
 <img width="1895" height="880" alt="image" src="https://github.com/user-attachments/assets/923ab56c-114e-4bc4-8d8d-17583b5b3125" />
+<img width="1913" height="860" alt="image" src="https://github.com/user-attachments/assets/2df13ed3-80c5-40a0-acd5-44c9ea2eca93" />
+<img width="1906" height="868" alt="image" src="https://github.com/user-attachments/assets/41df292e-3eb8-4572-b8a6-f010a04d9f78" />
+<img width="1906" height="866" alt="image" src="https://github.com/user-attachments/assets/094135b2-d838-47ad-800f-0842d7511d5b" />
 
 
