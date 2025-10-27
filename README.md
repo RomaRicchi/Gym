@@ -16,7 +16,7 @@ Queda activo, pero aún no tiene suscripción.
 
 2️⃣ Elección del plan
 
-El socio elige un plan (plan_id).
+Se elige un plan (plan_id).
 
 El sistema genera automáticamente una orden de pago (orden_pago):
 
@@ -72,7 +72,7 @@ Se crean registros en orden_turno con validación de cupos y horario.
 
 8️⃣ Check-in en el gimnasio
 
-El socio realiza check-in (checkin).
+Se realiza check-in (checkin).
 
 El sistema valida:
 
@@ -85,25 +85,24 @@ Se actualiza el registro de asistencia.
 ## 🧱 Arquitectura del Proyecto
 
 Gym/
-├── GymApi/ → Backend (ASP.NET Core 9.0, Web API, EF Core, MariaDB)
+├── Api/ → Backend (ASP.NET Core 9.0, Web API, EF Core, MariaDB)
+│ ├── Context/ → Script de base de datos (MySQL/MariaDB)
 │ ├── Controllers/ → Controladores REST
 │ ├── Data/ → Contexto EF Core y modelos
 │ ├── Services/ → Servicios auxiliares (archivos, storage, etc.)
 │ ├── Program.cs → Configuración principal
 │ ├── appsettings.json
-│ └── GymApi.csproj
+│ └── Api.csproj
 │
-├── gym-web/ → Frontend (React + Vite + Tailwind)
+├── frontend (React + Vite + Tailwind)
 │ ├── src/
 │ ├── public/
 │ ├── package.json
 │ └── vite.config.ts
 │
-├── backup_qym_oram.sql → Script de base de datos (MySQL/MariaDB)
-└── Sistema de Gestión para Gimnasios.docx → Documentación técnica original
+└── start-gym.bat
 
 ---
-
 ## ⚙️ Tecnologías utilizadas
 
 | Capa | Tecnología |
@@ -159,9 +158,11 @@ Roles:
 
 - Administrador → CRUD completo.
 
-- Profesor → Rutinas y turnos.
+- Recepcionesta → manejo de cobro y horarios.
 
-- Socio → Consultas personales.
+- Profesor → Rutinas y turnos (aun no implementado).
+
+- Socio → Consultas personales (aun no implementado).
 
 🖼️ Manejo de Archivos
 
@@ -173,11 +174,11 @@ Implementado mediante los servicios:
 
 Permite almacenar comprobantes o archivos relacionados.
 
-Pendiente: campo avatar_url en usuario (para imagen de perfil).
+Campo avatar_url en usuario (para imagen de perfil).
 
 ⚛️ CRUD React + AJAX
 
-El frontend (carpeta gym-web) está desarrollado con React + Vite + Tailwind.
+El frontend está desarrollado con React + Vite + Tailwind.
 Usa peticiones AJAX (axios/fetch) al backend, logrando una interfaz dinámica y moderna.
 Uno de los ABM (por ejemplo, Planes o Socios) cumple completamente el requisito de CRUD vía API.
 
@@ -193,37 +194,13 @@ var socios = _context.Socios
 Búsqueda AJAX:
 /api/socios/buscar?q=juan devuelve coincidencias dinámicamente (ideal para selects en el frontend).
 
-🔑 API con JWT
-
-Configuración recomendada (a implementar):
-
-En Program.cs:
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-        };
-    });
-En appsettings.json:
-"Jwt": {
-  "Key": "ClaveSuperSecretaParaGym123!"
-}
 
 🧪 Pruebas y Colección Postman
 
-Iniciar el backend con: dotnet run --project GymApi
+Iniciar el backend con: dotnet run 
 
-dotnet run --project GymApi
 Acceder a Swagger:
-👉 http://localhost:5000/swagger
+👉 http://localhost:5144/swagger
 
 Exportar la colección desde Postman: docs/GymAPI.postman_collection.json
 
@@ -232,19 +209,39 @@ Exportar la colección desde Postman: docs/GymAPI.postman_collection.json
 | Administrador | [admin@gym.com](mailto:admin@gym.com) | admin123   |
 | Profesor      | [profe@gym.com](mailto:profe@gym.com) | profe123   |
 | Socio         | [socio@gym.com](mailto:socio@gym.com) | socio123   |
+| Recepcionista | [@gmail.com](mailto:goyo@gmail.com)   | recep123   |
+
+## ✅ Cumplimiento de los Requerimientos
+
+| # | Requisito | Implementado en / Descripción |
+|---|------------|-------------------------------|
+| 1 | 4+ clases/tablas con relación 1:N | `Socio`, `Plan`, `Suscripcion`, `Usuario`, `TurnoPlantilla` — relaciones gestionadas por EF Core |
+| 2 | Seguridad con login y roles | JWT + `[Authorize(Roles="...")]` en controladores (`UsuariosController`, `PerfilController`) |
+| 3 | Avatar en usuarios | Subida en `/perfil/{id}/avatar` + guardado en `/uploads/avatars` |
+| 4 | Archivos adicionales | Subida de comprobantes (`OrdenPagoController`, `/uploads/comprobantes`) |
+| 5 | ABM con React + AJAX | (en planes entre otras vistas) |
+| 6 | Listados con paginado real | `SociosController`, `SuscripcionesController`, `UsuariosController` con `Skip()` / `Take()` |
+| 7 | Selección con búsqueda AJAX | `Select2` / `react-select` en formularios (`Turnos`, `Suscripciones`) |
+| 8 | API con JWT | Configurada en `Program.cs`, autenticación en todos los controladores |
+| 9 | `.gitignore` | Incluye `/bin`, `/obj`, `/node_modules`, `/wwwroot/uploads` |
+| 10 | Diagrama ER o de clases | Incluido en `Api/Context/` |
+| 11 | README.md descriptivo | Este archivo 😉 |
+| 12 | Usuarios por rol | Admin, Profesor y Socio definidos en tabla de ejemplo |
+| 13 | Base de datos | Incluido en `Api/Context/` |
+| 14 | Colección Postman | Incluido en `Api/Context/` |
+
 
 🚀 Instrucciones de Ejecución
 🔧 Backend
-cd Gym/GymApi
-dotnet restore
-dotnet ef database update
-dotnet run
+cd Gym/Api
+  dotnet run
 
 ⚛️ Frontend
-cd Gym/gym-web
-npm install
-npm run dev
+cd Gym/frontend
+  npm run dev
 
+o... cd Gym  
+  .\start-gym.bat
 
 Abrir en el navegador:
 👉 http://localhost:5173
@@ -260,5 +257,10 @@ Tecnicatura Universitaria en Desarrollo de Software — Universidad de La Punta 
 📧 roma.ricchiardi@gmail.com
 
 💼 GitHub: [RomaRicchi](https://github.com/RomaRicchi)
+
+## 🖥️ Vista del Sistema
+
+<img width="1913" height="869" alt="image" src="https://github.com/user-attachments/assets/1e1b197c-4d4a-45c3-9736-2970085feec3" />
+<img width="1895" height="880" alt="image" src="https://github.com/user-attachments/assets/923ab56c-114e-4bc4-8d8d-17583b5b3125" />
 
 
