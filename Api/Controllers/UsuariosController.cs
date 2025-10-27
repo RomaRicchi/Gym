@@ -32,29 +32,56 @@ namespace Api.Controllers
             _emailService = emailService;
         }
 
-        // 🔹 GET: /api/usuarios
+        // GET: /api/usuarios
         [Authorize(Roles = "Administrador")]
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct)
+        public async Task<IActionResult> GetAll(
+            int page = 1,
+            int pageSize = 10,
+            string? q = null,
+            CancellationToken ct = default)
         {
-            var usuarios = await _db.Usuarios
+            // Base query
+            var query = _db.Usuarios
                 .Include(u => u.Rol)
-                .Include(u => u.Personal)
-                .Include(u => u.Avatar)
                 .AsNoTracking()
+                .OrderBy(u => u.Alias)
+                .AsQueryable();
+
+            // Filtro por búsqueda (alias o email)
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                query = query.Where(u =>
+                    EF.Functions.Like(u.Alias, $"%{q}%") ||
+                    EF.Functions.Like(u.Email, $"%{q}%"));
+            }
+
+            // Total antes de paginar
+            var totalItems = await query.CountAsync(ct);
+
+            // Paginación
+            var usuarios = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(u => new
                 {
                     u.Id,
                     u.Email,
                     u.Alias,
                     Rol = u.Rol != null ? u.Rol.Nombre : "(Sin rol)",
-                    Personal = u.Personal != null ? u.Personal.Nombre : "(Sin asignar)",
-                    Avatar = u.Avatar != null ? u.Avatar.Url : "/images/user.png",
-                    u.Estado
+                    Estado = u.Estado
                 })
                 .ToListAsync(ct);
 
-            return Ok(new { items = usuarios });
+            // Devuelve formato estándar para frontend
+            return Ok(new
+            {
+                totalItems,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                items = usuarios
+            });
         }
 
         // 🔹 GET: /api/usuarios/{id}

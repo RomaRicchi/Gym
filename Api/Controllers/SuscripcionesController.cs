@@ -21,30 +21,63 @@ namespace Api.Controllers
             _db = db;
         }
 
-        // 🔹 GET: api/suscripciones
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct = default)
+        public async Task<IActionResult> Get(
+            int page = 1,
+            int pageSize = 10,
+            int? socioId = null,
+            CancellationToken ct = default)
         {
-            var list = await _repo.Query()
+            // 🧩 Base query
+            var query = _db.Suscripciones
                 .Include(s => s.Socio)
                 .Include(s => s.Plan)
+                .AsNoTracking()
                 .OrderByDescending(s => s.CreadoEn)
+                .AsQueryable();
+
+            // 🔹 Filtro por socio
+            if (socioId.HasValue)
+                query = query.Where(s => s.SocioId == socioId.Value);
+
+            // 📊 Total de registros antes de paginar
+            var totalItems = await query.CountAsync(ct);
+
+            // 🧮 Paginación
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(s => new
                 {
                     s.Id,
-                    Socio = s.Socio != null ? s.Socio.Nombre : "—",
-                    Plan = s.Plan != null ? s.Plan.Nombre : "—",
-                    PlanId = s.PlanId,
+                    socio = s.Socio != null ? s.Socio.Nombre : "(sin socio)",
+                    plan = s.Plan != null ? s.Plan.Nombre : "(sin plan)",
+                    s.PlanId,
                     s.Inicio,
                     s.Fin,
                     s.Estado,
                     s.CreadoEn,
-                    OrdenPagoId = s.OrdenPagoId
+                    s.OrdenPagoId,
+                    // 🧩 Estos valores se pueden calcular en el frontend si querés
+                    TurnosAsignados = _db.SuscripcionTurnos.Count(t => t.SuscripcionId == s.Id),
+                    CupoMaximo = _db.Planes
+                        .Where(p => p.Id == s.PlanId)
+                        .Select(p => p.DiasPorSemana)
+                        .FirstOrDefault()
                 })
                 .ToListAsync(ct);
 
-            return Ok(list);
+            // ✅ Devuelve en formato esperado
+            return Ok(new
+            {
+                totalItems,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                items
+            });
         }
+
 
         // 🔹 GET: api/suscripciones/activas
         [HttpGet("activas")]

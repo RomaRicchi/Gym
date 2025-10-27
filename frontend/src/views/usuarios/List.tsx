@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import Pagination from "@/components/Pagination";
 import gymApi from "@/api/gymApi";
 import { UsuarioEditSwal } from "@/views/usuarios/UsuarioEditSwal";
 
@@ -8,22 +8,30 @@ interface Usuario {
   id: number;
   email: string;
   alias: string;
-  rol: string; // 👈 mostrar nombre del rol
+  rol: string;
   estado: boolean | number;
 }
 
 export default function UsuariosList() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const navigate = useNavigate();
-
-  // 🔹 Cargar usuarios
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [search, setSearch] = useState("");
+  
   const fetchUsuarios = async () => {
+    setLoading(true);
     try {
-      const res = await gymApi.get("/usuarios");
-      const data = res.data.items || res.data;
+      const res = await gymApi.get(
+        `/usuarios?page=${page}&pageSize=${pageSize}&q=${search}`
+      );
 
-      // Adaptar datos en caso de estructura diferente
-      const adaptados = data.map((u: any) => ({
+      const data = res.data;
+      const items = data.items || data;
+      setTotalItems(data.totalItems || items.length);
+
+      const adaptados = items.map((u: any) => ({
         id: u.id,
         email: u.email,
         alias: u.alias,
@@ -35,12 +43,14 @@ export default function UsuariosList() {
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "No se pudieron cargar los usuarios", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchUsuarios();
-  }, []);
+  }, [page, search]);
 
   // 🔸 Desactivar usuario
   const handleDelete = async (id: number) => {
@@ -65,7 +75,14 @@ export default function UsuariosList() {
     }
   };
 
-  // 🔸 Render
+  if (loading)
+    return (
+      <div className="text-center mt-5">
+        <div className="spinner-border text-warning" role="status"></div>
+        <p className="mt-3">Cargando usuarios...</p>
+      </div>
+    );
+
   return (
     <div className="mt-4">
       <h1
@@ -75,6 +92,19 @@ export default function UsuariosList() {
         USUARIOS
       </h1>
 
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <input
+          type="text"
+          placeholder="Buscar por alias o email..."
+          className="form-control"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          style={{ width: "40%" }}
+        />
+      </div>
 
       <table className="table table-striped table-hover align-middle">
         <thead className="table-dark text-center">
@@ -123,6 +153,14 @@ export default function UsuariosList() {
           )}
         </tbody>
       </table>
+
+      <Pagination
+        currentPage={page}
+        totalPages={Math.ceil(totalItems / pageSize)}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        onPageChange={(newPage) => setPage(newPage)}
+      />
     </div>
   );
 }

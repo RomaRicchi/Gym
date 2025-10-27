@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import Pagination from "@/components/Pagination";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import Select from "react-select";
 
 interface Turno {
   id: number;
@@ -24,7 +26,27 @@ interface Turno {
 
 export default function TurnosList() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
+ 
+  const [socios, setSocios] = useState<any[]>([]);
+  const [selectedSocio, setSelectedSocio] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  
+ const filteredTurnos = selectedSocio
+  ? turnos.filter((t) => t.suscripcion?.socio?.id === selectedSocio)
+  : turnos;
+
+  useEffect(() => {
+    const total = turnos.length;
+    setTotalPages(Math.ceil(total / itemsPerPage));
+
+    if (currentPage > Math.ceil(total / itemsPerPage)) {
+      setCurrentPage(1);
+    }
+  }, [turnos, itemsPerPage, currentPage]);
+
 
   // 🔹 Cargar turnos desde la API
   const fetchTurnos = async () => {
@@ -41,8 +63,18 @@ export default function TurnosList() {
     }
   };
 
+  const fetchSocios = async () => {
+    try {
+      const res = await gymApi.get("/socios");
+      setSocios(res.data.items || res.data);
+    } catch (err) {
+      console.error("⚠️ No se pudieron cargar los socios:", err);
+    }
+  };
+
   useEffect(() => {
     fetchTurnos();
+    fetchSocios();
   }, []);
 
   // 🔹 Registrar check-in
@@ -101,6 +133,10 @@ export default function TurnosList() {
         <p className="mt-3">Cargando turnos asignados...</p>
       </div>
     );
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const visibleTurnos = filteredTurnos.slice(startIndex, endIndex);
+  const total = filteredTurnos.length; // cuántos turnos hay (filtrados)
 
   return (
     <div className="mt-4 container">
@@ -110,7 +146,33 @@ export default function TurnosList() {
       >
         TURNOS ASIGNADOS
       </h1>
-
+      <div className="card mb-3 p-3 shadow-sm">
+        <label className="form-label fw-semibold">Filtrar por Socio</label>
+        <Select
+          options={socios.map((s) => ({
+            value: s.id,
+            label: `${s.nombre} (${s.email ?? "sin email"})`,
+          }))}
+          placeholder="Seleccionar socio..."
+          isClearable
+          onChange={(opt) => setSelectedSocio(opt ? opt.value : null)}
+          styles={{
+            control: (base) => ({
+              ...base,
+              borderColor: "#ff6b00",
+              boxShadow: "none",
+              "&:hover": { borderColor: "#ff6b00" },
+            }),
+          }}
+        /> 
+        <button
+          className="btn btn-outline-secondary ms-2"
+          onClick={() => setSelectedSocio(null)}
+        >
+          Limpiar filtro
+        </button>
+      </div>
+     
       <table className="table table-striped table-hover align-middle text-center shadow-sm">
         <thead className="table-dark">
           <tr>
@@ -128,7 +190,7 @@ export default function TurnosList() {
 
         <tbody>
           {turnos.length > 0 ? (
-            turnos.map((t) => {
+            visibleTurnos.map((t) => {
               const socio = t.suscripcion?.socio?.nombre || "—";
               const socioId = t.suscripcion?.socio?.id;
               const turno = t.turnoPlantilla;
@@ -153,7 +215,7 @@ export default function TurnosList() {
                   : "text-success";
 
               const checkinHecho = t.checkinHecho ?? false;
-
+              
               return (
                 <tr key={t.id}>
                   <td>{socio}</td>
@@ -205,6 +267,13 @@ export default function TurnosList() {
           )}
         </tbody>
       </table>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={Math.ceil(filteredTurnos.length / itemsPerPage)}
+        totalItems={filteredTurnos.length}
+        pageSize={itemsPerPage}
+        onPageChange={(page) => setCurrentPage(page)}
+      />
 
       <div className="text-end mt-3">
         <button

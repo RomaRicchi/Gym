@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { crearTurnoPlantilla } from "./TurnoPlantillaCreate";
 import { editarTurnoPlantilla } from "./TurnoPlantillaEdit";
+import Pagination from "@/components/Pagination";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
@@ -13,7 +14,7 @@ interface Turno {
   hora_inicio: string;
   duracion_min: number;
   activo: boolean | number;
-  cupo: number; // 🔹 se completa desde la sala
+  cupo: number; // se completa desde la sala
   sala_id?: number;
   personal_id?: number;
   dia_semana_id?: number;
@@ -30,6 +31,18 @@ export default function TurnosPlantillaList() {
   const [filtroSala, setFiltroSala] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10); // cantidad por página
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const total = filtered.length;
+    setTotalPages(Math.ceil(total / itemsPerPage));
+
+    if (currentPage > Math.ceil(total / itemsPerPage)) {
+      setCurrentPage(1);
+    }
+  }, [filtered, itemsPerPage, currentPage]);
 
   // 🔹 Cargar turnos, profesores, salas y días
   const fetchTurnos = async () => {
@@ -122,6 +135,9 @@ export default function TurnosPlantillaList() {
   };
 
   if (loading) return <p className="text-center mt-4">Cargando turnos...</p>;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const visibleTurnos = filtered.slice(startIndex, endIndex);
 
   return (
     <div className="mt-4 container">
@@ -219,7 +235,7 @@ export default function TurnosPlantillaList() {
           </tr>
         </thead>
         <tbody>
-          {filtered.map((t) => (
+          {visibleTurnos.map((t) => (
             <tr key={t.id}>
               <td>{t.sala?.nombre || "-"}</td>
               <td>{t.personal?.nombre || "-"}</td>
@@ -246,6 +262,14 @@ export default function TurnosPlantillaList() {
           ))}
         </tbody>
       </table>
+      <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            pageSize={itemsPerPage}
+            onPageChange={(page) => setCurrentPage(page)}
+      />
     </div>
+    
   );
 }

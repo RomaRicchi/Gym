@@ -77,10 +77,10 @@ public class SociosController : ControllerBase
         // ✅ Devuelve el formato esperado
         return Ok(new
         {
-            total,
-            page,
-            pageSize,
-            items
+            items,
+            totalItems = total,
+            totalPages = (int)Math.Ceiling((double)total / pageSize),
+            page    
         });
     }
 

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import Pagination from "@/components/Pagination";
+import Select from "react-select";
 import { mostrarFormEditarSuscripcion } from "@/views/suscripciones/SuscripcionEdit";
 import { asignarTurnos } from "@/views/agenda/suscripcionTurno/asignarTurnos";
 import Swal from "sweetalert2";
@@ -21,33 +23,52 @@ interface Suscripcion {
 export default function SuscripcionesList() {
   const [suscripciones, setSuscripciones] = useState<Suscripcion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [socios, setSocios] = useState<any[]>([]);
+  const [selectedSocio, setSelectedSocio] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
 
   const fetchSuscripciones = async () => {
+    setLoading(true);
     try {
-      const res = await gymApi.get("/suscripciones");
-      const data = res.data.items || res.data;
+      // 🔹 Filtros dinámicos
+      const socioParam = selectedSocio ? `&socioId=${selectedSocio}` : "";
+      const res = await gymApi.get(
+        `/suscripciones?page=${page}&pageSize=${pageSize}${socioParam}`
+      );
 
+      const data = res.data;
+      const items = data.items || data;
+      setTotalItems(data.totalItems || items.length);
+
+      // 🔁 Mantiene tu lógica original (turnos + plan)
       const parsed: Suscripcion[] = await Promise.all(
-        data.map(async (s: any) => {
+        items.map(async (s: any) => {
           try {
             // 🧩 Buscar turnos asignados
             const { data: turnos } = await gymApi.get(
               `/suscripcionturno/suscripcion/${s.id}`
             );
 
-            // Buscar el plan correctamente por ID
+            // 🧩 Buscar el plan para calcular cupo máximo (días por semana)
             let diasPorSemana = 0;
             if (s.planId) {
               const { data: plan } = await gymApi.get(`/planes/${s.planId}`);
-              diasPorSemana =
-                Number(plan.diasPorSemana ?? plan.dias_por_semana ?? plan.DiasPorSemana ?? 0);
+              diasPorSemana = Number(
+                plan.diasPorSemana ??
+                  plan.dias_por_semana ??
+                  plan.DiasPorSemana ??
+                  0
+              );
             }
 
             return {
               id: s.id,
               socio: s.socio ?? "-",
               plan: s.plan ?? "-",
-              plan_id: s.planId, 
+              plan_id: s.planId,
               inicio: s.inicio,
               fin: s.fin,
               estado: Boolean(s.estado),
@@ -83,9 +104,20 @@ export default function SuscripcionesList() {
   };
 
 
+  const fetchSocios = async () => {
+    try {
+      const res = await gymApi.get("/socios");
+      setSocios(res.data.items || res.data);
+    } catch (err) {
+      console.error("⚠️ No se pudieron cargar los socios:", err);
+    }
+  };
+
+
   useEffect(() => {
     fetchSuscripciones();
-  }, []);
+    fetchSocios();
+  },[page, selectedSocio]);
 
   //  Eliminar suscripción
   const handleDelete = async (id: number) => {
@@ -127,6 +159,41 @@ export default function SuscripcionesList() {
       >
         SUSCRIPCIONES
       </h1>
+      <div className="card mb-3 p-3 shadow-sm">
+        <label className="form-label fw-semibold">Filtrar por Socio</label>
+        <Select
+          options={socios.map((s) => ({
+            value: s.id,
+            label: `${s.nombre} (${s.email ?? "sin email"})`,
+          }))}
+          placeholder="Seleccionar socio..."
+          isClearable
+          onChange={(opt) => {
+            setSelectedSocio(opt ? opt.value : null);
+            setPage(1); // reinicia la paginación
+          }}
+          styles={{
+            control: (base) => ({
+              ...base,
+              borderColor: "#ff6b00",
+              boxShadow: "none",
+              "&:hover": { borderColor: "#ff6b00" },
+            }),
+          }}
+        />
+        <div className="text-end mt-3">
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => {
+              setSelectedSocio(null);
+              setPage(1);
+              fetchSuscripciones();
+            }}
+          >
+            Limpiar filtro
+          </button>
+        </div>
+      </div>
 
       <table className="table table-striped table-hover align-middle text-center shadow-sm">
         <thead className="table-dark">
@@ -218,6 +285,14 @@ export default function SuscripcionesList() {
           )}
         </tbody>
       </table>
+      <Pagination
+        currentPage={page}
+        totalPages={Math.ceil(totalItems / pageSize)}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        onPageChange={(newPage) => setPage(newPage)}
+      />
+
     </div>
   );
 }

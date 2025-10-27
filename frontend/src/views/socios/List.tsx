@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Pagination from "@/components/Pagination";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import { mostrarFormNuevoSocio } from "@/views/socios/SociosCreateSwal";
@@ -24,6 +25,7 @@ export default function SociosList() {
   const [socios, setSocios] = useState<Socio[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
@@ -32,7 +34,11 @@ export default function SociosList() {
     setLoading(true);
     try {
       const res = await gymApi.get(`/socios?page=${page}&pageSize=${pageSize}&q=${search}`);
-      setSocios(res.data.items || res.data);
+      console.log("📦 DATA BACKEND:", res.data);
+      const data = res.data;
+
+      setSocios(data.items || []);
+      setTotalItems(data.totalItems || data.total || 0); 
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "No se pudieron cargar los socios", "error");
@@ -40,6 +46,7 @@ export default function SociosList() {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchSocios();
@@ -169,24 +176,14 @@ export default function SociosList() {
         </tbody>
       </table>
 
-      {/* ⏩ Paginación */}
-      <div className="d-flex justify-content-between mt-3">
-        <button
-          className="btn btn-outline-primary"
-          onClick={() => setPage((p) => Math.max(p - 1, 1))}
-          disabled={page === 1}
-        >
-          ← Anterior
-        </button>
-        <span>Página {page}</span>
-        <button
-          className="btn btn-outline-primary"
-          onClick={() => setPage((p) => p + 1)}
-          disabled={socios.length < pageSize}
-        >
-          Siguiente →
-        </button>
-      </div>
+      <Pagination
+        currentPage={page}
+        totalPages={Math.ceil(totalItems / pageSize)}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        onPageChange={(newPage) => setPage(newPage)}
+      />
+
     </div>
   );
 

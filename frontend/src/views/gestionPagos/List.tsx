@@ -26,7 +26,7 @@ export default function OrdenesList() {
     if (dtInstance.current) dtInstance.current.draw();
   }, [fechaInicio, fechaFin]);
 
-  // 🔹 Cargar datos
+  // Cargar datos
   const fetchOrdenes = async () => {
     try {
       const res = await gymApi.get("/ordenes");
@@ -39,14 +39,16 @@ export default function OrdenesList() {
   };
   useEffect(() => { fetchOrdenes(); }, []);
 
-  // 🔹 Inicializar DataTable
+  //  Inicializar DataTable
   useEffect(() => {
     if (!loading && tableRef.current && !dtInstance.current) {
       dtInstance.current = new DataTable(tableRef.current, {
         responsive: true,
-        pageLength: 10,
+        deferRender: true,
+        pageLength: 10, // cantidad inicial
+        lengthMenu: [ [5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"] ],
         destroy: true,
-        order: [[6, "asc"]], // ordenar por venceISO
+        order: [[6, "asc"]],
         language: {
           url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
@@ -57,11 +59,11 @@ export default function OrdenesList() {
           { data: "vence" },
           { data: "estado" },
           { data: "acciones" },
-          { data: "venceISO", visible: false, defaultContent: "" }, // ✅ fallback seguro
+          { data: "venceISO", visible: false, defaultContent: "" },
         ],
       });
 
-      // 🔹 Filtro personalizado
+      // Filtro personalizado
       $.fn.dataTable.ext.search.push((settings: any, data: string[]) => {
         const desde = fechaInicioRef.current || "0000-01-01";
         const hasta = fechaFinRef.current || "9999-12-31";
@@ -80,7 +82,7 @@ export default function OrdenesList() {
     };
   }, [loading]);
 
-  // 🔹 Formateo seguro
+  // Formateo seguro
   const parseFecha = (fecha: any) => {
     try {
       const d = new Date(fecha);
@@ -108,7 +110,7 @@ export default function OrdenesList() {
           plan: o.plan?.nombre || "—",
           monto: `$${o.monto?.toFixed(2) || "0.00"}`,
           vence: local || "—",
-          venceISO: iso || "", // ✅ garantizado siempre presente
+          venceISO: iso || "", // garantizado siempre presente
           estado: `
             <span class="badge ${
               o.estado?.nombre?.toLowerCase() === "verificado"
@@ -141,6 +143,7 @@ export default function OrdenesList() {
 
       dtInstance.current.clear();
       dtInstance.current.rows.add(rows).draw();
+      dtInstance.current.page(0).draw();
 
       $(tableRef.current!).off("click");
 
@@ -167,7 +170,7 @@ export default function OrdenesList() {
             return;
           }
 
-          // 🧩 Construimos la URL completa con el backend
+          //  Construi la URL completa con el backend
           const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5144";
           const fullUrl = `${baseUrl}/${fileUrl}`; 
           if (fileUrl.toLowerCase().endsWith(".pdf")) {
