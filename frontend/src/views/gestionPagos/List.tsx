@@ -236,7 +236,20 @@ export default function OrdenesList() {
           />
         </div>
         <Button
-          variant="secondary"
+          className="btn btn-warning fw-semibold px-4 py-2"
+          style={{
+            backgroundColor: "#ff6600",
+            border: "none",
+            borderRadius: "8px",
+            color: "white",
+            transition: "all 0.2s ease",
+          }}
+          onMouseOver={(e) =>
+            ((e.target as HTMLButtonElement).style.backgroundColor = "#e65100")
+          }
+          onMouseOut={(e) =>
+            ((e.target as HTMLButtonElement).style.backgroundColor = "#ff6600")
+          }
           onClick={() => {
             setFechaInicio("");
             setFechaFin("");

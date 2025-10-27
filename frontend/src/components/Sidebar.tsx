@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHouse,
@@ -12,12 +13,22 @@ import {
   faGears,
   faPuzzlePiece,
   faUser,
-  faListCheck,      // ✅ nuevo ícono para “Listado de turnos”
-  faCalendarCheck,  // ✅ nuevo ícono para “Asignar turnos”
+  faListCheck,      
+  faCalendarCheck,  
 } from "@fortawesome/free-solid-svg-icons";
 import "@/styles/Sidebar.css";
 
 export default function Sidebar() {
+    const [usuario, setUsuario] = useState<{ rol?: string }>({});
+    const location = useLocation();
+
+    useEffect(() => {
+      const stored = localStorage.getItem("usuario");
+      if (stored) setUsuario(JSON.parse(stored));
+    }, []);
+
+    const rol = usuario?.rol || "Invitado";
+
   return (
     <div className="sidebar">
       <ul className="nav flex-column">
@@ -122,36 +133,40 @@ export default function Sidebar() {
         <hr className="sidebar-divider" />
 
         {/* Instalaciones */}
-        <li className="nav-section">
-          <span className="text-uppercase small text-muted">Instalaciones</span>
-        </li>
+        {rol === "Administrador" && (
+        <>
+          <li className="nav-section">
+            <span className="text-uppercase small text-muted">Instalaciones</span>
+          </li>
 
-        <li className="nav-item">
-          <NavLink
-            to="/salas"
-            className={({ isActive }) =>
-              `nav-link ${isActive ? "active-link" : ""}`
-            }
-          >
-            <FontAwesomeIcon icon={faDumbbell} className="me-2" />
-            Salas
-          </NavLink>
-        </li>
+          <li className="nav-item">
+            <NavLink
+              to="/salas"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? "active-link" : ""}`
+              }
+            >
+              <FontAwesomeIcon icon={faDumbbell} className="me-2" />
+              Salas
+            </NavLink>
+          </li>
 
-        <li className="nav-item">
-          <NavLink
-            to="/personal"
-            className={({ isActive }) =>
-              `nav-link ${isActive ? "active-link" : ""}`
-            }
-          >
-            <FontAwesomeIcon icon={faUserTie} className="me-2" />
-            Personal
-          </NavLink>
-        </li>
+          <li className="nav-item">
+            <NavLink
+              to="/personal"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? "active-link" : ""}`
+              }
+            >
+              <FontAwesomeIcon icon={faUserTie} className="me-2" />
+              Personal
+            </NavLink>
+          </li>
+       
 
         <hr className="sidebar-divider" />
-
+        </>
+        )}
         {/* Pagos */}
         <li className="nav-section">
           <span className="text-uppercase small text-muted">Pagos</span>
@@ -168,7 +183,8 @@ export default function Sidebar() {
             Órdenes
           </NavLink>
         </li>
-
+        {rol === "Administrador" && (
+        <>
         <li className="nav-item">
           <NavLink
             to="/estados"
@@ -180,10 +196,13 @@ export default function Sidebar() {
             Estados
           </NavLink>
         </li>
-
+        </>
+        )}
         <hr className="sidebar-divider" />
 
         {/* Usuarios */}
+        {rol === "Administrador" && (
+        <>
         <li className="nav-section">
           <span className="text-uppercase small text-muted">Usuarios</span>
         </li>
@@ -211,6 +230,8 @@ export default function Sidebar() {
             Usuarios
           </NavLink>
         </li>
+        </>
+      )}
       </ul>
     </div>
   );

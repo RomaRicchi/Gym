@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción")]
     [ApiController]
     [Route("api/[controller]")]
     public class SuscripcionesController : ControllerBase
@@ -28,7 +28,7 @@ namespace Api.Controllers
             int? socioId = null,
             CancellationToken ct = default)
         {
-            // 🧩 Base query
+            // Base query
             var query = _db.Suscripciones
                 .Include(s => s.Socio)
                 .Include(s => s.Plan)
@@ -36,14 +36,14 @@ namespace Api.Controllers
                 .OrderByDescending(s => s.CreadoEn)
                 .AsQueryable();
 
-            // 🔹 Filtro por socio
+            //  Filtro por socio
             if (socioId.HasValue)
                 query = query.Where(s => s.SocioId == socioId.Value);
 
-            // 📊 Total de registros antes de paginar
+            // total de registros antes de paginar
             var totalItems = await query.CountAsync(ct);
 
-            // 🧮 Paginación
+            // Paginación
             var items = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -58,7 +58,7 @@ namespace Api.Controllers
                     s.Estado,
                     s.CreadoEn,
                     s.OrdenPagoId,
-                    // 🧩 Estos valores se pueden calcular en el frontend si querés
+                    // Estos valores se pueden calcular en el frontend si querés
                     TurnosAsignados = _db.SuscripcionTurnos.Count(t => t.SuscripcionId == s.Id),
                     CupoMaximo = _db.Planes
                         .Where(p => p.Id == s.PlanId)
@@ -67,7 +67,7 @@ namespace Api.Controllers
                 })
                 .ToListAsync(ct);
 
-            // ✅ Devuelve en formato esperado
+            // Devuelve en formato esperado
             return Ok(new
             {
                 totalItems,
@@ -79,7 +79,7 @@ namespace Api.Controllers
         }
 
 
-        // 🔹 GET: api/suscripciones/activas
+        // GET: api/suscripciones/activas
         [HttpGet("activas")]
         public async Task<IActionResult> GetActivas(CancellationToken ct = default)
         {
@@ -87,9 +87,8 @@ namespace Api.Controllers
             return Ok(list);
         }
 
-        // 🔹 GET: api/suscripciones/socio/{id}
+        // GET: api/suscripciones/socio/{id}
         [HttpGet("socio/{id}")]
-        // ✅ GET /api/suscripciones?socioId=5
         public async Task<IActionResult> GetBySocio([FromQuery] int socioId, CancellationToken ct)
         {
             var suscripciones = await _db.Suscripciones
@@ -110,7 +109,7 @@ namespace Api.Controllers
         }
 
 
-        // 🔹 GET: api/suscripciones/por-orden/{ordenId}
+        // GET: api/suscripciones/por-orden/{ordenId}
         [HttpGet("por-orden/{ordenId:int:min(1)}")]
         public async Task<IActionResult> GetByOrdenPago([FromRoute] int ordenId, CancellationToken ct = default)
         {
@@ -120,7 +119,7 @@ namespace Api.Controllers
             return Ok(sus);
         }
 
-        // 🔹 GET: api/suscripciones/{id}
+        // GET: api/suscripciones/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct = default)
         {
@@ -130,7 +129,7 @@ namespace Api.Controllers
             return Ok(sus);
         }
 
-        // 🔹 POST: api/suscripciones
+        // POST: api/suscripciones
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] SuscripcionCreateDto dto, CancellationToken ct = default)
         {
@@ -197,7 +196,7 @@ namespace Api.Controllers
         }
 
 
-        // 🔹 PUT: api/suscripciones/{id}
+        // PUT: api/suscripciones/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Actualizar([FromRoute] int id, [FromBody] Suscripcion dto, CancellationToken ct = default)
         {
@@ -215,7 +214,7 @@ namespace Api.Controllers
             return Ok(new { ok = true, mensaje = "Suscripción actualizada correctamente" });
         }
 
-        // 🔹 PATCH: api/suscripciones/{id}/estado
+        // PATCH: api/suscripciones/{id}/estado
         [HttpPatch("{id}/estado")]
         public async Task<IActionResult> CambiarEstado([FromRoute] int id, [FromBody] bool nuevoEstado, CancellationToken ct = default)
         {
@@ -229,7 +228,7 @@ namespace Api.Controllers
             return Ok(new { ok = true, id, nuevoEstado });
         }
 
-        // 🔹 DELETE: api/suscripciones/{id}
+        // DELETE: api/suscripciones/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Eliminar([FromRoute] int id, CancellationToken ct = default)
         {
@@ -241,7 +240,7 @@ namespace Api.Controllers
             return Ok(new { ok = true, mensaje = "Suscripción eliminada correctamente" });
         }
 
-        // 🔹 GET: api/suscripciones/vencen-semana
+        // GET: api/suscripciones/vencen-semana
         [HttpGet("vencen-semana")]
         public async Task<IActionResult> GetSuscripcionesQueVencenEstaSemana(CancellationToken ct = default)
         {

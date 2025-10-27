@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers;
 
-[Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+[Authorize(Roles = "Administrador, Profesor, Recepción")]
 [ApiController]
 [Route("api/socios")]
 public class SociosController : ControllerBase
@@ -22,7 +22,7 @@ public class SociosController : ControllerBase
         _db = db;
     }
 
-    // ✅ GET /api/socios?page=1&pageSize=10&q=roma&activo=true
+    // GET /api/socios?page=1&pageSize=10&q=roma&activo=true
     [HttpGet]
     public async Task<IActionResult> Get(
         int page = 1,
@@ -31,26 +31,26 @@ public class SociosController : ControllerBase
         bool? activo = null,
         CancellationToken ct = default)
     {
-        // 🧩 Base query
+        // Base query
         var query = _db.Socios
             .AsNoTracking()
             .OrderBy(s => s.Nombre)
             .AsQueryable();
 
-        // 🔍 Filtro de búsqueda
+        // Filtro de búsqueda
         if (!string.IsNullOrWhiteSpace(q))
             query = query.Where(s =>
                 EF.Functions.Like(s.Nombre, $"%{q}%") ||
                 EF.Functions.Like(s.Dni, $"%{q}%"));
 
-        // ✅ Filtro de activo/inactivo
+        // Filtro de activo/inactivo
         if (activo.HasValue)
             query = query.Where(s => s.Activo == activo.Value);
 
-        // 📊 Total de registros antes de paginar
+        // Total de registros antes de paginar
         var total = await query.CountAsync(ct);
 
-        // 📦 Paginación + cálculo del plan actual
+        // Paginación + cálculo del plan actual
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -65,7 +65,7 @@ public class SociosController : ControllerBase
                 s.CreadoEn,
                 s.FechaNacimiento,
 
-                // 🧩 Trae el nombre del plan activo más reciente
+                // Trae el nombre del plan activo más reciente
                 PlanActual = _db.Suscripciones
                     .Where(sub => sub.SocioId == s.Id && sub.Estado == true)
                     .OrderByDescending(sub => sub.CreadoEn)
@@ -74,7 +74,7 @@ public class SociosController : ControllerBase
             })
             .ToListAsync(ct);
 
-        // ✅ Devuelve el formato esperado
+        // Devuelve el formato esperado
         return Ok(new
         {
             items,
@@ -84,7 +84,7 @@ public class SociosController : ControllerBase
         });
     }
 
-    // ✅ GET /api/socios/5
+    // GET /api/socios/5
     [HttpGet("{id:int:min(1)}")]
     public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
     {
@@ -100,13 +100,13 @@ public class SociosController : ControllerBase
             s.Activo,
             s.CreadoEn,
             s.FechaNacimiento,
-            s.PlanActual // 👈 muestra plan actual si lo tiene
+            s.PlanActual //  muestra plan actual si lo tiene
         );
 
         return Ok(dto);
     }
 
-    // ✅ POST /api/socios
+    // POST /api/socios
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] SocioCreateDto body, CancellationToken ct)
     {
@@ -154,14 +154,14 @@ public class SociosController : ControllerBase
         }
     }
 
-    // ✅ PUT /api/socios/5
+    // PUT /api/socios/5
     [HttpPut("{id:int:min(1)}")]
     public async Task<IActionResult> Put([FromRoute] int id, [FromBody] SocioUpdateDto body, CancellationToken ct)
     {
         if (body.FechaNacimiento.HasValue && body.FechaNacimiento > DateTime.UtcNow)
             return BadRequest("La fecha de nacimiento no puede ser futura.");
 
-        // 👇 UpdateAsync ahora devuelve bool, no void
+        // UpdateAsync ahora devuelve bool, no void
         var ok = await _repo.UpdateAsync(id, s =>
         {
             if (!string.IsNullOrWhiteSpace(body.Nombre)) s.Nombre = body.Nombre.Trim();
@@ -191,7 +191,7 @@ public class SociosController : ControllerBase
         return Ok(dto);
     }
 
-    // ✅ PATCH /api/socios/5/bajaLogica?value=false
+    // PATCH /api/socios/5/bajaLogica?value=false
     [HttpPatch("{id:int:min(1)}/bajaLogica")]
     public async Task<IActionResult> BajaLogica([FromRoute] int id, [FromQuery] bool value = true, CancellationToken ct = default)
     {
@@ -199,7 +199,7 @@ public class SociosController : ControllerBase
         return ok ? NoContent() : NotFound();
     }
 
-    // ✅ Buscar por nombre o dni (sin cambios)
+    // Buscar por nombre o dni (sin cambios)
     [HttpGet("buscar")]
     public async Task<IActionResult> BuscarPorNombreYDni(
         [FromQuery] string? nombre = null,
@@ -244,7 +244,7 @@ public class SociosController : ControllerBase
         return Ok(new { total, page, pageSize, items });
     }
 
-    // ✅ Cumpleaños del mes (sin cambios)
+    // Cumpleaños del mes (sin cambios)
     [HttpGet("cumpleanios")]
     public async Task<IActionResult> GetCumpleaniosMes([FromQuery] int? mes = null, CancellationToken ct = default)
     {
@@ -272,7 +272,7 @@ public class SociosController : ControllerBase
         return Ok(new { mes = mesActual, total = socios.Count, socios });
     }
 
-    // ✅ Socios por plan (sin cambios)
+    // Socios por plan (sin cambios)
     [HttpGet("por-plan/{planId:int:min(1)}")]
     public async Task<IActionResult> GetByPlanPaginado(
         [FromRoute] int planId,

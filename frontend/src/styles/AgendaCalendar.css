@@ -1,85 +1,156 @@
-.agenda-calendar-container {
-  margin-top: 1.5rem;
+/* 🧱 CONTENEDOR GENERAL */
+.agenda-container {
   padding: 1rem;
+  transition: all 0.3s ease; /* fluidez al ocultar sidebar */
 }
 
+/* 🧭 TÍTULO */
 .agenda-title {
   text-align: center;
   color: #ff6600;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 1.5rem;
+  letter-spacing: 2px;
 }
 
+/* 🎛️ FILTROS (centrados e iguales) */
 .agenda-filtros {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.5rem;
+  gap: 2rem;
   margin-bottom: 1.5rem;
 }
 
-/* 🔶 Estilo FullCalendar */
-.fc .fc-toolbar-title {
-  color: #ff6600;
+.agenda-filtros > div {
+  width: 250px;
+  text-align: center;
+}
+
+.agenda-filtros label {
+  display: block;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  color: #333;
+  margin-bottom: 0.5rem;
+  text-align: center;
 }
 
-/* 🔹 Forzar color negro en encabezados de días y horas */
-.fc .fc-col-header-cell,
-.fc .fc-timegrid-slot-label {
-  background-color: #ff6600 !important;
-  color: #000 !important;
-  font-weight: 700;
-  border: 1px solid #e65100;
+.agenda-filtros select {
+  width: 100%;
+  text-align: center;
+  border: 2px solid #ff6600;
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-/* 🔹 Forzar color negro en los enlaces de los días */
-.fc .fc-col-header-cell a {
-  color: #000 !important;
-  text-decoration: none !important;
-  font-weight: 700 !important;
+.agenda-filtros select:hover,
+.agenda-filtros select:focus {
+  border-color: #e65100;
+  box-shadow: 0 0 5px rgba(255, 102, 0, 0.4);
+  outline: none;
 }
 
-/* 🔹 Al pasar el mouse, que no cambie a azul */
-.fc .fc-col-header-cell a:hover {
-  color: #111 !important;
+/* 🗓️ CALENDARIO (contenedor blanco con sombra) */
+.agenda-calendar-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
 }
 
-.fc .fc-timegrid-slot {
-  border-color: #ffe0b2;
-}
-
-.fc .fc-scrollgrid {
-  border-color: #ffb74d;
-}
-
-.fc-event {
-  border-radius: 8px !important;
-  background-color: #ff9800 !important;
-  border: 1px solid #e65100 !important;
-  color: #fff !important;
-  box-shadow: 0 2px 6px rgba(255, 102, 0, 0.4);
-  transition: transform 0.2s ease, filter 0.2s ease;
-}
-
-.fc-event:hover {
-  transform: scale(1.03);
-  filter: brightness(1.05);
-}
-
+/* 📅 CABECERA (botones y días) */
 .fc .fc-toolbar-chunk button {
   background-color: #ff6600 !important;
   border: none !important;
   color: white !important;
   font-weight: 600;
   border-radius: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
+  transition: all 0.2s ease;
 }
 
 .fc .fc-toolbar-chunk button:hover {
   background-color: #e65100 !important;
+}
+
+.fc .fc-toolbar-title {
+  color: #222;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* 🔹 ENCABEZADO DE DÍAS (LUN, MAR, MIÉ...) */
+.fc .fc-col-header-cell {
+  background: linear-gradient(180deg, #333, #111) !important;
+  color: #ffb74d !important;
+  border: 1px solid #444 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.fc .fc-col-header-cell a {
+  color: #ff9800 !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+  transition: color 0.2s ease;
+}
+
+.fc .fc-col-header-cell a:hover {
+  color: #ffc107 !important;
+}
+
+/* ⏰ COLUMNA DE HORAS */
+.fc .fc-timegrid-slot-label {
+  background-color: #222 !important;
+  color: #fff !important;
+  font-weight: 600;
+  border-right: 1px solid #444 !important;
+}
+
+/* 🔲 CELDAS */
+.fc .fc-timegrid-slot {
+  border-color: #eee;
+}
+
+/* 🟧 EVENTOS */
+.fc-event {
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, #ff9800, #ff6600) !important;
+  border: 1px solid #e65100 !important;
+  color: #fff !important;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(255, 102, 0, 0.3);
+  transition: all 0.25s ease-in-out;
+}
+
+.fc-event:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+/* 💡 Ajuste fluido al cambiar ancho (sidebar oculto) */
+.agenda-calendar-container .fc {
+  width: 100% !important;
+  transition: width 0.3s ease;
+}
+
+/* Opcional: mejora visual en pantallas grandes */
+@media (min-width: 1200px) {
+  .agenda-calendar-container {
+    margin: 0 auto;
+    max-width: 95%;
+  }
+}
+.agenda-calendar-container {
+  transition: all 0.3s ease-in-out;
+  width: 100%;
+}
+.agenda-calendar-container .fc {
+  width: 100% !important;
+  transition: width 0.3s ease;
 }

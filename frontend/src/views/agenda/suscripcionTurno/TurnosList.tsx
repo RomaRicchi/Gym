@@ -146,30 +146,47 @@ export default function TurnosList() {
       >
         TURNOS ASIGNADOS
       </h1>
-      <div className="card mb-3 p-3 shadow-sm">
-        <label className="form-label fw-semibold">Filtrar por Socio</label>
-        <Select
-          options={socios.map((s) => ({
-            value: s.id,
-            label: `${s.nombre} (${s.email ?? "sin email"})`,
-          }))}
-          placeholder="Seleccionar socio..."
-          isClearable
-          onChange={(opt) => setSelectedSocio(opt ? opt.value : null)}
-          styles={{
-            control: (base) => ({
-              ...base,
-              borderColor: "#ff6b00",
-              boxShadow: "none",
-              "&:hover": { borderColor: "#ff6b00" },
-            }),
-          }}
-        /> 
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="flex-grow-1 w-100">
+          <Select
+            options={socios.map((s) => ({
+              value: s.id,
+              label: `${s.nombre} (${s.email ?? "sin email"})`,
+            }))}
+            placeholder="Seleccionar socio..."
+            isClearable
+            onChange={(opt) => setSelectedSocio(opt ? opt.value : null)}
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: "#ff6b00",
+                boxShadow: "none",
+                "&:hover": { borderColor: "#ff6b00" },
+                borderRadius: "8px",
+                fontWeight: 500,
+              }),
+            }}
+          />
+        </div>
+
         <button
-          className="btn btn-outline-secondary ms-2"
+          className="btn btn-warning fw-semibold px-4 py-2"
+          style={{
+            backgroundColor: "#ff6600",
+            border: "none",
+            borderRadius: "8px",
+            color: "white",
+            transition: "all 0.2s ease",
+          }}
+          onMouseOver={(e) =>
+            ((e.target as HTMLButtonElement).style.backgroundColor = "#e65100")
+          }
+          onMouseOut={(e) =>
+            ((e.target as HTMLButtonElement).style.backgroundColor = "#ff6600")
+          }
           onClick={() => setSelectedSocio(null)}
         >
-          Limpiar filtro
+          Limpiar
         </button>
       </div>
      
@@ -274,15 +291,6 @@ export default function TurnosList() {
         pageSize={itemsPerPage}
         onPageChange={(page) => setCurrentPage(page)}
       />
-
-      <div className="text-end mt-3">
-        <button
-          className="btn btn-outline-secondary"
-          onClick={() => fetchTurnos()}
-        >
-          🔄 Actualizar lista
-        </button>
-      </div>
     </div>
   );
 }

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción")]
     [ApiController]
     [Route("api/turnosplantilla")]
     public class TurnosPlantillaController : ControllerBase
@@ -22,7 +22,7 @@ namespace Api.Controllers
             _db = db;
         }
 
-        // 🔹 Obtener todos
+        // Obtener todos
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct = default)
         {
@@ -30,7 +30,7 @@ namespace Api.Controllers
             return Ok(list);
         }
 
-        // 🔹 Obtener activos
+        // Obtener activos
         [HttpGet("activos")]
         public async Task<IActionResult> GetActivos(CancellationToken ct = default)
         {
@@ -38,7 +38,7 @@ namespace Api.Controllers
             return Ok(list);
         }
 
-        // 🔹 Obtener por ID
+        // Obtener por ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
         {
@@ -49,7 +49,7 @@ namespace Api.Controllers
             return Ok(turno);
         }
 
-        // 🔹 Obtener por día (ahora usa el nuevo método del repo)
+        // Obtener por día (ahora usa el nuevo método del repo)
         [HttpGet("dia/{id:int}")]
         public async Task<IActionResult> GetByDia(int id, CancellationToken ct = default)
         {
@@ -60,7 +60,7 @@ namespace Api.Controllers
             return Ok(turnos);
         }
 
-        // 🔹 Crear nuevo turno plantilla
+        // Crear nuevo turno plantilla
         [HttpPost("crear")]
         public async Task<IActionResult> Crear([FromBody] TurnoPlantillaCreateDto dto, CancellationToken ct)
         {
@@ -95,7 +95,7 @@ namespace Api.Controllers
             }
         }
 
-        // 🔹 Actualizar turno existente
+        // Actualizar turno existente
         [HttpPut("{id}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] TurnoPlantilla dto, CancellationToken ct = default)
         {
@@ -127,7 +127,7 @@ namespace Api.Controllers
             return Ok(new { ok = true, message = "Turno actualizado correctamente." });
         }
 
-        // 🔹 Eliminar turno
+        // Eliminar turno
         [HttpDelete("{id}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct = default)
         {

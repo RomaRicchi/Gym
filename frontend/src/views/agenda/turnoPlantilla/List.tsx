@@ -149,10 +149,9 @@ export default function TurnosPlantillaList() {
       </h1>
 
       {/* 🔸 FILTROS */}
-      <div className="card mb-3 p-3 shadow-sm">
-        <div className="row g-3 align-items-end">
-          <div className="col-md-4">
-            <label className="form-label">Filtrar por Día</label>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="flex-grow-1 w-100 row g-3">
+          <div className="col-md-4 col-sm-12">
             <select
               className="form-select"
               value={filtroDia}
@@ -168,7 +167,6 @@ export default function TurnosPlantillaList() {
           </div>
 
           <div className="col-md-4">
-            <label className="form-label">Filtrar por Profesor</label>
             <select
               className="form-select"
               value={filtroProfesor}
@@ -184,7 +182,6 @@ export default function TurnosPlantillaList() {
           </div>
 
           <div className="col-md-4">
-            <label className="form-label">Filtrar por Sala</label>
             <select
               className="form-select"
               value={filtroSala}
@@ -199,17 +196,29 @@ export default function TurnosPlantillaList() {
             </select>
           </div>
         </div>
-
-        <div className="mt-3 d-flex justify-content-end gap-2">
-          <button
-            className="btn btn-secondary"
+      </div>
+        <button
+          className="btn btn-warning fw-semibold px-4 py-2"
+          style={{
+            backgroundColor: "#ff6600",
+            border: "none",
+            borderRadius: "8px",
+            color: "white",
+            transition: "all 0.2s ease",
+          }}
+          onMouseOver={(e) =>
+            ((e.target as HTMLButtonElement).style.backgroundColor = "#e65100")
+          }
+          onMouseOut={(e) =>
+            ((e.target as HTMLButtonElement).style.backgroundColor = "#ff6600")
+          }
             onClick={() => {
               setFiltroDia("");
               setFiltroProfesor("");
               setFiltroSala("");
             }}
           >
-            Limpiar Filtros
+            Limpiar
           </button>
           <button
             className="btn btn-success"
@@ -217,10 +226,8 @@ export default function TurnosPlantillaList() {
           >
             ➕ Nuevo Turno
           </button>
-        </div>
-      </div>
-
-      {/* 🔸 TABLA */}
+      
+   
       <table className="table table-striped table-hover text-center align-middle">
         <thead className="table-dark">
           <tr>

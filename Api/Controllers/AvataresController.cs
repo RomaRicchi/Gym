@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción")]
     [ApiController]
     [Route("api/[controller]")]
     public class AvataresController : ControllerBase
@@ -17,7 +17,7 @@ namespace Api.Controllers
             _repo = repo;
         }
 
-        // ✅ GET: api/avatares
+        // GET: api/avatares
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Avatar>>> GetAll(CancellationToken ct)
         {
@@ -25,7 +25,7 @@ namespace Api.Controllers
             return Ok(avatares);
         }
 
-        // ✅ GET: api/avatares/{id}
+        // GET: api/avatares/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<Avatar>> GetById(int id, CancellationToken ct)
         {
@@ -36,7 +36,7 @@ namespace Api.Controllers
             return Ok(avatar);
         }
 
-        // ✅ POST: api/avatares
+        // POST: api/avatares
         [HttpPost]
         public async Task<ActionResult<Avatar>> Create([FromBody] Avatar avatar, CancellationToken ct)
         {
@@ -44,7 +44,7 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
-        // ✅ PUT: api/avatares/{id}
+        // PUT: api/avatares/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] Avatar avatar, CancellationToken ct)
         {
@@ -58,7 +58,7 @@ namespace Api.Controllers
             return NoContent();
         }
 
-        // ✅ DELETE: api/avatares/{id}
+        // DELETE: api/avatares/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {

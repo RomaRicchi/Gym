@@ -3,7 +3,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
 import { EventClickArg } from "@fullcalendar/core";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import { crearTurnoPlantilla } from "@/views/agenda/turnoPlantilla/TurnoPlantillaCreate";
@@ -35,8 +35,8 @@ export default function AgendaCalendar() {
   const [profesores, setProfesores] = useState<Profesor[]>([]);
   const [filtroSala, setFiltroSala] = useState<string>("todos");
   const [filtroProfesor, setFiltroProfesor] = useState<string>("todos");
-
-  // 🔹 Cargar filtros de salas y profesores
+  const calendarRef = useRef<any>(null);
+  // Cargar filtros de salas y profesores
   const cargarFiltros = async () => {
     try {
       const [{ data: salasRes }, { data: profRes }] = await Promise.all([
@@ -52,13 +52,13 @@ export default function AgendaCalendar() {
     }
   };
 
-  // 🔹 Cargar turnos plantilla con cupos dinámicos
+  // Cargar turnos plantilla con cupos dinámicos
   const cargarTurnosPlantilla = async () => {
     try {
       const { data } = await gymApi.get("/turnosplantilla/activos");
       const turnos: TurnoPlantilla[] = data.items || data;
 
-      // 🧩 Filtros activos
+      // Filtros activos
       let filtrados = turnos;
       if (filtroSala !== "todos") {
         filtrados = filtrados.filter((t) => t.sala?.id === Number(filtroSala));
@@ -67,7 +67,7 @@ export default function AgendaCalendar() {
         filtrados = filtrados.filter((t) => t.personal?.id === Number(filtroProfesor));
       }
 
-      // 🗓️ Mapeo a eventos del calendario
+      // Mapeo a eventos del calendario
       const eventosMapeados = filtrados.map((t) => {
         const [hora, minuto] = t.horaInicio.split(":").map(Number);
         const duracionHoras = Math.floor(t.duracionMin / 60);
@@ -140,7 +140,6 @@ export default function AgendaCalendar() {
     }
   };
 
-  // 🕓 Mostrar detalle del turno
   const handleEventClick = async (info: EventClickArg) => {
     const { sala, profesor, duracion, cupoTotal, cupoDisponible } =
       info.event.extendedProps;
@@ -167,71 +166,103 @@ export default function AgendaCalendar() {
       confirmButtonColor: "#ff6600",
     });
   };
+  useEffect(() => {
+    const resizeCalendar = () => {
+      const calendarApi = calendarRef.current?.getApi();
+      if (calendarApi) {
+        setTimeout(() => calendarApi.updateSize(), 300); // 🕓 pequeño delay para transiciones CSS
+      }
+    };
 
-  return (
-    <div className="agenda-calendar-container">
-      <h1
-        className="text-center fw-bold mb-4"
-        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
-      >
-        CALENDARIO
-      </h1>
+    // Redimensiona al cambiar tamaño de ventana
+    window.addEventListener("resize", resizeCalendar);
 
-      {/* 🎛️ Filtros */}
-      <div className="agenda-filtros mb-3 d-flex gap-3 justify-content-center">
-        <div>
-          <label className="form-label fw-bold">Filtrar por sala</label>
-          <select
-            className="form-select"
-            value={filtroSala}
-            onChange={(e) => setFiltroSala(e.target.value)}
-          >
-            <option value="todos">Todas las salas</option>
-            {salas.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
+    // Detecta cuando cambia el ancho del contenedor padre
+    const container = document.querySelector(".agenda-calendar-container")?.parentElement;
+    if (container) {
+      const observer = new ResizeObserver(resizeCalendar);
+      observer.observe(container);
 
-        <div>
-          <label className="form-label fw-bold">Filtrar por profesor</label>
-          <select
-            className="form-select"
-            value={filtroProfesor}
-            onChange={(e) => setFiltroProfesor(e.target.value)}
-          >
-            <option value="todos">Todos los profesores</option>
-            {profesores.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
+      return () => {
+        window.removeEventListener("resize", resizeCalendar);
+        observer.disconnect();
+      };
+    } else {
+      return () => window.removeEventListener("resize", resizeCalendar);
+    }
+  }, []);
+
+
+ return (
+  <div className="agenda-container">
+    <h1
+      className="text-center fw-bold mb-3"
+      style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+    >
+      CALENDARIO
+    </h1>
+
+    <div className="agenda-filtros mb-4 d-flex gap-3 justify-content-center">
+      <div>
+        <label className="form-label fw-bold">Filtrar por sala</label>
+        <select
+          className="form-select"
+          value={filtroSala}
+          onChange={(e) => setFiltroSala(e.target.value)}
+        >
+          <option value="todos">Todas las salas</option>
+          {salas.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nombre}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* 📅 Calendario */}
-      <FullCalendar
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="timeGridWeek"
-        locale="es"
-        allDaySlot={false}
-        editable={false}
-        selectable={true}
-        events={eventos}
-        dateClick={handleDateClick}
-        eventClick={handleEventClick}
-        height="auto"
-        slotMinTime="07:00:00"
-        slotMaxTime="22:00:00"
-        headerToolbar={{
-          left: "prev,next today",
-          center: "title",
-          right: "",
-        }}
-      />
+      <div>
+        <label className="form-label fw-bold">Filtrar por profesor</label>
+        <select
+          className="form-select"
+          value={filtroProfesor}
+          onChange={(e) => setFiltroProfesor(e.target.value)}
+        >
+          <option value="todos">Todos los profesores</option>
+          {profesores.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
+
+    {/* 📅 Calendario */}
+    <div className="agenda-calendar-container">
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView="timeGridWeek"
+          locale="es"
+          allDaySlot={false}
+          editable={false}
+          selectable={true}
+          hiddenDays={[0, 6]} // 0 = domingo, 6 = sábado
+          events={eventos}
+          dateClick={handleDateClick}
+          eventClick={handleEventClick}
+          height="auto"
+          slotMinTime="07:00:00"
+          slotMaxTime="22:00:00"
+          headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "",
+          }}
+        />
+      </div>
+
+    </div>
+    
   );
+  
 }

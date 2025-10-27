@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador, Recepción")]
     [ApiController]
     [Route("api/personal")]
     public class PersonalController : ControllerBase

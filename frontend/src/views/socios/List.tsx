@@ -104,7 +104,7 @@ export default function SociosList() {
       </h1>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
-        {/* Buscador (izquierda) */}
+        
         <div className="flex-grow-1 d-flex justify-content-start">
           <input
             type="text"

@@ -27,7 +27,7 @@ namespace Api.Controllers
             _env = env;
         }
 
-        [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+        [Authorize(Roles = "Administrador, Profesor, Recepción")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
@@ -50,7 +50,7 @@ namespace Api.Controllers
             });
         }
 
-        [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+        [Authorize(Roles = "Administrador, Profesor, Recepción")]
         [HttpGet("/api/ordenes/{ordenId:int}/comprobante")]
         public async Task<IActionResult> GetByOrden(int ordenId, CancellationToken ct)
         {
@@ -74,7 +74,7 @@ namespace Api.Controllers
             });
         }
 
-        [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+        [Authorize(Roles = "Administrador, Profesor, Recepción")]
         [HttpPost]
         public async Task<IActionResult> Subir([FromForm] IFormFile file, [FromForm] int ordenPagoId, CancellationToken ct)
         {
@@ -113,7 +113,7 @@ namespace Api.Controllers
             _db.Comprobantes.Add(comprobante);
             await _db.SaveChangesAsync(ct);
 
-            // ✅ Asociar comprobante a la orden
+            // Asociar comprobante a la orden
             orden.ComprobanteId = comprobante.Id;
             _db.OrdenesPago.Update(orden);
             await _db.SaveChangesAsync(ct);

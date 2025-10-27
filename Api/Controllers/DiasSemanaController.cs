@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+    
     [ApiController]
     [Route("api/diasemana")]
     public class DiasSemanaController : ControllerBase

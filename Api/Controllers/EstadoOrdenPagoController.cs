@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción")]
     [ApiController]
     [Route("api/estadoOrdenPago")]
     public class EstadoOrdenPagoController : ControllerBase
@@ -18,7 +18,7 @@ namespace Api.Controllers
             _db = db;
         }
 
-        // ✅ GET /api/estados
+        // GET /api/estados
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct)
         {
@@ -28,7 +28,7 @@ namespace Api.Controllers
             return Ok(estados);
         }
 
-        // ✅ GET /api/estados/{id}
+        // GET /api/estados/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
@@ -36,7 +36,7 @@ namespace Api.Controllers
             return estado is null ? NotFound() : Ok(estado);
         }
 
-        // ✅ POST /api/estados
+        // POST /api/estados
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] EstadoOrdenPago dto, CancellationToken ct)
         {
@@ -48,7 +48,7 @@ namespace Api.Controllers
             return Ok(dto);
         }
 
-        // ✅ PUT /api/estados/{id}
+        // PUT /api/estados/{id}
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] EstadoOrdenPago dto, CancellationToken ct)
         {
@@ -62,7 +62,7 @@ namespace Api.Controllers
             return NoContent();
         }
 
-        // ✅ DELETE /api/estados/{id}
+        // DELETE /api/estados/{id}
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {

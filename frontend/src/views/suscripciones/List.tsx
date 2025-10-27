@@ -159,8 +159,9 @@ export default function SuscripcionesList() {
       >
         SUSCRIPCIONES
       </h1>
-      <div className="card mb-3 p-3 shadow-sm">
-        <label className="form-label fw-semibold">Filtrar por Socio</label>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="flex-grow-1 w-100">
+        
         <Select
           options={socios.map((s) => ({
             value: s.id,
@@ -181,20 +182,28 @@ export default function SuscripcionesList() {
             }),
           }}
         />
-        <div className="text-end mt-3">
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => {
-              setSelectedSocio(null);
-              setPage(1);
-              fetchSuscripciones();
-            }}
-          >
-            Limpiar filtro
-          </button>
         </div>
+        <button
+          className="btn btn-warning fw-semibold px-4 py-2"
+          style={{
+            backgroundColor: "#ff6600",
+            border: "none",
+            borderRadius: "8px",
+            color: "white",
+            transition: "all 0.2s ease",
+          }}
+          onMouseOver={(e) =>
+            ((e.target as HTMLButtonElement).style.backgroundColor = "#e65100")
+          }
+          onMouseOut={(e) =>
+            ((e.target as HTMLButtonElement).style.backgroundColor = "#ff6600")
+          }
+          onClick={() => setSelectedSocio(null)}
+        >
+          Limpiar
+        </button>
       </div>
-
+      
       <table className="table table-striped table-hover align-middle text-center shadow-sm">
         <thead className="table-dark">
           <tr>

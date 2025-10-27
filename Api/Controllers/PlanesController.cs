@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Api.Repositories.Interfaces;
 using Api.Data.Models;
+using Api.Contracts;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers;
 
-[Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+[Authorize(Roles = "Administrador, Profesor, Recepción")]
 [ApiController]
 [Route("api/planes")]
 public class PlanesController : ControllerBase
@@ -55,9 +56,6 @@ public class PlanesController : ControllerBase
 
         return Ok(plan);
     }
-
-    // DTO para creación
-    public record PlanCreateDto(string Nombre, int DiasPorSemana, decimal Precio, bool Activo = true);
 
     // POST /api/planes
     [HttpPost]

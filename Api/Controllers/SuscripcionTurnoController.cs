@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepcionista")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción")]
     [ApiController]
     [Route("api/[controller]")]
     public class SuscripcionTurnoController : ControllerBase
@@ -22,7 +22,7 @@ namespace Api.Controllers
             _db = db;
         }
 
-        // 🔹 GET: api/SuscripcionTurno
+        // GET: api/SuscripcionTurno
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct = default)
         {
@@ -109,7 +109,7 @@ namespace Api.Controllers
         }
 
 
-        // 🔹 GET: api/SuscripcionTurno/{id}
+        // GET: api/SuscripcionTurno/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
         {
@@ -158,7 +158,7 @@ namespace Api.Controllers
             return Ok(result);
         }
 
-        // 🔹 GET: api/SuscripcionTurno/suscripcion/{id}
+        // GET: api/SuscripcionTurno/suscripcion/{id}
         [HttpGet("suscripcion/{id:int}")]
         public async Task<IActionResult> GetBySuscripcion(int id, CancellationToken ct = default)
         {
@@ -166,7 +166,7 @@ namespace Api.Controllers
             return Ok(list);
         }
 
-        // 🔹 GET: api/SuscripcionTurno/socio/{id}
+        // GET: api/SuscripcionTurno/socio/{id}
         [HttpGet("socio/{id:int}")]
         public async Task<IActionResult> GetBySocio(int id, CancellationToken ct = default)
         {
@@ -174,7 +174,7 @@ namespace Api.Controllers
             return Ok(list);
         }
 
-        // 🔹 POST: api/SuscripcionTurno
+        // POST: api/SuscripcionTurno
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] SuscripcionTurnoCreateDto dto, CancellationToken ct = default)
         {
@@ -252,7 +252,7 @@ namespace Api.Controllers
             });
         }
 
-        // 🔹 PUT: api/SuscripcionTurno/{id}
+        // PUT: api/SuscripcionTurno/{id}
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] SuscripcionTurno dto, CancellationToken ct = default)
         {
@@ -273,7 +273,7 @@ namespace Api.Controllers
             return Ok(new { ok = true, message = "✅ Turno actualizado correctamente." });
         }
 
-        // 🔹 DELETE: api/SuscripcionTurno/{id}
+        // DELETE: api/SuscripcionTurno/{id}
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct = default)
         {
@@ -295,7 +295,7 @@ namespace Api.Controllers
             });
         }
 
-        // 🔹 GET: api/SuscripcionTurno/con-checkin
+        // GET: api/SuscripcionTurno/con-checkin
         [HttpGet("con-checkin")]
         public async Task<IActionResult> GetAllConCheckin(CancellationToken ct = default)
         {
