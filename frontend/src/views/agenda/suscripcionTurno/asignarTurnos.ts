@@ -4,8 +4,9 @@ import gymApi from "@/api/gymApi";
 /**
  * Muestra un modal para asignar turnos a una suscripción.
  * Cada día del plan tiene su propio botón de guardado individual.
+ * Cuando se cierra el modal, se ejecuta el callback onClose() para refrescar la lista.
  */
-export async function asignarTurnos(suscripcion: any) {
+export async function asignarTurnos(suscripcion: any, onClose?: () => void) {
   try {
     // 🧩 1️⃣ Buscar el plan (por ID o nombre)
     let planData = null;
@@ -29,13 +30,20 @@ export async function asignarTurnos(suscripcion: any) {
     // 🧠 2️⃣ Datos base
     const socioNombre = suscripcion.socio || "(sin socio)";
     const planNombre = planData.nombre;
-    const diasPorSemana = planData.diasPorSemana || planData.dias_por_semana || 1;
+    const diasPorSemana =
+      planData.diasPorSemana || planData.dias_por_semana || 1;
 
     // 📅 3️⃣ Cargar días de la semana
     const { data: diasRes } = await gymApi.get("/diasemana");
     const dias = diasRes.items || diasRes;
 
-    // 🧩 4️⃣ Generar los bloques según los días del plan
+    // 🔍 4️⃣ Obtener turnos ya asignados para evitar duplicados
+    const { data: asignadosRes } = await gymApi.get(
+      `/suscripcionturno/suscripcion/${suscripcion.id}`
+    );
+    const turnosAsignados = asignadosRes.map((t: any) => t.turnoPlantillaId);
+
+    // 🧩 5️⃣ Generar los bloques según los días del plan
     const gruposHtml = Array.from({ length: diasPorSemana }, (_, i) => `
       <div class="turno-grupo" style="
         background: #fff;
@@ -71,7 +79,7 @@ export async function asignarTurnos(suscripcion: any) {
       </div>
     `).join("");
 
-    // 🪄 5️⃣ Mostrar el modal
+    // 🪄 6️⃣ Mostrar el modal
     await Swal.fire({
       title: "➕ Asignar Turnos",
       width: 650,
@@ -103,12 +111,18 @@ export async function asignarTurnos(suscripcion: any) {
               const { data } = await gymApi.get(`/turnosPlantilla/dia/${diaId}`);
               const turnos = data.items || data;
 
-              turnoSelect.innerHTML = turnos.length
-                ? turnos.map((t: any) => {
+              // 🚫 Filtrar turnos ya asignados
+              const disponibles = turnos.filter(
+                (t: any) => !turnosAsignados.includes(t.id)
+              );
+
+              turnoSelect.innerHTML = disponibles.length
+                ? disponibles.map((t: any) => {
                     const hora = t.hora_inicio || t.horaInicio || "--:--";
                     const duracion = t.duracion_min || t.duracionMin || "?";
                     const sala = t.sala?.nombre || "Sala";
-                    const cupo = t.cupo ?? "?";
+                    const cupo =
+                      t.sala?.cupoDisponible ?? t.sala?.cupoTotal ?? "?";
                     return `<option value="${t.id}">
                       ${hora} (${duracion} min, ${sala}, cupo ${cupo})
                     </option>`;
@@ -126,7 +140,11 @@ export async function asignarTurnos(suscripcion: any) {
             const turnoId = turnoSelect.value;
 
             if (!diaId || !turnoId) {
-              Swal.fire("⚠️ Atención", `Seleccioná día y turno válidos para el grupo ${i + 1}`, "warning");
+              Swal.fire(
+                "⚠️ Atención",
+                `Seleccioná día y turno válidos para el grupo ${i + 1}`,
+                "warning"
+              );
               return;
             }
 
@@ -137,20 +155,47 @@ export async function asignarTurnos(suscripcion: any) {
               });
 
               await gymApi.post("/suscripcionturno", {
-                  suscripcionId: suscripcion.id,
-                  turnoPlantillaId: parseInt(turnoId),
+                suscripcionId: suscripcion.id,
+                turnoPlantillaId: parseInt(turnoId),
               });
 
               btnSave.textContent = "✅ Guardado";
               btnSave.style.background = "#28a745";
               btnSave.disabled = true;
             } catch (error: any) {
-              console.error("Error al guardar turno:", error.response?.data || error.message);
-              Swal.fire("Error", "No se pudo guardar el turno seleccionado", "error");
+              const status = error.response?.status;
+              const msg = error.response?.data?.message;
+
+              console.error("Error al guardar turno:", msg || error.message);
+
+              if (status === 409) {
+                Swal.fire({
+                  icon: "warning",
+                  title: "Turno duplicado",
+                  text: "Este turno ya fue asignado a esta suscripción.",
+                  confirmButtonColor: "#ff6600",
+                });
+              } else if (status === 400) {
+                Swal.fire({
+                  icon: "warning",
+                  title: "Datos inválidos",
+                  text: msg || "Verificá los datos enviados.",
+                  confirmButtonColor: "#ff6600",
+                });
+              } else {
+                Swal.fire({
+                  icon: "error",
+                  title: "Error",
+                  text: msg || "No se pudo guardar el turno seleccionado.",
+                  confirmButtonColor: "#ff6600",
+                });
+              }
             }
           });
         }
       },
+    }).then(() => {
+      if (onClose) onClose(); // refresca la lista al cerrar el modal
     });
   } catch (err) {
     console.error("Error global en asignarTurnos:", err);

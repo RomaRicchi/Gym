@@ -7,13 +7,13 @@ import gymApi from "@/api/gymApi";
 
 interface Turno {
   id: number;
-  sala: { id: number; nombre: string };
+  sala: { id: number; nombre: string; cupo: number };
   personal: { id: number; nombre: string };
   dia_semana: { id: number; nombre: string };
   hora_inicio: string;
   duracion_min: number;
-  cupo: number;
   activo: boolean | number;
+  cupo: number; // 🔹 se completa desde la sala
   sala_id?: number;
   personal_id?: number;
   dia_semana_id?: number;
@@ -38,7 +38,7 @@ export default function TurnosPlantillaList() {
         gymApi.get("/turnosplantilla"),
         gymApi.get("/personal"),
         gymApi.get("/salas"),
-        gymApi.get("/diasemana"), // 👈 obtiene los días desde la tabla real
+        gymApi.get("/diasemana"), 
       ]);
 
       console.log("✅ TURNOS:", resTurnos.data);
@@ -57,6 +57,7 @@ export default function TurnosPlantillaList() {
           personal_id: t.personal_id ?? t.personalId ?? t.personal?.id,
           sala_id: t.sala_id ?? t.salaId ?? t.sala?.id,
           dia_semana: t.dia_semana ?? t.diaSemana ?? null,
+          cupo: t.sala?.cupo ?? 0, // ✅ cupo traído desde la sala
         }))
         .sort(
           (a: any, b: any) =>
@@ -176,7 +177,7 @@ export default function TurnosPlantillaList() {
               <option value="">Todas las salas</option>
               {salas.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.nombre}
+                  {`${s.nombre} (${s.cupo} cupos)`} {/* ✅ cupo visible */}
                 </option>
               ))}
             </select>
@@ -196,7 +197,7 @@ export default function TurnosPlantillaList() {
           </button>
           <button
             className="btn btn-success"
-            onClick={() => crearTurnoPlantilla()}
+            onClick={() => crearTurnoPlantilla(fetchTurnos)} // ✅ refresca lista
           >
             ➕ Nuevo Turno
           </button>
@@ -225,20 +226,20 @@ export default function TurnosPlantillaList() {
               <td>{t.dia_semana?.nombre || "-"}</td>
               <td>{t.hora_inicio}</td>
               <td>{t.duracion_min} min</td>
-              <td>{t.cupo}</td>
+              <td>{t.cupo}</td> {/* ✅ cupo real de la sala */}
               <td>{t.activo ? "✅" : "❌"}</td>
               <td>
                 <button
                   className="btn btn-warning"
                   onClick={() => editarTurnoPlantilla(t.id, fetchTurnos)}
                 >
-                  ✏️ 
+                  ✏️
                 </button>
                 <button
                   className="btn btn-danger"
                   onClick={() => handleDelete(t.id)}
                 >
-                  🗑️ 
+                  🗑️
                 </button>
               </td>
             </tr>

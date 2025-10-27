@@ -14,9 +14,6 @@ namespace Api.Data.Models
         [Column("activo")]
         public bool Activo { get; set; }
 
-        [Column("cupo")]
-        public int Cupo { get; set; }
-
         [Column("duracion_min")]
         public int DuracionMin { get; set; }
 

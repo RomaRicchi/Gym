@@ -15,8 +15,8 @@ export async function SalaEditSwal(id: string, onSuccess?: () => void) {
             <input id="nombre" type="text" class="form-control" value="${data.nombre || ""}"/>
           </div>
           <div class="mb-3 text-start">
-            <label class="form-label">Capacidad</label>
-            <input id="capacidad" type="number" class="form-control" value="${data.capacidad || 1}" min="1"/>
+            <label class="form-label">Cupo</label>
+            <input id="cupo" type="number" class="form-control" value="${data.cupo || 1}" min="1"/>
           </div>
           <div class="form-check mb-3 text-start">
             <input id="activa" type="checkbox" class="form-check-input" ${data.activa ? "checked" : ""}/>
@@ -28,7 +28,7 @@ export async function SalaEditSwal(id: string, onSuccess?: () => void) {
       confirmButtonText: "Guardar cambios",
       preConfirm: () => {
         const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
-        const capacidad = (document.getElementById("capacidad") as HTMLInputElement).value;
+        const cupo = (document.getElementById("cupo") as HTMLInputElement).value;
         const activa = (document.getElementById("activa") as HTMLInputElement).checked;
 
         if (!nombre) {
@@ -36,7 +36,7 @@ export async function SalaEditSwal(id: string, onSuccess?: () => void) {
           return false;
         }
 
-        return { nombre, capacidad, activa };
+        return { nombre, cupo, activa };
       },
     });
 

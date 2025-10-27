@@ -6,7 +6,7 @@ namespace Api.Repositories.Interfaces
     {
         Task<IReadOnlyList<TurnoPlantilla>> GetAllAsync(CancellationToken ct = default);
         Task<IReadOnlyList<TurnoPlantilla>> GetActivosAsync(CancellationToken ct = default);
-        Task<IReadOnlyList<TurnoPlantilla>> GetByDiaSemanaAsync(byte diaSemana, CancellationToken ct = default);
+        Task<List<object>> GetByDiaAsync(int diaId, CancellationToken ct = default);
         Task<IReadOnlyList<TurnoPlantilla>> GetByPersonalAsync(int personalId, CancellationToken ct = default);
         Task<TurnoPlantilla?> GetByIdAsync(int id, CancellationToken ct = default);
         Task<TurnoPlantilla> AddAsync(TurnoPlantilla turno, CancellationToken ct = default);

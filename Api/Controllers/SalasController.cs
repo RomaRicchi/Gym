@@ -46,7 +46,7 @@ namespace Api.Controllers
             if (sala is null) return NotFound();
 
             sala.Nombre = dto.Nombre;
-            sala.Capacidad = dto.Capacidad;
+            sala.Cupo = dto.Cupo;
             sala.Activa = dto.Activa;
             await _repo.UpdateAsync(sala, ct);
 

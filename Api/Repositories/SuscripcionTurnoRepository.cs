@@ -14,6 +14,35 @@ namespace Api.Repositories
             _db = db;
         }
 
+        // 🔹 Obtener todos con cálculo de cupo dinámico
+        public async Task<List<SuscripcionTurno>> GetAllAsync(CancellationToken ct = default)
+        {
+            var lista = await _db.SuscripcionTurnos
+                .AsNoTracking()
+                .Include(st => st.Suscripcion)
+                    .ThenInclude(s => s.Socio)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.Sala)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.Personal)
+                .Include(st => st.TurnoPlantilla)
+                    .ThenInclude(tp => tp.DiaSemana)
+                .OrderBy(st => st.Suscripcion.Socio.Nombre)
+                .ToListAsync(ct);
+
+            foreach (var item in lista)
+            {
+                var inscriptos = await _db.SuscripcionTurnos
+                    .CountAsync(x => x.TurnoPlantillaId == item.TurnoPlantillaId, ct);
+
+                item.TurnoPlantilla.Sala.CupoDisponible =
+                    item.TurnoPlantilla.Sala.Cupo - inscriptos;
+            }
+
+            return lista;
+        }
+
+        // 🔹 Obtener con check-in
         public async Task<List<object>> GetAllWithCheckinAsync(CancellationToken ct = default)
         {
             var data = await _db.SuscripcionTurnos
@@ -42,12 +71,16 @@ namespace Api.Repositories
                         st.TurnoPlantilla.Id,
                         st.TurnoPlantilla.HoraInicio,
                         st.TurnoPlantilla.DuracionMin,
-                        st.TurnoPlantilla.Cupo,
-                        Sala = new { st.TurnoPlantilla.Sala.Nombre },
+                        Sala = new
+                        {
+                            st.TurnoPlantilla.Sala.Nombre,
+                            CupoTotal = st.TurnoPlantilla.Sala.Cupo,
+                            CupoDisponible = st.TurnoPlantilla.Sala.Cupo -
+                                _db.SuscripcionTurnos.Count(x => x.TurnoPlantillaId == st.TurnoPlantillaId)
+                        },
                         Personal = new { st.TurnoPlantilla.Personal.Nombre },
                         DiaSemana = new { st.TurnoPlantilla.DiaSemana.Nombre }
                     },
-                    // 👇 Calcula si ya hizo check-in hoy
                     CheckinHecho = _db.Checkins.Any(c =>
                         c.SocioId == st.Suscripcion.Socio.Id &&
                         c.TurnoPlantillaId == st.TurnoPlantillaId &&
@@ -59,28 +92,10 @@ namespace Api.Repositories
             return data.Cast<object>().ToList();
         }
 
-        // 🔹 Obtener todos los turnos asignados (para todos los socios)
-
-        public async Task<List<SuscripcionTurno>> GetAllAsync(CancellationToken ct = default)
-        {
-            return await _db.SuscripcionTurnos
-                .AsNoTracking()
-                .Include(st => st.Suscripcion)
-                    .ThenInclude(s => s.Socio)
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.Sala)
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.Personal)
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.DiaSemana)
-                .OrderBy(st => st.Suscripcion.Socio.Nombre)
-                .ToListAsync(ct);
-        }
-
         // 🔹 Obtener por ID
         public async Task<SuscripcionTurno?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await _db.SuscripcionTurnos
+            var entity = await _db.SuscripcionTurnos
                 .AsNoTracking()
                 .Include(st => st.Suscripcion)
                     .ThenInclude(s => s.Socio)
@@ -91,12 +106,23 @@ namespace Api.Repositories
                 .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.DiaSemana)
                 .FirstOrDefaultAsync(st => st.Id == id, ct);
+
+            if (entity?.TurnoPlantilla?.Sala != null)
+            {
+                var inscriptos = await _db.SuscripcionTurnos
+                    .CountAsync(x => x.TurnoPlantillaId == entity.TurnoPlantillaId, ct);
+
+                entity.TurnoPlantilla.Sala.CupoDisponible =
+                    entity.TurnoPlantilla.Sala.Cupo - inscriptos;
+            }
+
+            return entity;
         }
 
         // 🔹 Obtener turnos por suscripción
         public async Task<List<SuscripcionTurno>> GetBySuscripcionAsync(int suscripcionId, CancellationToken ct = default)
         {
-            return await _db.SuscripcionTurnos
+            var lista = await _db.SuscripcionTurnos
                 .Where(st => st.SuscripcionId == suscripcionId)
                 .Include(st => st.Suscripcion)
                     .ThenInclude(s => s.Socio)
@@ -108,12 +134,23 @@ namespace Api.Repositories
                     .ThenInclude(tp => tp.DiaSemana)
                 .AsNoTracking()
                 .ToListAsync(ct);
+
+            foreach (var item in lista)
+            {
+                var inscriptos = await _db.SuscripcionTurnos
+                    .CountAsync(x => x.TurnoPlantillaId == item.TurnoPlantillaId, ct);
+
+                item.TurnoPlantilla.Sala.CupoDisponible =
+                    item.TurnoPlantilla.Sala.Cupo - inscriptos;
+            }
+
+            return lista;
         }
 
         // 🔹 Obtener turnos por socio
         public async Task<List<SuscripcionTurno>> GetBySocioAsync(int socioId, CancellationToken ct = default)
         {
-            return await _db.SuscripcionTurnos
+            var lista = await _db.SuscripcionTurnos
                 .Where(st => st.Suscripcion.SocioId == socioId)
                 .Include(st => st.Suscripcion)
                     .ThenInclude(s => s.Plan)
@@ -125,6 +162,17 @@ namespace Api.Repositories
                     .ThenInclude(tp => tp.DiaSemana)
                 .AsNoTracking()
                 .ToListAsync(ct);
+
+            foreach (var item in lista)
+            {
+                var inscriptos = await _db.SuscripcionTurnos
+                    .CountAsync(x => x.TurnoPlantillaId == item.TurnoPlantillaId, ct);
+
+                item.TurnoPlantilla.Sala.CupoDisponible =
+                    item.TurnoPlantilla.Sala.Cupo - inscriptos;
+            }
+
+            return lista;
         }
 
         // 🔹 Crear

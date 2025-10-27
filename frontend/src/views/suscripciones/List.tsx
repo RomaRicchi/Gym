@@ -8,33 +8,70 @@ interface Suscripcion {
   id: number;
   socio: string;
   plan: string;
+  plan_id?: number;
   inicio: string;
   fin: string;
   estado: boolean;
   creado_en: string;
   orden_pago_id?: number;
+  turnosAsignados?: number;
+  cupoMaximo?: number;
 }
 
 export default function SuscripcionesList() {
   const [suscripciones, setSuscripciones] = useState<Suscripcion[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Cargar lista de suscripciones
   const fetchSuscripciones = async () => {
     try {
       const res = await gymApi.get("/suscripciones");
       const data = res.data.items || res.data;
 
-      const parsed: Suscripcion[] = data.map((s: any) => ({
-        id: s.id,
-        socio: s.socio ?? "-", // Evita valores null
-        plan: s.plan ?? "-",
-        inicio: s.inicio,
-        fin: s.fin,
-        estado: Boolean(s.estado),
-        creado_en: s.creado_en,
-        orden_pago_id: s.orden_pago_id,
-      }));
+      const parsed: Suscripcion[] = await Promise.all(
+        data.map(async (s: any) => {
+          try {
+            // 🧩 Buscar turnos asignados
+            const { data: turnos } = await gymApi.get(
+              `/suscripcionturno/suscripcion/${s.id}`
+            );
+
+            // Buscar el plan correctamente por ID
+            let diasPorSemana = 0;
+            if (s.planId) {
+              const { data: plan } = await gymApi.get(`/planes/${s.planId}`);
+              diasPorSemana =
+                Number(plan.diasPorSemana ?? plan.dias_por_semana ?? plan.DiasPorSemana ?? 0);
+            }
+
+            return {
+              id: s.id,
+              socio: s.socio ?? "-",
+              plan: s.plan ?? "-",
+              plan_id: s.planId, 
+              inicio: s.inicio,
+              fin: s.fin,
+              estado: Boolean(s.estado),
+              creado_en: s.creadoEn,
+              orden_pago_id: s.ordenPagoId,
+              turnosAsignados: turnos.length,
+              cupoMaximo: diasPorSemana,
+            };
+          } catch (error) {
+            console.error(`Error cargando info de suscripción ${s.id}`, error);
+            return {
+              id: s.id,
+              socio: s.socio ?? "-",
+              plan: s.plan ?? "-",
+              inicio: s.inicio,
+              fin: s.fin,
+              estado: Boolean(s.estado),
+              creado_en: s.creadoEn,
+              turnosAsignados: 0,
+              cupoMaximo: 0,
+            };
+          }
+        })
+      );
 
       setSuscripciones(parsed);
     } catch (err) {
@@ -45,11 +82,12 @@ export default function SuscripcionesList() {
     }
   };
 
+
   useEffect(() => {
     fetchSuscripciones();
   }, []);
 
-  // 🔹 Eliminar suscripción
+  //  Eliminar suscripción
   const handleDelete = async (id: number) => {
     const result = await Swal.fire({
       title: "¿Eliminar suscripción?",
@@ -73,7 +111,6 @@ export default function SuscripcionesList() {
     }
   };
 
-  // 🔹 Render
   if (loading)
     return (
       <div className="text-center mt-5">
@@ -99,63 +136,82 @@ export default function SuscripcionesList() {
             <th>Inicio</th>
             <th>Fin</th>
             <th>Estado</th>
+            <th>Turnos</th>
             <th>Acciones</th>
           </tr>
         </thead>
 
         <tbody>
           {suscripciones.length > 0 ? (
-            suscripciones.map((s) => (
-              <tr key={s.id}>
-                <td>{s.socio}</td>
-                <td>{s.plan}</td>
-                <td>{new Date(s.inicio).toLocaleDateString()}</td>
-                <td>{new Date(s.fin).toLocaleDateString()}</td>
-                <td>
-                  {s.estado ? (
-                    <span className="text-success fw-bold">✅</span>
-                  ) : (
-                    <span className="text-danger fw-bold">❌</span>
-                  )}
-                </td>
-                <td>
-                  <div className="d-flex justify-content-center gap-2">
-                    {/* ✏️ Editar */}
-                    <button
-                      className="btn btn-sm btn-warning"
-                      title="Editar suscripción"
-                      onClick={async () => {
-                        const ok = await mostrarFormEditarSuscripcion(s.id);
-                        if (ok) fetchSuscripciones();
-                      }}
-                    >
-                      ✏️
-                    </button>
+            suscripciones.map((s) => {
+              const completado =
+                (s.cupoMaximo ?? 0) > 0 &&
+                (s.turnosAsignados ?? 0) >= (s.cupoMaximo ?? 0);
 
-                    {/* 🗑️ Eliminar */}
-                    <button
-                      className="btn btn-sm btn-danger"
-                      title="Eliminar suscripción"
-                      onClick={() => handleDelete(s.id)}
-                    >
-                      🗑️
-                    </button>
+              return (
+                <tr key={s.id}>
+                  <td>{s.socio}</td>
+                  <td>{s.plan}</td>
+                  <td>{new Date(s.inicio).toLocaleDateString()}</td>
+                  <td>{new Date(s.fin).toLocaleDateString()}</td>
+                  <td>
+                    {s.estado ? (
+                      <span className="text-success fw-bold">✅</span>
+                    ) : (
+                      <span className="text-danger fw-bold">❌</span>
+                    )}
+                  </td>
+                  <td>
+                    {(s.turnosAsignados ?? 0)}/{s.cupoMaximo ?? "?"}
+                  </td>
+                  <td>
+                    <div className="d-flex justify-content-center gap-2">
+                      {/* ✏️ Editar */}
+                      <button
+                        className="btn btn-sm btn-warning"
+                        title="Editar suscripción"
+                        onClick={async () => {
+                          const ok = await mostrarFormEditarSuscripcion(s.id);
+                          if (ok) fetchSuscripciones();
+                        }}
+                      >
+                        ✏️
+                      </button>
 
-                    {/* 🗓️ Asignar Turnos */}
-                    <button
-                      className="btn btn-sm btn-primary"
-                      title="Asignar turnos al socio"
-                      onClick={() => asignarTurnos(s)}
-                    >
-                      🗓️
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
+                      {/* 🗑️ Eliminar */}
+                      <button
+                        className="btn btn-sm btn-danger"
+                        title="Eliminar suscripción"
+                        onClick={() => handleDelete(s.id)}
+                      >
+                        🗑️
+                      </button>
+
+                      {/* 🗓️ Asignar Turnos */}
+                      <button
+                        className={`btn btn-sm ${completado ? "btn-secondary" : "btn-primary"}`}
+                        title={
+                          completado
+                            ? "Todos los turnos ya fueron asignados"
+                            : "Asignar turnos al socio"
+                        }
+                        onClick={async () => {
+                          if (!completado) {
+                            await asignarTurnos(s, fetchSuscripciones); 
+                          }
+                        }}
+                        disabled={completado}
+                      >
+                        🗓️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
           ) : (
             <tr>
-              <td colSpan={6} className="text-muted">
+              <td colSpan={7} className="text-muted">
                 No hay suscripciones registradas.
               </td>
             </tr>

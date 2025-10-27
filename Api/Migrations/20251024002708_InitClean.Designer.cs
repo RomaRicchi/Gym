@@ -519,9 +519,9 @@ namespace Api.Migrations
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("activa");
 
-                    b.Property<int>("Capacidad")
+                    b.Property<int>("Cupo")
                         .HasColumnType("int")
-                        .HasColumnName("capacidad");
+                        .HasColumnName("cupo");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -668,10 +668,6 @@ namespace Api.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("activo");
-
-                    b.Property<int>("Cupo")
-                        .HasColumnType("int")
-                        .HasColumnName("cupo");
 
                     b.Property<byte>("DiaSemanaId")
                         .HasColumnType("tinyint unsigned")

@@ -16,11 +16,10 @@ interface Turno {
     horaInicio: string;
     duracionMin: number;
     diaSemana?: { nombre: string };
-    sala?: { nombre: string };
+    sala?: { nombre: string; cupoTotal?: number; cupoDisponible?: number };
     personal?: { nombre: string };
-    cupo?: number;
   };
-  checkinHecho?: boolean; // 👈 nuevo campo del backend
+  checkinHecho?: boolean;
 }
 
 export default function TurnosList() {
@@ -30,7 +29,7 @@ export default function TurnosList() {
   // 🔹 Cargar turnos desde la API
   const fetchTurnos = async () => {
     try {
-      const res = await gymApi.get("/SuscripcionTurno/con-checkin"); // 👈 usamos el nuevo endpoint
+      const res = await gymApi.get("/SuscripcionTurno/con-checkin");
       const data = res.data.items || res.data;
       console.log("📦 Datos de turnos:", data);
       setTurnos(data);
@@ -49,7 +48,6 @@ export default function TurnosList() {
   // 🔹 Registrar check-in
   const handleCheckin = async (socioId: number, turnoPlantillaId: number) => {
     try {
-      // ✅ Enviar los nombres exactos que el backend espera
       const payload = { socioId, turnoPlantillaId };
       console.log("📤 Enviando payload:", payload);
 
@@ -63,7 +61,7 @@ export default function TurnosList() {
         showConfirmButton: false,
       });
 
-      fetchTurnos(); // 👈 refresca la lista para actualizar el ícono
+      fetchTurnos();
     } catch (error: any) {
       console.error(error);
       const msg =
@@ -96,7 +94,6 @@ export default function TurnosList() {
     }
   };
 
-  // 🔹 Render
   if (loading)
     return (
       <div className="text-center mt-5">
@@ -106,7 +103,7 @@ export default function TurnosList() {
     );
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 container">
       <h1
         className="text-center fw-bold mb-4"
         style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
@@ -143,13 +140,18 @@ export default function TurnosList() {
               const sala = turno?.sala?.nombre || "—";
               const profesor = turno?.personal?.nombre || "—";
               const duracion = turno?.duracionMin || 0;
-              const cupo = turno?.cupo ?? 0;
+
+              // ✅ Cupos dinámicos
+              const cupoTotal = turno?.sala?.cupoTotal ?? 0;
+              const cupoDisponible = turno?.sala?.cupoDisponible ?? 0;
+
               const cupoColor =
-                cupo > 5
-                  ? "text-success"
-                  : cupo > 0
+                cupoDisponible === 0
+                  ? "text-danger"
+                  : cupoDisponible <= 3
                   ? "text-warning"
-                  : "text-danger";
+                  : "text-success";
+
               const checkinHecho = t.checkinHecho ?? false;
 
               return (
@@ -161,7 +163,7 @@ export default function TurnosList() {
                   <td>{profesor}</td>
                   <td>{duracion} min</td>
                   <td className={`${cupoColor} fw-bold`}>
-                    {cupo > 0 ? `${cupo} disp.` : "Sin cupo"}
+                    {cupoDisponible}/{cupoTotal}
                   </td>
                   <td>
                     <button
@@ -203,6 +205,15 @@ export default function TurnosList() {
           )}
         </tbody>
       </table>
+
+      <div className="text-end mt-3">
+        <button
+          className="btn btn-outline-secondary"
+          onClick={() => fetchTurnos()}
+        >
+          🔄 Actualizar lista
+        </button>
+      </div>
     </div>
   );
 }

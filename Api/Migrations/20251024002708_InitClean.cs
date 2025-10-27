@@ -166,7 +166,7 @@ namespace Api.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     nombre = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    capacidad = table.Column<int>(type: "int", nullable: false),
+                    cupo = table.Column<int>(type: "int", nullable: false),
                     activa = table.Column<bool>(type: "tinyint(1)", nullable: true)
                 },
                 constraints: table =>
@@ -313,7 +313,6 @@ namespace Api.Migrations
                     dia_semana_id = table.Column<byte>(type: "tinyint unsigned", nullable: false),
                     hora_inicio = table.Column<TimeSpan>(type: "time(6)", nullable: false),
                     duracion_min = table.Column<int>(type: "int", nullable: false),
-                    cupo = table.Column<int>(type: "int", nullable: false),
                     activo = table.Column<bool>(type: "tinyint(1)", nullable: false),
                    
                 },

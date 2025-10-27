@@ -3,104 +3,74 @@ import gymApi from "@/api/gymApi";
 
 export async function crearTurnoPlantilla(onSuccess?: () => void) {
   try {
-    const [{ data: salasRes }, { data: personalRes }] = await Promise.all([
+    const [{ data: salasRes }, { data: personalRes }, { data: diasRes }] = await Promise.all([
       gymApi.get("/salas"),
       gymApi.get("/personal"),
+      gymApi.get("/diasemana"), 
     ]);
 
     const salas = salasRes.items || salasRes;
     const personal = personalRes.items || personalRes;
-    const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const dias = diasRes.items || diasRes || [
+      { id: 1, nombre: "Lunes" },
+      { id: 2, nombre: "Martes" },
+      { id: 3, nombre: "Miércoles" },
+      { id: 4, nombre: "Jueves" },
+      { id: 5, nombre: "Viernes" },
+      { id: 6, nombre: "Sábado" },
+      { id: 7, nombre: "Domingo" },
+    ];
 
     const { value: formValues } = await Swal.fire({
       title: "➕ Nuevo Turno",
       width: 650,
       customClass: { popup: "swal2-card-style" },
       html: `
-        <style>
-          .swal2-html-container .row {
-            margin-bottom: 0.75rem;
-          }
-          .swal2-html-container label {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-          }
-          .swal2-html-container .form-control,
-          .swal2-html-container .form-select {
-            border-radius: 0.5rem;
-            border: 1px solid #ccc;
-            box-shadow: none;
-            font-size: 0.95rem;
-          }
-          .swal2-html-container .form-control:focus,
-          .swal2-html-container .form-select:focus {
-            border-color: #ff8800;
-            box-shadow: 0 0 4px #ff8800;
-          }
-          .swal2-html-container .form-check {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 0.4rem;
-            margin-top: 0.4rem;
-          }
-          .swal2-html-container .form-check-input {
-            width: 18px;
-            height: 18px;
-            accent-color: #ff8800;
-          }
-        </style>
-
         <div class="container-fluid text-start">
           <div class="row">
             <div class="col-12">
-              <label for="sala_id">Sala</label>
-              <select id="sala_id" class="form-select">
+              <label for="SalaId">Sala</label>
+              <select id="SalaId" class="form-select">
                 <option value="">Seleccionar sala...</option>
                 ${salas.map((s: any) => `<option value="${s.id}">${s.nombre}</option>`).join("")}
               </select>
             </div>
           </div>
 
-          <div class="row">
+          <div class="row mt-2">
             <div class="col-12">
-              <label for="personal_id">Profesor</label>
-              <select id="personal_id" class="form-select">
+              <label for="PersonalId">Profesor</label>
+              <select id="PersonalId" class="form-select">
                 <option value="">Seleccionar profesor...</option>
                 ${personal.map((p: any) => `<option value="${p.id}">${p.nombre}</option>`).join("")}
               </select>
             </div>
           </div>
 
-          <div class="row">
+          <div class="row mt-2">
             <div class="col-md-6">
-              <label for="dia_semana_id">Día de la Semana</label>
-              <select id="dia_semana_id" class="form-select">
+              <label for="DiaSemanaId">Día</label>
+              <select id="DiaSemanaId" class="form-select">
                 <option value="">Seleccionar día...</option>
-                ${dias.map((d, i) => `<option value="${i + 1}">${d}</option>`).join("")}
+                ${dias.map((d: any) => `<option value="${d.id}">${d.nombre}</option>`).join("")}
               </select>
             </div>
             <div class="col-md-6">
-              <label for="hora_inicio">Hora Inicio</label>
-              <input id="hora_inicio" type="time" class="form-control" />
+              <label for="HoraInicio">Hora Inicio</label>
+              <input id="HoraInicio" type="time" class="form-control" />
             </div>
           </div>
 
-          <div class="row">
+          <div class="row mt-2">
             <div class="col-md-6">
-              <label for="duracion_min">Duración (min)</label>
-              <input id="duracion_min" type="number" min="10" class="form-control" />
+              <label for="DuracionMin">Duración (min)</label>
+              <input id="DuracionMin" type="number" min="10" class="form-control" />
             </div>
-            <div class="col-md-6">
-              <label for="cupo">Cupo Máximo</label>
-              <input id="cupo" type="number" min="1" class="form-control" />
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-12 form-check">
-              <input id="activo" type="checkbox" class="form-check-input" checked />
-              <label for="activo" class="form-check-label">Activo</label>
+            <div class="col-md-6 d-flex align-items-end justify-content-end">
+              <div class="form-check">
+                <input id="Activo" type="checkbox" class="form-check-input" checked />
+                <label for="Activo" class="form-check-label">Activo</label>
+              </div>
             </div>
           </div>
         </div>
@@ -108,41 +78,37 @@ export async function crearTurnoPlantilla(onSuccess?: () => void) {
       showCancelButton: true,
       confirmButtonText: "Guardar",
       cancelButtonText: "Cancelar",
-      focusConfirm: false,
       preConfirm: () => {
-        const form = {
-          sala_id: Number((document.getElementById("sala_id") as HTMLSelectElement).value),
-          personal_id: Number((document.getElementById("personal_id") as HTMLSelectElement).value),
-          dia_semana_id: Number((document.getElementById("dia_semana_id") as HTMLSelectElement).value),
-          hora_inicio: (document.getElementById("hora_inicio") as HTMLInputElement).value + ":00",
-          duracion_min: Number((document.getElementById("duracion_min") as HTMLInputElement).value),
-          cupo: Number((document.getElementById("cupo") as HTMLInputElement).value),
-          activo: (document.getElementById("activo") as HTMLInputElement).checked,
+        const data = {
+          SalaId: Number((document.getElementById("SalaId") as HTMLSelectElement).value),
+          PersonalId: Number((document.getElementById("PersonalId") as HTMLSelectElement).value),
+          DiaSemanaId: Number((document.getElementById("DiaSemanaId") as HTMLSelectElement).value),
+          HoraInicio: (document.getElementById("HoraInicio") as HTMLInputElement).value + ":00",
+          DuracionMin: Number((document.getElementById("DuracionMin") as HTMLInputElement).value),
+          Activo: (document.getElementById("Activo") as HTMLInputElement).checked,
         };
 
-        if (!form.sala_id || !form.personal_id || !form.dia_semana_id)
+        if (!data.SalaId || !data.PersonalId || !data.DiaSemanaId)
           return Swal.showValidationMessage("Complete todos los campos obligatorios");
-        if (!form.hora_inicio)
+        if (!data.HoraInicio)
           return Swal.showValidationMessage("Debe especificar la hora de inicio");
-        if (form.duracion_min <= 0)
+        if (data.DuracionMin <= 0)
           return Swal.showValidationMessage("La duración debe ser mayor que 0");
-        if (form.cupo <= 0)
-          return Swal.showValidationMessage("El cupo debe ser mayor que 0");
 
-        console.log("📤 Enviando turno:", form);
-        return form;
-      }
+        return data;
+      },
     });
 
     if (!formValues) return;
-console.log("📤 Enviando turno:", formValues);
 
+    console.log("📤 Enviando turno:", formValues);
     await gymApi.post("/turnosplantilla/crear", formValues);
-    await Swal.fire("✅ Guardado", "Turno creado correctamente", "success");
-    if (onSuccess) onSuccess();
 
-  } catch (err) {
-    console.error(err);
-    Swal.fire("❌ Error", "No se pudo crear el turno", "error");
+    await Swal.fire("✅ Guardado", "Turno creado correctamente", "success");
+    onSuccess?.();
+  } catch (err: any) {
+    console.error("❌ Error al crear turno:", err);
+    const msg = err.response?.data?.message || "No se pudo crear el turno";
+    Swal.fire("❌ Error", msg, "error");
   }
 }

@@ -31,7 +31,6 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<TurnoPlantilla> TurnosPlantilla { get; set; }
     public virtual DbSet<Usuario> Usuarios { get; set; }
     public virtual DbSet<Avatar> Avatares { get; set; } = null!;
-    public virtual DbSet<VCupoReservado> VCupoReservado { get; set; }
     public virtual DbSet<VOcupacionHoy> VOcupacionHoy { get; set; }
     public virtual DbSet<VOrdenesAr> VOrdenesAr { get; set; }
     public virtual DbSet<VSuscripcionesAr> VSuscripcionesAr { get; set; }
@@ -92,9 +91,7 @@ public partial class GymDbContext : DbContext
                 .HasConstraintName("FK_Usuario_Avatar");
         });
 
-        // Vistas sin clave
-       
-        modelBuilder.Entity<VCupoReservado>().ToTable("v_cupo_reservado").HasNoKey();
+      
         modelBuilder.Entity<VOcupacionHoy>().ToTable("v_ocupacion_hoy").HasNoKey();
         modelBuilder.Entity<VOrdenesAr>().ToTable("v_ordenes_ar").HasNoKey();
         modelBuilder.Entity<VSuscripcionesAr>().ToTable("v_suscripciones_ar").HasNoKey();

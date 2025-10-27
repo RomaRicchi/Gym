@@ -41,21 +41,36 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
-        // 🔹 Obtener por día — corregido (usa byte)
-        public async Task<IReadOnlyList<TurnoPlantilla>> GetByDiaSemanaAsync(byte diaSemana, CancellationToken ct = default)
+        // 🔹 Obtener turnos por día con cupos dinámicos
+        public async Task<List<object>> GetByDiaAsync(int diaId, CancellationToken ct = default)
         {
-            Console.WriteLine($"📅 [Repo] Buscando turnos por dia_semana_id={diaSemana}");
-
-            // Se realiza el cast a (byte) ya que DiaSemanaId en el modelo es 'byte' (unsigned tinyint)
-            return await _db.TurnosPlantilla
+            var turnos = await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
                 .Include(t => t.DiaSemana)
-                .AsNoTracking()
-                .Where(t => t.DiaSemanaId == (byte)diaSemana && t.Activo)
+                .Where(t => t.DiaSemanaId == diaId && t.Activo)
                 .OrderBy(t => t.HoraInicio)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.HoraInicio,
+                    t.DuracionMin,
+                    Sala = new
+                    {
+                        t.Sala.Id,
+                        t.Sala.Nombre,
+                        CupoTotal = t.Sala.Cupo,
+                        CupoDisponible = t.Sala.Cupo -
+                            _db.SuscripcionTurnos.Count(st => st.TurnoPlantillaId == t.Id)
+                    },
+                    Profesor = t.Personal != null ? t.Personal.Nombre : "(sin profesor)",
+                    Dia = t.DiaSemana.Nombre
+                })
                 .ToListAsync(ct);
+
+            return turnos.Cast<object>().ToList();
         }
+
 
         // 🔹 Obtener por personal
         public async Task<IReadOnlyList<TurnoPlantilla>> GetByPersonalAsync(int personalId, CancellationToken ct = default)
@@ -92,7 +107,7 @@ namespace Api.Repositories
             {
                 Console.WriteLine($"➡️ [ADD] Recibido para insertar:");
                 Console.WriteLine($"   SalaId={turno.SalaId}, PersonalId={turno.PersonalId}, DiaSemanaId={turno.DiaSemanaId}");
-                Console.WriteLine($"   HoraInicio={turno.HoraInicio}, DuracionMin={turno.DuracionMin}, Cupo={turno.Cupo}, Activo={turno.Activo}");
+                Console.WriteLine($"   HoraInicio={turno.HoraInicio}, DuracionMin={turno.DuracionMin}, Activo={turno.Activo}");
 
                 _db.TurnosPlantilla.Add(turno);
                 await _db.SaveChangesAsync(ct);
@@ -129,7 +144,6 @@ namespace Api.Repositories
             turno.DiaSemanaId = updated.DiaSemanaId;
             turno.HoraInicio = updated.HoraInicio;
             turno.DuracionMin = updated.DuracionMin;
-            turno.Cupo = updated.Cupo;
             turno.Activo = updated.Activo;
 
             await _db.SaveChangesAsync(ct);
@@ -156,22 +170,39 @@ namespace Api.Repositories
         }
 
         // 🔹 Validar solapamientos
-        public async Task<bool> ExisteSolapamientoAsync(int salaId, byte diaSemana, TimeSpan horaInicio, int duracionMin, CancellationToken ct = default)
+        public async Task<bool> ExisteSolapamientoAsync(
+            int salaId,
+            byte diaSemana,
+            TimeSpan horaInicio,
+            int duracionMin,
+            CancellationToken ct = default)
         {
+            // Calculamos la hora fin del nuevo turno
             var horaFin = horaInicio + TimeSpan.FromMinutes(duracionMin);
 
-            return await _db.TurnosPlantilla
+            // 🔹 Obtenemos los turnos del mismo día y sala
+            var turnos = await _db.TurnosPlantilla
                 .AsNoTracking()
-                .AnyAsync(t =>
-                    t.SalaId == salaId &&
-                    t.DiaSemanaId == diaSemana &&
-                    t.Activo &&
-                    (
-                        (t.HoraInicio <= horaInicio && (t.HoraInicio + TimeSpan.FromMinutes(t.DuracionMin)) > horaInicio) ||
-                        (t.HoraInicio < horaFin && (t.HoraInicio + TimeSpan.FromMinutes(t.DuracionMin)) >= horaFin)
-                    ),
-                    ct
-                );
+                .Where(t => t.SalaId == salaId && t.DiaSemanaId == diaSemana && t.Activo)
+                .ToListAsync(ct);
+
+            // 🔹 Verificamos solapamiento en memoria (donde TimeSpan sí funciona)
+            foreach (var t in turnos)
+            {
+                var inicioExistente = t.HoraInicio;
+                var finExistente = t.HoraInicio + TimeSpan.FromMinutes(t.DuracionMin);
+
+                bool seSolapan =
+                    (inicioExistente <= horaInicio && finExistente > horaInicio) ||
+                    (inicioExistente < horaFin && finExistente >= horaFin) ||
+                    (inicioExistente >= horaInicio && finExistente <= horaFin);
+
+                if (seSolapan)
+                    return true;
+            }
+
+            return false;
         }
+
     }
 }

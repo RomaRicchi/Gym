@@ -14,7 +14,7 @@ namespace Api.Repositories
             _db = db;
         }
 
-        public async Task<IEnumerable<DiaSemana>> GetAllAsync(CancellationToken ct = default)
+        public async Task<IReadOnlyList<DiaSemana>> GetAllAsync(CancellationToken ct = default)
         {
             return await _db.DiasSemana
                 .AsNoTracking()

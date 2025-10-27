@@ -7,7 +7,7 @@ import { SalaEditSwal } from "@/views/salas/SalaEditSwal";
 interface Sala {
   id: number;
   nombre: string;
-  capacidad: number;
+  cupo: number;
   activa: boolean | number;
 }
 
@@ -74,7 +74,7 @@ export default function SalasList() {
         <thead className="table-dark">
           <tr>
             <th>Nombre</th>
-            <th>Capacidad</th>
+            <th>Cupo</th>
             <th>Activa</th>
             <th>Acciones</th>
           </tr>
@@ -83,7 +83,7 @@ export default function SalasList() {
           {salas.map((s) => (
             <tr key={s.id}>
               <td>{s.nombre}</td>
-              <td>{s.capacidad}</td>
+              <td>{s.cupo}</td>
               <td>{s.activa ? "✅ Sí" : "❌ No"}</td>
               <td>
                 {/* ✏️ Editar usando el Swal importado */}

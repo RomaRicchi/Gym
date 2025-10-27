@@ -6,16 +6,17 @@ import { EventClickArg } from "@fullcalendar/core";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import { crearTurnoPlantilla } from "@/views/agenda/turnoPlantilla/TurnoPlantillaCreate"; 
+import { crearTurnoPlantilla } from "@/views/agenda/turnoPlantilla/TurnoPlantillaCreate";
 import "@/styles/AgendaCalendar.css";
+
 interface TurnoPlantilla {
   id: number;
-  sala: { id: number; nombre: string };
+  sala: { id: number; nombre: string; cupoTotal?: number; cupoDisponible?: number };
   personal: { id: number; nombre: string };
   diaSemana: { id: number; nombre: string };
   horaInicio: string;
   duracionMin: number;
-  cupo: number;
+  activo?: boolean;
 }
 
 interface Sala {
@@ -35,35 +36,39 @@ export default function AgendaCalendar() {
   const [filtroSala, setFiltroSala] = useState<string>("todos");
   const [filtroProfesor, setFiltroProfesor] = useState<string>("todos");
 
-  // 🔹 Cargar filtros
+  // 🔹 Cargar filtros de salas y profesores
   const cargarFiltros = async () => {
     try {
       const [{ data: salasRes }, { data: profRes }] = await Promise.all([
         gymApi.get("/salas"),
         gymApi.get("/personal"),
       ]);
+
       setSalas(salasRes.items || salasRes);
       setProfesores(profRes.items || profRes);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error al cargar filtros:", err);
       Swal.fire("Error", "No se pudieron cargar los filtros.", "error");
     }
   };
 
-  // 🔹 Cargar turnos plantilla
+  // 🔹 Cargar turnos plantilla con cupos dinámicos
   const cargarTurnosPlantilla = async () => {
     try {
       const { data } = await gymApi.get("/turnosplantilla/activos");
+      const turnos: TurnoPlantilla[] = data.items || data;
 
-      let filtrados = data;
+      // 🧩 Filtros activos
+      let filtrados = turnos;
       if (filtroSala !== "todos") {
-        filtrados = filtrados.filter((t: any) => t.salaId === Number(filtroSala));
+        filtrados = filtrados.filter((t) => t.sala?.id === Number(filtroSala));
       }
       if (filtroProfesor !== "todos") {
-        filtrados = filtrados.filter((t: any) => t.personalId === Number(filtroProfesor));
+        filtrados = filtrados.filter((t) => t.personal?.id === Number(filtroProfesor));
       }
 
-      const eventosMapeados = filtrados.map((t: TurnoPlantilla) => {
+      // 🗓️ Mapeo a eventos del calendario
+      const eventosMapeados = filtrados.map((t) => {
         const [hora, minuto] = t.horaInicio.split(":").map(Number);
         const duracionHoras = Math.floor(t.duracionMin / 60);
         const duracionMinutos = t.duracionMin % 60;
@@ -71,27 +76,41 @@ export default function AgendaCalendar() {
         const horaFin = hora + duracionHoras + Math.floor((minuto + duracionMinutos) / 60);
         const minutoFin = (minuto + duracionMinutos) % 60;
 
+        // 🎨 Color según cupo
+        const cupoTotal = t.sala?.cupoTotal ?? 0;
+        const cupoDisp = t.sala?.cupoDisponible ?? cupoTotal;
+        const porcentaje = cupoTotal ? (cupoDisp / cupoTotal) * 100 : 100;
+
+        let color = "#4caf50"; // verde (disponible)
+        if (porcentaje <= 30 && porcentaje > 0) color = "#ff9800"; // naranja
+        if (cupoDisp <= 0) color = "#e53935"; // rojo (sin cupo)
+
         return {
           id: t.id.toString(),
-          title: `${t.sala?.nombre || "Sala"} — ${t.personal?.nombre || "Profesor"} (${t.cupo} disp.)`,
+          title: `${t.sala?.nombre || "Sala"} — ${t.personal?.nombre || "Profesor"}`,
           daysOfWeek: [t.diaSemana?.id || 1],
-          startTime: `${hora.toString().padStart(2, "0")}:${minuto.toString().padStart(2, "0")}`,
-          endTime: `${horaFin.toString().padStart(2, "0")}:${minutoFin.toString().padStart(2, "0")}`,
-          backgroundColor: "#ff9800",
-          borderColor: "#e65100",
+          startTime: `${hora.toString().padStart(2, "0")}:${minuto
+            .toString()
+            .padStart(2, "0")}`,
+          endTime: `${horaFin.toString().padStart(2, "0")}:${minutoFin
+            .toString()
+            .padStart(2, "0")}`,
+          backgroundColor: color,
+          borderColor: color,
           textColor: "#fff",
           extendedProps: {
             sala: t.sala?.nombre,
             profesor: t.personal?.nombre,
             duracion: t.duracionMin,
-            cupo: t.cupo,
+            cupoTotal: cupoTotal,
+            cupoDisponible: cupoDisp,
           },
         };
       });
 
       setEventos(eventosMapeados);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error al cargar turnos plantilla:", err);
       Swal.fire("Error", "No se pudieron cargar los turnos plantilla.", "error");
     }
   };
@@ -104,7 +123,7 @@ export default function AgendaCalendar() {
     cargarTurnosPlantilla();
   }, [filtroSala, filtroProfesor]);
 
-  // 🔸 Crear turno al hacer click en un día del calendario
+  // 🧩 Crear turno nuevo
   const handleDateClick = async (info: DateClickArg) => {
     const { isConfirmed } = await Swal.fire({
       title: "➕ Nuevo turno plantilla",
@@ -117,24 +136,32 @@ export default function AgendaCalendar() {
     });
 
     if (isConfirmed) {
-      await crearTurnoPlantilla(() => cargarTurnosPlantilla()); 
+      await crearTurnoPlantilla(() => cargarTurnosPlantilla());
     }
   };
 
-  // 🔸 Ver detalle de un turno existente
+  // 🕓 Mostrar detalle del turno
   const handleEventClick = async (info: EventClickArg) => {
-    const { sala, profesor, duracion, cupo } = info.event.extendedProps;
+    const { sala, profesor, duracion, cupoTotal, cupoDisponible } =
+      info.event.extendedProps;
     const horaInicio = info.event.startStr.slice(11, 16);
     const horaFin = info.event.endStr.slice(11, 16);
 
-    Swal.fire({
+    const color =
+      cupoDisponible <= 0 ? "red" : cupoDisponible <= 3 ? "orange" : "green";
+
+    await Swal.fire({
       title: "🕓 Detalle del turno",
       html: `
         <p><strong>Sala:</strong> ${sala || "—"}</p>
         <p><strong>Profesor:</strong> ${profesor || "—"}</p>
         <p><strong>Horario:</strong> ${horaInicio} - ${horaFin}</p>
         <p><strong>Duración:</strong> ${duracion} min</p>
-        <p><strong>Cupo disponible:</strong> ${cupo}</p>
+        <p><strong>Cupos:</strong> 
+          <span style="color:${color}; font-weight:600;">
+            ${cupoDisponible}/${cupoTotal}
+          </span>
+        </p>
       `,
       confirmButtonText: "Cerrar",
       confirmButtonColor: "#ff6600",
@@ -151,7 +178,7 @@ export default function AgendaCalendar() {
       </h1>
 
       {/* 🎛️ Filtros */}
-      <div className="agenda-filtros">
+      <div className="agenda-filtros mb-3 d-flex gap-3 justify-content-center">
         <div>
           <label className="form-label fw-bold">Filtrar por sala</label>
           <select
@@ -192,7 +219,7 @@ export default function AgendaCalendar() {
         locale="es"
         allDaySlot={false}
         editable={false}
-        selectable={true} // 👈 permite detectar clicks
+        selectable={true}
         events={eventos}
         dateClick={handleDateClick}
         eventClick={handleEventClick}

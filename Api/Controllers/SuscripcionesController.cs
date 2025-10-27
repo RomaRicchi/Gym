@@ -34,6 +34,7 @@ namespace Api.Controllers
                     s.Id,
                     Socio = s.Socio != null ? s.Socio.Nombre : "—",
                     Plan = s.Plan != null ? s.Plan.Nombre : "—",
+                    PlanId = s.PlanId,
                     s.Inicio,
                     s.Fin,
                     s.Estado,
