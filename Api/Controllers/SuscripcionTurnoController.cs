@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepción")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
     [ApiController]
     [Route("api/[controller]")]
     public class SuscripcionTurnoController : ControllerBase

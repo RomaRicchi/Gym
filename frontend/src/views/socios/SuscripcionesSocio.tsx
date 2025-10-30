@@ -7,6 +7,9 @@ import {
   faCheckCircle,
   faArrowRight,
 } from "@fortawesome/free-solid-svg-icons";
+import gymApi from "../../api/gymApi";
+import "@/styles/SuscripcionesSocio.css";
+import { asignarTurnos } from "./AsignarTurnoSocio";
 
 interface Suscripcion {
   id: number;
@@ -22,14 +25,23 @@ const SuscripcionesSocio: React.FC = () => {
   const [suscripciones, setSuscripciones] = useState<Suscripcion[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const socioId = localStorage.getItem("socioId");
-
   useEffect(() => {
     const fetchSuscripciones = async () => {
       try {
-        const res = await fetch(`/api/suscripciones?socioId=${socioId}`);
-        const data = await res.json();
-        setSuscripciones(data.items || []);
+        // ✅ Obtener ID del socio desde localStorage (guardado al loguearse)
+        const socioId = localStorage.getItem("socioId");
+        if (!socioId) {
+          console.warn("No se encontró socioId en localStorage");
+          setLoading(false);
+          return;
+        }
+
+        // ✅ Endpoint correcto del backend
+        const res = await gymApi.get(`/suscripciones?socioId=${socioId}`);
+        const data = res.data;
+
+        // ✅ Acepta tanto { items: [...] } como una lista directa
+        setSuscripciones(data.items || data || []);
       } catch (err) {
         console.error("Error al obtener suscripciones:", err);
       } finally {
@@ -38,11 +50,11 @@ const SuscripcionesSocio: React.FC = () => {
     };
 
     fetchSuscripciones();
-  }, [socioId]);
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#121212] text-white">
+      <div className="flex items-center justify-center min-h-screen text-white">
         <p className="text-lg animate-pulse">Cargando tus suscripciones...</p>
       </div>
     );
@@ -50,20 +62,22 @@ const SuscripcionesSocio: React.FC = () => {
 
   if (!suscripciones.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-gray-300">
-        <FontAwesomeIcon icon={faDumbbell} size="3x" className="text-[#ff6b00] mb-4" />
+      <div className="flex flex-col items-center justify-center min-h-screen text-gray-300">
+        <FontAwesomeIcon
+          icon={faDumbbell}
+          size="3x"
+          className="text-[#ff6b00] mb-4"
+        />
         <p className="text-xl">No tenés suscripciones activas</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white px-6 py-10">
-      <h1 className="text-3xl font-bold text-center text-[#ff6b00] mb-10">
-        Mis Suscripciones 🧡
-      </h1>
+    <div className="suscripciones-container">
+      <h1 className="suscripciones-title">Mis Suscripciones 🧡</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="suscripciones-grid">
         {suscripciones.map((s) => {
           const inicio = new Date(s.inicio).toLocaleDateString();
           const fin = new Date(s.fin).toLocaleDateString();
@@ -71,45 +85,36 @@ const SuscripcionesSocio: React.FC = () => {
           const cupo = s.cupoMaximo ?? 0;
 
           return (
-            <div
-              key={s.id}
-              className="bg-[#1e1e1e] border border-[#ff6b00]/40 rounded-2xl shadow-lg p-6 hover:scale-105 transition-all duration-300"
-            >
-              <div className="flex items-center mb-4 space-x-3">
-                <FontAwesomeIcon icon={faDumbbell} className="text-[#ff6b00]" />
-                <h2 className="text-xl font-semibold">{s.plan?.nombre}</h2>
-              </div>
+            <div key={s.id} className="suscripcion-card">
+              <FontAwesomeIcon icon={faDumbbell} className="icon-top" />
+              <h2 className="suscripcion-plan">{s.plan?.nombre}</h2>
 
-              <div className="space-y-2 text-gray-300 text-sm">
+              <div className="suscripcion-info">
                 <p>
-                  <FontAwesomeIcon icon={faCalendarAlt} className="text-[#ff6b00] mr-2" />
-                  <span className="text-gray-200 font-medium">
-                    {inicio} – {fin}
-                  </span>
+                  <FontAwesomeIcon icon={faCalendarAlt} className="fa-icon" />
+                  {inicio} – {fin}
                 </p>
-
                 <p>
-                  <FontAwesomeIcon icon={faClock} className="text-[#ff6b00] mr-2" />
+                  <FontAwesomeIcon icon={faClock} className="fa-icon" />
                   {turnos}/{cupo} clases usadas
                 </p>
-
-                <p className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faCheckCircle}
-                    className="text-green-500 mr-2"
-                  />
-                  Activa
-                </p>
               </div>
 
-              <button
-                className="mt-6 w-full py-2 rounded-xl font-semibold bg-[#ff6b00] hover:bg-[#ff8533] transition-all text-white flex items-center justify-center space-x-2"
-                onClick={() =>
-                  (window.location.href = `/turnos?suscripcionId=${s.id}`)
-                }
+              <div
+                className={`suscripcion-estado ${
+                  s.estado ? "activa" : "inactiva"
+                }`}
               >
-                <span>Seleccionar Turnos</span>
-                <FontAwesomeIcon icon={faArrowRight} />
+                <FontAwesomeIcon icon={faCheckCircle} />
+                {s.estado ? "Activa" : "Inactiva"}
+              </div>
+
+              {/* ✅ Pasar objeto completo, no solo el ID */}
+              <button
+                className="suscripcion-btn"
+                onClick={() => asignarTurnos(s)}
+              >
+                Seleccionar Turnos <FontAwesomeIcon icon={faArrowRight} />
               </button>
             </div>
           );

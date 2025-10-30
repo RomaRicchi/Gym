@@ -4,9 +4,10 @@ import {
   faDumbbell,
   faCalendarDay,
   faDollarSign,
-  faCheckCircle,
-  faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
+import Swal from "sweetalert2";
+import gymApi from "../../api/gymApi";
+import "@/styles/PlanesSocio.css";
 
 interface Plan {
   id: number;
@@ -23,11 +24,20 @@ const PlanesSocio: React.FC = () => {
   useEffect(() => {
     const fetchPlanes = async () => {
       try {
-        const res = await fetch("/api/planes");
-        const data = await res.json();
-        setPlanes(data.items);
+        const res = await gymApi.get("/planes?activo=true");
+        const data = res.data;
+
+        // Solo planes activos
+        const activos = data.items.filter((p: Plan) => p.activo);
+        setPlanes(activos);
       } catch (error) {
         console.error("Error al cargar los planes:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar los planes disponibles.",
+          confirmButtonColor: "#ff6b00",
+        });
       } finally {
         setLoading(false);
       }
@@ -35,6 +45,63 @@ const PlanesSocio: React.FC = () => {
 
     fetchPlanes();
   }, []);
+
+  const abrirFormularioOrden = (plan: Plan) => {
+    Swal.fire({
+      title: `Generar orden de pago`,
+      html: `
+        <p style="font-size:1rem; margin-bottom:0.5rem;">Plan seleccionado: <b>${plan.nombre}</b></p>
+        <p style="font-size:1rem;">Precio: <b>$${plan.precio}</b></p>
+        <input type="file" id="comprobante" class="swal2-input custom-file-input" accept="image/*,application/pdf">
+      `,
+      confirmButtonText: "Enviar orden",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      focusConfirm: false,
+      confirmButtonColor: "#ff6b00",
+      didOpen: () => {
+        // 🔧 corrige visual del input
+        const fileInput = document.querySelector(".custom-file-input") as HTMLElement;
+        if (fileInput) {
+          fileInput.style.display = "block";
+          fileInput.style.width = "100%";
+          fileInput.style.marginTop = "1rem";
+          fileInput.style.padding = "0.4rem";
+          fileInput.style.background = "white";
+          fileInput.style.color = "#333";
+          fileInput.style.borderRadius = "6px";
+        }
+      },
+      preConfirm: async () => {
+        const fileInput = document.getElementById("comprobante") as HTMLInputElement;
+        if (!fileInput.files?.length) {
+          Swal.showValidationMessage("Debe adjuntar un comprobante");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("PlanId", plan.id.toString());
+        formData.append("FechaInicio", new Date().toISOString());
+        formData.append("Notas", "Orden generada por socio desde PlanesSocio");
+        formData.append("file", fileInput.files[0]);
+
+        const res = await gymApi.post("/ordenes/socio", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        return res.data;
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          icon: "success",
+          title: "Orden enviada",
+          text: "Tu orden fue registrada y está pendiente de aprobación.",
+          confirmButtonColor: "#ff6b00",
+        });
+      }
+    });
+  };
 
   if (loading) {
     return (
@@ -45,55 +112,34 @@ const PlanesSocio: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white px-6 py-10">
-      <h1 className="text-3xl font-bold text-center text-[#ff6b00] mb-8">
-        Planes Disponibles 🧡
-      </h1>
+    <div className="planes-socio-container">
+      <h1 className="planes-socio-title">Planes Disponibles 🧡</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="planes-socio-grid">
         {planes.map((plan) => (
-          <div
+          <button
             key={plan.id}
-            className="bg-[#1e1e1e] border border-[#ff6b00]/40 rounded-2xl shadow-lg p-6 hover:scale-105 transition-all duration-300"
+            onClick={() => abrirFormularioOrden(plan)}
+            className="plan-card"
           >
-            <div className="flex items-center space-x-3 mb-3">
-              <FontAwesomeIcon icon={faDumbbell} className="text-[#ff6b00]" />
-              <h2 className="text-xl font-semibold">{plan.nombre}</h2>
-            </div>
+            <FontAwesomeIcon icon={faDumbbell} className="plan-icon" />
+            <h3 className="plan-title">{plan.nombre}</h3>
 
-            <div className="space-y-2 text-sm text-gray-300">
+            <div className="plan-info">
               <p>
-                <FontAwesomeIcon icon={faCalendarDay} className="text-[#ff6b00] mr-2" />
+                <FontAwesomeIcon icon={faCalendarDay} />
                 {plan.diasPorSemana} días por semana
               </p>
               <p>
-                <FontAwesomeIcon icon={faDollarSign} className="text-[#ff6b00] mr-2" />
-                ${plan.precio.toFixed(2)}
-              </p>
-              <p className="flex items-center">
-                <FontAwesomeIcon
-                  icon={plan.activo ? faCheckCircle : faTimesCircle}
-                  className={`mr-2 ${plan.activo ? "text-green-500" : "text-red-500"}`}
-                />
-                {plan.activo ? "Activo" : "Inactivo"}
+                <FontAwesomeIcon icon={faDollarSign} /> ${plan.precio.toFixed(2)}
               </p>
             </div>
-
-            <button
-              disabled={!plan.activo}
-              className={`mt-6 w-full py-2 rounded-xl font-semibold transition-all ${
-                plan.activo
-                  ? "bg-[#ff6b00] hover:bg-[#ff8533] text-white"
-                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              {plan.activo ? "Suscribirme" : "No disponible"}
-            </button>
-          </div>
+          </button>
         ))}
       </div>
     </div>
   );
+
 };
 
 export default PlanesSocio;

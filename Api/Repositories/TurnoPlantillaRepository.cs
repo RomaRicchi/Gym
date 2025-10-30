@@ -72,6 +72,7 @@ namespace Api.Repositories
         }
 
 
+
         // 🔹 Obtener por personal
         public async Task<IReadOnlyList<TurnoPlantilla>> GetByPersonalAsync(int personalId, CancellationToken ct = default)
         {

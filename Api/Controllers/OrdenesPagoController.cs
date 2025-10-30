@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Recepción")]
+    [Authorize(Roles = "Administrador, Recepción, Socio")]
     [ApiController]
     [Route("api/ordenes")]
     public class OrdenesPagoController : ControllerBase
@@ -113,8 +113,7 @@ namespace Api.Controllers
             return Ok(new { ok = true, message = "Comprobante asignado correctamente." });
         }
 
-        // POST /api/ordenes
-        [Authorize(Roles = "Administrador, Recepción, Profesor")]
+        
         [HttpPost]
         public async Task<IActionResult> Crear([FromForm] OrdenPagoCreateDto dto, [FromForm] IFormFile? file, CancellationToken ct)
         {
@@ -252,6 +251,92 @@ namespace Api.Controllers
             await _db.SaveChangesAsync(ct);
             return Ok(new { ok = true, message = "Orden actualizada correctamente." });
         }
+
+        [Authorize(Roles = "Socio")]
+        [HttpPost("socio")]
+        public async Task<IActionResult> CrearPorSocio([FromForm] int PlanId, [FromForm] IFormFile file, CancellationToken ct)
+        {
+            try
+            {
+                // ✅ Obtener el email desde el claim correcto del token
+                var userEmail = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    Console.WriteLine("⚠️ No se pudo obtener el email del token del socio.");
+                    return Unauthorized("No se encontró el socio asociado al token.");
+                }
+
+                Console.WriteLine($"✅ Socio autenticado: {userEmail}");
+
+                // ✅ Buscar socio por email
+                var socio = await _db.Socios.FirstOrDefaultAsync(s => s.Email == userEmail, ct);
+                if (socio == null)
+                    return Unauthorized("No se encontró el socio en la base de datos.");
+
+                // ✅ Validar el plan
+                var plan = await _db.Planes.FindAsync(new object[] { PlanId }, ct);
+                if (plan == null)
+                    return BadRequest("El plan seleccionado no existe.");
+
+                // ✅ Crear la orden
+                var orden = new OrdenPago
+                {
+                    SocioId = socio.Id,
+                    PlanId = PlanId,
+                    EstadoId = 1, // Pendiente
+                    Monto = plan.Precio,
+                    CreadoEn = DateTime.UtcNow,
+                    VenceEn = DateTime.UtcNow.AddMonths(1),
+                    Notas = "Orden generada por socio desde PlanesSocio"
+                };
+
+                _db.OrdenesPago.Add(orden);
+                await _db.SaveChangesAsync(ct);
+
+                // ✅ Guardar comprobante si se adjunta
+                if (file != null && file.Length > 0)
+                {
+                    var uploads = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "comprobantes");
+                    Directory.CreateDirectory(uploads);
+
+                    var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                    var allowed = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+                    if (!allowed.Contains(ext))
+                        return BadRequest("Solo se permiten archivos PDF o imágenes (.jpg, .png).");
+
+                    var fileName = $"{Guid.NewGuid()}{ext}";
+                    var filePath = Path.Combine(uploads, fileName);
+
+                    await using (var stream = new FileStream(filePath, FileMode.Create))
+                        await file.CopyToAsync(stream, ct);
+
+                    var comprobante = new Comprobante
+                    {
+                        FileUrl = $"uploads/comprobantes/{fileName}",
+                        MimeType = file.ContentType,
+                        SubidoEn = DateTime.UtcNow
+                    };
+
+                    _db.Comprobantes.Add(comprobante);
+                    await _db.SaveChangesAsync(ct);
+
+                    orden.ComprobanteId = comprobante.Id;
+                    _db.OrdenesPago.Update(orden);
+                    await _db.SaveChangesAsync(ct);
+                }
+
+                Console.WriteLine($"🧾 Orden creada correctamente para socio {socio.Email} (PlanId {PlanId})");
+
+                return Ok(new { ok = true, message = "Orden creada correctamente.", orden.Id });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR CrearPorSocio] {ex.Message}");
+                return StatusCode(500, new { message = "Error al crear la orden.", ex.Message });
+            }
+        }
+
+
 
         // PATCH /api/ordenes/{id}/estado
         [HttpPatch("{id:int}/estado")]

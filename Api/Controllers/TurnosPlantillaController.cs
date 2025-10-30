@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepción")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
     [ApiController]
     [Route("api/turnosplantilla")]
     public class TurnosPlantillaController : ControllerBase
@@ -49,16 +49,16 @@ namespace Api.Controllers
             return Ok(turno);
         }
 
-        // Obtener por día (ahora usa el nuevo método del repo)
         [HttpGet("dia/{id:int}")]
         public async Task<IActionResult> GetByDia(int id, CancellationToken ct = default)
         {
             var turnos = await _repo.GetByDiaAsync(id, ct);
             if (turnos == null || !turnos.Any())
-                return NotFound(new { message = "No se encontraron turnos activos para ese día." });
+                return Ok(new { ok = true, items = new List<object>() }); // 🔸 devuelve array vacío
 
-            return Ok(turnos);
+            return Ok(new { ok = true, items = turnos });
         }
+
 
         // Crear nuevo turno plantilla
         [HttpPost("crear")]

@@ -36,7 +36,7 @@ namespace Api.Controllers
         }
 
         // ============================================================
-        // 🔹 GET: /api/usuarios
+        // GET: /api/usuarios
         // ============================================================
         [Authorize(Roles = "Administrador")]
         [HttpGet]
@@ -113,7 +113,7 @@ namespace Api.Controllers
         }
 
         // ============================================================
-        // 🔹 POST: /api/usuarios
+        // POST: /api/usuarios
         // ============================================================
         [Authorize(Roles = "Administrador")]
         [HttpPost]
@@ -132,7 +132,7 @@ namespace Api.Controllers
         }
 
         // ============================================================
-        // 🔹 PUT: /api/usuarios/{id}
+        // PUT: /api/usuarios/{id}
         // ============================================================
         [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
         [HttpPut("{id:int}")]
@@ -155,7 +155,7 @@ namespace Api.Controllers
         }
 
         // ============================================================
-        // 🔹 DELETE lógico: /api/usuarios/{id}
+        //  DELETE lógico: /api/usuarios/{id}
         // ============================================================
         [Authorize(Roles = "Administrador")]
         [HttpDelete("{id:int}")]
@@ -172,8 +172,9 @@ namespace Api.Controllers
         }
 
         // ============================================================
-        // 🔹 POST: /api/usuarios/login
+        //  POST: /api/usuarios/login
         // ============================================================
+
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest dto, CancellationToken ct)
@@ -226,24 +227,28 @@ namespace Api.Controllers
 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
-            var response = new LoginResponseDto
+            // 🔹 NUEVO: incluir socioId y personalId si existen
+            var response = new
             {
-                Token = jwt,
-                Usuario = new UsuarioDto
+                token = jwt,
+                usuario = new
                 {
-                    Id = usuario.Id,
-                    Email = usuario.Email,
-                    Alias = usuario.Alias,
-                    Rol = usuario.Rol?.Nombre,
-                    Avatar = usuario.Avatar?.Url
+                    id = usuario.Id,
+                    email = usuario.Email,
+                    alias = usuario.Alias,
+                    rol = usuario.Rol?.Nombre,
+                    avatar = usuario.Avatar?.Url,
+                    socioId = usuario.SocioId,      
+                    personalId = usuario.PersonalId 
                 }
             };
 
             return Ok(response);
         }
 
+
         // ============================================================
-        // 🔹 POST: /api/usuarios/forgot-password
+        // POST: /api/usuarios/forgot-password
         // ============================================================
         [AllowAnonymous]
         [HttpPost("forgot-password")]
@@ -276,7 +281,7 @@ namespace Api.Controllers
         }
 
         // ============================================================
-        // 🔹 POST: /api/usuarios/reset-password
+        // POST: /api/usuarios/reset-password
         // ============================================================
         [AllowAnonymous]
         [HttpPost("reset-password")]
@@ -297,7 +302,7 @@ namespace Api.Controllers
         }
 
         // ============================================================
-        // 🔹 POST: /api/usuarios/register
+        // POST: /api/usuarios/register
         // ============================================================
         [AllowAnonymous]
         [HttpPost("register")]

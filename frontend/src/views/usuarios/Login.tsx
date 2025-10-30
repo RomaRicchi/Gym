@@ -22,32 +22,37 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // Petición al backend
+      // 🔹 Petición al backend
       const res = await gymApi.post("/usuarios/login", { email, password });
 
-      // Compatibilidad con Token / token
-      const token = res.data.Token || res.data.token;
-      const usuario = res.data.Usuario || res.data.usuario;
+      // Compatibilidad con mayúsculas/minúsculas
+      const token = res.data.token || res.data.Token;
+      const usuario = res.data.usuario || res.data.Usuario;
 
-      // Normalizar rol para el frontend
-      if (usuario?.rol_id === 4 || usuario?.RolId === 4) {
-        usuario.rol = "Socio";
-      } else if (usuario?.rol_id === 1) {
-        usuario.rol = "Administrador";
-      } else if (usuario?.rol_id === 2) {
-        usuario.rol = "Profesor";
-      } else if (usuario?.rol_id === 3) {
-        usuario.rol = "Recepción";
-      }
+      if (!token) throw new Error("No se recibió el token JWT del servidor.");
 
-      if (!token) {
-        throw new Error("No se recibió el token JWT del servidor.");
-      }
+      // 🔹 Normalizar el rol
+      const rol =
+        usuario?.rol?.toLowerCase() ||
+        usuario?.Rol?.toLowerCase() ||
+        "invitado";
 
-      // Guardar sesión en localStorage
+      // 🔹 Guardar datos principales en localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("usuario", JSON.stringify(usuario));
 
+      // Guardar socioId o personalId según corresponda
+      if (usuario?.socioId) {
+        localStorage.setItem("socioId", usuario.socioId.toString());
+        console.log("✅ socioId guardado:", usuario.socioId);
+      } else if (usuario?.personalId) {
+        localStorage.setItem("personalId", usuario.personalId.toString());
+        console.log("✅ personalId guardado:", usuario.personalId);
+      } else {
+        console.warn("⚠️ No se encontró socioId ni personalId en la respuesta");
+      }
+
+      // 🔹 Feedback visual
       await Swal.fire({
         icon: "success",
         title: "Bienvenido",
@@ -56,16 +61,21 @@ export default function Login() {
         showConfirmButton: false,
       });
 
-      // Redirigir según rol
-      if (usuario?.rol?.toLowerCase() === "socio") {
+      // 🔹 Redirección según rol
+      if (rol === "socio") {
         navigate("/perfil-socio");
+      } else if (rol === "administrador") {
+        navigate("/dashboard");
+      } else if (rol === "recepción") {
+        navigate("/panel-recepcion");
+      } else if (rol === "profesor") {
+        navigate("/panel-profesor");
       } else {
         navigate("/");
       }
 
-      // Recargar para refrescar navbar o contexto
+      // 🔹 Refrescar para que Navbar y Context se actualicen
       window.location.reload();
-
     } catch (err: any) {
       console.error(err);
       Swal.fire(
@@ -78,7 +88,7 @@ export default function Login() {
     }
   };
 
-  // Swal de recuperación de contraseña
+  // 🔹 Recuperar contraseña
   const handleForgotPassword = async () => {
     const { value: email } = await Swal.fire<string>({
       title: "Recuperar contraseña",
@@ -111,18 +121,17 @@ export default function Login() {
       }
     }
   };
-  
+
   return (
     <div
-          className="d-flex align-items-center justify-content-center vh-100"
-          style={{
-            backgroundImage: "url('/public/gym.jpg')", 
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
-        >
-
+      className="d-flex align-items-center justify-content-center vh-100"
+      style={{
+        backgroundImage: "url('/public/gym.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       <div
         className="card shadow-lg p-4 text-white"
         style={{
