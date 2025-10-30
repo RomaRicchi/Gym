@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepción")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
     [ApiController]
     [Route("api/perfil")]
     public class PerfilController : ControllerBase
@@ -54,12 +54,12 @@ namespace Api.Controllers
                     }
                     : null,
                 Avatar = usuario.Avatar != null
-                    ? new { usuario.Avatar.Id, usuario.Avatar.Url, usuario.Avatar.Nombre }
+                    ? new { usuario.Avatar.Id, usuario.Avatar.Url,Nombre = usuario.Avatar.Nombre ?? string.Empty }
                     : new { Id = 0, Url = "/images/user.png", Nombre = "avatar por defecto" }
             });
         }
 
-        // Subir o reemplazar avatar
+        [Authorize(Roles = "Socio, Administrador")]
         [HttpPost("{id:int}/avatar")]
         public async Task<IActionResult> SubirAvatar(int id, IFormFile archivo, CancellationToken ct)
         {

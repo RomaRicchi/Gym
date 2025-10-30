@@ -1,0 +1,77 @@
+/* Contenedor general (centra todo el contenido del socio) */
+.dashboard-socio-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* centra vertical y horizontal */
+  min-height: calc(100vh - 100px); /* deja espacio para navbar */
+  width: 100%;
+  background: transparent;
+  color: white;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Título */
+.dashboard-title {
+  color: #ff6b00;
+  font-weight: 700;
+  font-size: 2.3rem;
+  margin-bottom: 3rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Grid 2x2 equilibrado */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 260px);
+  grid-template-rows: repeat(2, 200px);
+  gap: 2.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card */
+.dashboard-card {
+  background: #ff6b00;
+  border: none;
+  border-radius: 22px;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(255, 107, 0, 0.3);
+  transition: all 0.25s ease-in-out;
+  width: 260px;
+  height: 200px;
+}
+
+/* Hover animado */
+.dashboard-card:hover {
+  background: #ff8533;
+  transform: translateY(-6px);
+  box-shadow: 0 10px 24px rgba(255, 107, 0, 0.5);
+}
+
+/* Íconos un poco más grandes */
+.dashboard-card svg {
+  margin-bottom: 10px;
+  font-size: 2.2rem;
+}
+
+/* Responsive (1 columna) */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
+
+  .dashboard-card {
+    width: 90%;
+    height: 160px;
+  }
+}

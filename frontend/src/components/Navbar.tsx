@@ -7,6 +7,7 @@ interface Usuario {
   alias?: string;
   email: string;
   avatar?: { url?: string } | string;
+  rol?: string;
 }
 
 export default function Navbar({
@@ -19,7 +20,7 @@ export default function Navbar({
 
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5144";
 
-  // 🔹 Cargar usuario al montar y escuchar cambios globales
+  // Cargar usuario al montar y escuchar cambios globales
   useEffect(() => {
     const loadUser = () => {
       const stored = localStorage.getItem("usuario");
@@ -31,7 +32,7 @@ export default function Navbar({
     return () => window.removeEventListener("authChange", loadUser);
   }, []);
 
-  // 🔹 Cerrar sesión
+  //  Cerrar sesión
   const handleLogout = async () => {
     const result = await Swal.fire({
       title: "¿Cerrar sesión?",
@@ -52,7 +53,7 @@ export default function Navbar({
     }
   };
 
-  // 🧩 Determinar URL del avatar (acepta string o { url })
+  // Determinar URL del avatar (acepta string o { url })
   const avatarUrlRaw =
     typeof usuario?.avatar === "string"
       ? usuario.avatar
@@ -92,7 +93,7 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* 🔹 Lado derecho */}
+        {/*  Lado derecho */}
         <div className="d-flex align-items-center">
           {!usuario ? (
             <Link
@@ -136,13 +137,18 @@ export default function Navbar({
               <ul className="dropdown-menu dropdown-menu-end shadow">
                 <li>
                   <Link
-                    to="/perfil"
+                    to={
+                      usuario?.rol?.toLowerCase() === "socio"
+                        ? "/perfil-socio"
+                        : "/perfil"
+                    }
                     className="dropdown-item d-flex align-items-center gap-2"
                     style={{ textDecoration: "none", color: "inherit" }}
                   >
                     <i className="fa fa-user"></i> Perfil
                   </Link>
                 </li>
+
                 <li>
                   <hr className="dropdown-divider" />
                 </li>

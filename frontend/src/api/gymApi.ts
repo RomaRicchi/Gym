@@ -31,18 +31,33 @@ gymApi.interceptors.request.use(
   }
 );
 
-// 🛑 Interceptor de respuesta: captura expiraciones o 401 automáticos
+// Interceptor de respuesta: captura expiraciones o 401 automáticos
 gymApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const url = error.config?.url || "";
+
+    // ⚡ Ignorar rutas públicas
+    const rutasPublicas = [
+      "/usuarios/login",
+      "/usuarios/register",
+      "/socios/registro-publico",
+      "/usuarios/forgot-password",
+      "/usuarios/reset-password",
+    ];
+
+    const esPublica = rutasPublicas.some((r) => url.includes(r));
+
+    if (!esPublica && error.response?.status === 401) {
       console.warn("[GymAPI] ⚠️ Token expirado o no autorizado. Redirigiendo al login...");
       localStorage.removeItem("token");
-      window.location.href = "/login"; // redirige al login si el token no es válido
+      window.location.href = "/login";
     }
+
     return Promise.reject(error);
   }
 );
+
 
 console.log("[GymAPI] Base URL:", gymApi.defaults.baseURL);
 

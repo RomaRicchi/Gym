@@ -1,21 +1,25 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": "/src", 
+      "@": path.resolve(__dirname, "src"), 
     },
   },
   define: {
-    global: "window", 
+    global: "window",
   },
   optimizeDeps: {
     include: ["jquery", "select2"],
   },
   server: {
     host: true,
-    port: 5173
+    port: 5173,
   },
 });

@@ -25,20 +25,20 @@ namespace Api.Data.Models
         public byte DiaSemanaId { get; set; }
 
         [ForeignKey(nameof(DiaSemanaId))]
-        public DiaSemana DiaSemana { get; set; }
+        public DiaSemana? DiaSemana { get; set; }
 
         // 🔹 Relación con Personal
         [Column("personal_id")]
         public int PersonalId { get; set; }
 
         [ForeignKey(nameof(PersonalId))]
-        public Personal Personal { get; set; }
+        public Personal? Personal { get; set; }
 
         // 🔹 Relación con Sala
         [Column("sala_id")]
         public int SalaId { get; set; }
 
         [ForeignKey(nameof(SalaId))]
-        public Sala Sala { get; set; }
+        public Sala? Sala { get; set; }
     }
 }

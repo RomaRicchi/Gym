@@ -11,49 +11,34 @@ import Layout from "@/components/Layout";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@/styles/main.css";
 
-// 🧩 Vistas principales
+/* === Vistas administrativas === */
 import Dashboard from "@/views/Dashboard";
 import Login from "@/views/usuarios/Login";
 import PerfilView from "@/views/usuarios/perfil/PerfilView";
-
-// 🧍 Socios
 import SociosList from "@/views/socios/List";
-
-// 👨‍🏫 Personal
 import PersonalList from "@/views/personal/List";
-
-// 💳 Suscripciones
 import SuscripcionesList from "@/views/suscripciones/List";
-
-// 💰 Planes
 import PlanesList from "@/views/suscripciones/planes/List";
-
-// 🏋️ Salas
 import SalasList from "@/views/salas/List";
-
-// 📆 Turnos plantilla
 import TurnosPlantillaList from "@/views/agenda/turnoPlantilla/List";
 import TurnosList from "@/views/agenda/suscripcionTurno/TurnosList";
 import AgendaCalendar from "@/views/agenda/AgendaCalendar";
-
-// 🧾 Órdenes de pago
 import OrdenesList from "@/views/gestionPagos/List";
-
-// 📑 Comprobantes
 import ComprobantesList from "@/views/gestionPagos/comprobantes/List";
 import ComprobanteUpload from "@/views/gestionPagos/comprobantes/Upload";
-
-// ⚙️ Estados de orden de pago
 import EstadosList from "@/views/gestionPagos/estado/List";
-
-// 🧩 Roles
 import RolesList from "@/views/usuarios/rol/List";
-
-// 👤 Usuarios
 import UsuariosList from "@/views/usuarios/List";
 import ResetPassword from "@/views/usuarios/ResetPassword";
 
-/* 🔝 Scroll automático al cambiar de ruta */
+/* === Vistas del SOCIO === */
+import DashboardSocio from "@/views/DashboardSocio";
+import PlanesSocio from "@/views/socios/PlanesSocio";
+import SuscripcionesSocio from "@/views/socios/SuscripcionesSocio";
+import TurnosSocio from "@/views/socios/TurnosSocio";
+import RutinasSocio from "@/views/socios/RutinasSocio";
+
+/* Scroll automático */
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -67,63 +52,44 @@ export default function App() {
     <Router>
       <ScrollToTop />
       <Routes>
-        {/* 🔐 Rutas protegidas: solo accesibles si hay sesión */}
-        
-          <Route element={<Layout />}>
-            {/* 🏠 Dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+        {/* 🔒 Panel Administrativo */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/dashboard" element={<Dashboard />} />
 
-            {/* 👤 Perfil */}
-            <Route path="/perfil" element={<PerfilView />} />
+          {/* Perfil administrativo */}
+          <Route path="/perfil" element={<PerfilView />} />
 
-            {/* 🧍 Socios */}
-            <Route path="/socios" element={<SociosList />} />
-
-            {/* 👨‍🏫 Personal */}
-            <Route path="/personal" element={<PersonalList />} />
-
-            {/* 💳 Suscripciones */}
-            <Route path="/suscripciones" element={<SuscripcionesList />} />
-
-            {/* 💰 Planes */}
-            <Route path="/planes" element={<PlanesList />} />
-
-            {/* 🏋️ Salas */}
-            <Route path="/salas" element={<SalasList />} />
-
-            {/* 🗓️ Agenda y Turnos */}
-            <Route path="/agenda/calendario" element={<AgendaCalendar />} />
-
-            {/* Turnos plantilla */}
-            <Route path="/turnos" element={<TurnosPlantillaList />} />
-           
-            {/* Turnos por suscripción */}
-            <Route path="/suscripciones/turnos" element={<TurnosList />} />
-
-            {/* 🧾 Órdenes de Pago */}
-            <Route path="/ordenes" element={<OrdenesList />} />
-
-            {/* 📑 Comprobantes */}
-            <Route path="/comprobantes" element={<ComprobantesList />} />
-            <Route path="/ordenes/:id/comprobantes" element={<ComprobantesList />} />
-            <Route path="/ordenes/:id/subir-comprobante" element={<ComprobanteUpload />} />
-
-            {/* ⚙️ Estados */}
-            <Route path="/estados" element={<EstadosList />} />
-
-            {/* 🧩 Roles */}
-            <Route path="/roles" element={<RolesList />} />
-
-            {/* 👤 Usuarios */}
-            <Route path="/usuarios" element={<UsuariosList />} />
-          </Route>
+          {/* Gestión */}
+          <Route path="/socios" element={<SociosList />} />
+          <Route path="/personal" element={<PersonalList />} />
+          <Route path="/suscripciones" element={<SuscripcionesList />} />
+          <Route path="/planes" element={<PlanesList />} />
+          <Route path="/salas" element={<SalasList />} />
+          <Route path="/agenda/calendario" element={<AgendaCalendar />} />
+          <Route path="/turnos" element={<TurnosPlantillaList />} />
+          <Route path="/suscripciones/turnos" element={<TurnosList />} />
+          <Route path="/ordenes" element={<OrdenesList />} />
+          <Route path="/comprobantes" element={<ComprobantesList />} />
+          <Route path="/ordenes/:id/comprobantes" element={<ComprobantesList />} />
+          <Route path="/ordenes/:id/subir-comprobante" element={<ComprobanteUpload />} />
+          <Route path="/estados" element={<EstadosList />} />
+          <Route path="/roles" element={<RolesList />} />
+          <Route path="/usuarios" element={<UsuariosList />} />
        
 
-        {/* 🌐 Ruta pública: Login */}
+          {/* 🧡 Panel del Socio */}
+          <Route path="/dashboardSocio" element={<DashboardSocio />} />
+          <Route path="/socio/planesSocio" element={<PlanesSocio />} />
+          <Route path="/socio/suscripcionesSocio" element={<SuscripcionesSocio />} />
+          <Route path="/socio/turnosSocio" element={<TurnosSocio />} />
+          <Route path="/socio/rutinasSocio" element={<RutinasSocio />} />
+        </Route>
+        {/* 🌐 Rutas públicas */}
         <Route path="/login" element={<Login />} />
-        <Route path="/reset-password" element={<ResetPassword/>} />
-        {/* 🚧 Redirección para rutas inexistentes */}
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* Redirección general */}
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>

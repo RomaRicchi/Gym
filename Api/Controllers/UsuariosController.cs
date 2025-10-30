@@ -12,7 +12,6 @@ using System.Text;
 using static BCrypt.Net.BCrypt;
 using Microsoft.AspNetCore.Authorization;
 
-
 namespace Api.Controllers
 {
     [ApiController]
@@ -24,15 +23,21 @@ namespace Api.Controllers
         private readonly GymDbContext _db;
         private readonly IEmailService _emailService;
 
-        public UsuariosController(IUsuarioRepository repo, IConfiguration config, GymDbContext db, IEmailService emailService)
+        public UsuariosController(
+            IUsuarioRepository repo,
+            IConfiguration config,
+            GymDbContext db,
+            IEmailService emailService)
         {
-            _repo = repo;
-            _config = config;
-            _db = db;
-            _emailService = emailService;
+            _repo = repo ?? throw new ArgumentNullException(nameof(repo));
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _db = db ?? throw new ArgumentNullException(nameof(db));
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         }
 
-        // GET: /api/usuarios
+        // ============================================================
+        // 🔹 GET: /api/usuarios
+        // ============================================================
         [Authorize(Roles = "Administrador")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
@@ -41,14 +46,12 @@ namespace Api.Controllers
             string? q = null,
             CancellationToken ct = default)
         {
-            // Base query
             var query = _db.Usuarios
                 .Include(u => u.Rol)
                 .AsNoTracking()
                 .OrderBy(u => u.Alias)
                 .AsQueryable();
 
-            // Filtro por búsqueda (alias o email)
             if (!string.IsNullOrWhiteSpace(q))
             {
                 query = query.Where(u =>
@@ -56,10 +59,8 @@ namespace Api.Controllers
                     EF.Functions.Like(u.Email, $"%{q}%"));
             }
 
-            // Total antes de paginar
             var totalItems = await query.CountAsync(ct);
 
-            // Paginación
             var usuarios = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -69,11 +70,10 @@ namespace Api.Controllers
                     u.Email,
                     u.Alias,
                     Rol = u.Rol != null ? u.Rol.Nombre : "(Sin rol)",
-                    Estado = u.Estado
+                    u.Estado
                 })
                 .ToListAsync(ct);
 
-            // Devuelve formato estándar para frontend
             return Ok(new
             {
                 totalItems,
@@ -84,8 +84,10 @@ namespace Api.Controllers
             });
         }
 
+        // ============================================================
         // 🔹 GET: /api/usuarios/{id}
-        [Authorize(Roles = "Administrador")]
+        // ============================================================
+        [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
@@ -110,18 +112,18 @@ namespace Api.Controllers
             });
         }
 
+        // ============================================================
         // 🔹 POST: /api/usuarios
+        // ============================================================
         [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] Usuario dto, CancellationToken ct)
         {
             dto.CreadoEn = DateTime.UtcNow;
 
-            // ✅ Hash automático si la contraseña está en texto plano
+            // Hash automático si viene en texto plano
             if (!string.IsNullOrWhiteSpace(dto.PasswordHash) && !dto.PasswordHash.StartsWith("$2"))
-            {
                 dto.PasswordHash = HashPassword(dto.PasswordHash);
-            }
 
             _db.Usuarios.Add(dto);
             await _db.SaveChangesAsync(ct);
@@ -129,7 +131,10 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
-        [Authorize(Roles = "Administrador")]
+        // ============================================================
+        // 🔹 PUT: /api/usuarios/{id}
+        // ============================================================
+        [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> ActualizarUsuario(int id, [FromBody] UsuarioUpdateDto dto, CancellationToken ct)
         {
@@ -137,21 +142,21 @@ namespace Api.Controllers
             if (usuario == null)
                 return NotFound(new { message = "Usuario no encontrado." });
 
-            // 🧩 Validar rol antes de asignar
             if (dto.RolId <= 0 || !await _db.Roles.AnyAsync(r => r.Id == dto.RolId, ct))
                 return BadRequest(new { message = "Rol inválido o no existente." });
 
-            usuario.Email = dto.Email;
-            usuario.Alias = dto.Alias;
+            usuario.Email = dto.Email ?? usuario.Email;
+            usuario.Alias = dto.Alias ?? usuario.Alias;
             usuario.RolId = dto.RolId;
             usuario.Estado = dto.Estado;
 
             await _db.SaveChangesAsync(ct);
-
             return Ok(new { message = "✅ Usuario actualizado correctamente." });
         }
 
+        // ============================================================
         // 🔹 DELETE lógico: /api/usuarios/{id}
+        // ============================================================
         [Authorize(Roles = "Administrador")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
@@ -160,13 +165,15 @@ namespace Api.Controllers
             if (usuario == null)
                 return NotFound(new { message = "Usuario no encontrado." });
 
-            usuario.Estado = false; // baja lógica
+            usuario.Estado = false;
             await _db.SaveChangesAsync(ct);
 
             return Ok(new { message = "🗑️ Usuario marcado como inactivo." });
         }
 
+        // ============================================================
         // 🔹 POST: /api/usuarios/login
+        // ============================================================
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest dto, CancellationToken ct)
@@ -178,6 +185,9 @@ namespace Api.Controllers
 
             if (usuario == null)
                 return BadRequest(new { message = "Usuario no encontrado." });
+
+            if (usuario.Rol == null && usuario.RolId != 0)
+                usuario.Rol = await _db.Roles.FirstOrDefaultAsync(r => r.Id == usuario.RolId, ct);
 
             bool esValida = false;
 
@@ -192,16 +202,19 @@ namespace Api.Controllers
             if (!esValida)
                 return BadRequest(new { message = "Credenciales incorrectas." });
 
-            // 🔐 Generar token JWT con rol
+            // Generar token JWT seguro
+            var jwtKey = _config["Jwt:Key"]
+                ?? throw new InvalidOperationException("Falta la clave JWT en la configuración.");
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(ClaimTypes.Email, usuario.Email),
-                new Claim(ClaimTypes.Role, usuario.Rol?.Nombre ?? "Usuario")
+                new Claim(ClaimTypes.Email, usuario.Email ?? string.Empty),
+                new Claim(ClaimTypes.Role, usuario.Rol?.Nombre ?? "Invitado")
             };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
@@ -229,12 +242,16 @@ namespace Api.Controllers
             return Ok(response);
         }
 
+        // ============================================================
+        // 🔹 POST: /api/usuarios/forgot-password
+        // ============================================================
         [AllowAnonymous]
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
             var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null) return NotFound("No existe un usuario con ese correo.");
+            if (user == null)
+                return NotFound("No existe un usuario con ese correo.");
 
             var token = Guid.NewGuid().ToString();
             var reset = new PasswordResetToken
@@ -247,15 +264,20 @@ namespace Api.Controllers
             _db.PasswordResetTokens.Add(reset);
             await _db.SaveChangesAsync();
 
-            // ✉️ Enviar correo con el token
-            var frontendUrl = _config["FrontendUrl"];
+            var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:5173";
             var resetLink = $"{frontendUrl}/reset-password?token={token}";
-            await _emailService.SendEmailAsync(user.Email, "Recuperar contraseña",
+
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Recuperar contraseña",
                 $"Haz clic en el siguiente enlace para restablecer tu contraseña:<br><a href='{resetLink}'>Restablecer contraseña</a>");
 
             return Ok("Correo de recuperación enviado.");
         }
 
+        // ============================================================
+        // 🔹 POST: /api/usuarios/reset-password
+        // ============================================================
         [AllowAnonymous]
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
@@ -264,13 +286,49 @@ namespace Api.Controllers
                 .Include(x => x.Usuario)
                 .FirstOrDefaultAsync(x => x.Token == dto.Token && x.Expira > DateTime.UtcNow);
 
-            if (reset == null) return BadRequest("Token inválido o expirado.");
+            if (reset == null)
+                return BadRequest("Token inválido o expirado.");
 
-            reset.Usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            reset.Usuario.PasswordHash = HashPassword(dto.NewPassword);
             _db.PasswordResetTokens.Remove(reset);
             await _db.SaveChangesAsync();
 
             return Ok("Contraseña restablecida correctamente.");
+        }
+
+        // ============================================================
+        // 🔹 POST: /api/usuarios/register
+        // ============================================================
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] UsuarioRegisterDto dto, CancellationToken ct)
+        {
+            if (await _db.Usuarios.AnyAsync(u => u.Email == dto.Email, ct))
+                return BadRequest(new { message = "Ya existe un usuario con ese correo." });
+
+            Socio? socio = null;
+            if (dto.SocioId.HasValue)
+            {
+                socio = await _db.Socios.FindAsync(new object[] { dto.SocioId.Value }, ct);
+                if (socio == null)
+                    return BadRequest(new { message = "El socio indicado no existe." });
+            }
+
+            var usuario = new Usuario
+            {
+                Email = dto.Email,
+                Alias = dto.Alias,
+                PasswordHash = HashPassword(dto.Password),
+                RolId = 4, // Rol “Socio”
+                Estado = true,
+                CreadoEn = DateTime.UtcNow,
+                SocioId = socio?.Id
+            };
+
+            _db.Usuarios.Add(usuario);
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new { message = "Usuario registrado correctamente." });
         }
     }
 }

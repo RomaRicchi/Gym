@@ -1,21 +1,64 @@
+using Api.Data;
 using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepción")]
+    [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
     [ApiController]
     [Route("api/[controller]")]
     public class AvataresController : ControllerBase
     {
         private readonly IAvatarRepository _repo;
+        private readonly GymDbContext _db;
 
-        public AvataresController(IAvatarRepository repo)
+        public AvataresController(IAvatarRepository repo, GymDbContext db)
         {
             _repo = repo;
+            _db = db;
         }
+
+       
+        [HttpPost("upload")]
+[Authorize(Roles = "Socio, Administrador, Profesor, Recepción")]
+public async Task<IActionResult> Upload([FromForm] IFormFile archivo)
+{
+    if (archivo == null || archivo.Length == 0)
+        return BadRequest("Debe seleccionar una imagen.");
+
+    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "avatars");
+    if (!Directory.Exists(uploadsPath))
+        Directory.CreateDirectory(uploadsPath);
+
+    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(archivo.FileName)}";
+    var filePath = Path.Combine(uploadsPath, fileName);
+
+    using (var stream = new FileStream(filePath, FileMode.Create))
+        await archivo.CopyToAsync(stream);
+
+    var avatar = new Avatar
+    {
+        Url = $"/uploads/avatars/{fileName}",
+        Nombre = fileName,
+        EsPredeterminado = false
+    };
+
+    _db.Avatares.Add(avatar);
+    await _db.SaveChangesAsync();
+
+    var idUsuario = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+    var usuario = await _db.Usuarios.FindAsync(idUsuario);
+    if (usuario == null)
+        return NotFound("Usuario no encontrado.");
+
+    usuario.IdAvatar = avatar.Id;
+    await _db.SaveChangesAsync();
+
+    return Ok(new { message = "Avatar subido y asociado correctamente", id = avatar.Id, url = avatar.Url });
+}
 
         // GET: api/avatares
         [HttpGet]

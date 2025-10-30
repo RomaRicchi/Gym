@@ -19,31 +19,32 @@ namespace Api.Controllers
             _db = db;
         }
 
-        // 🔹 GET /api/personal
+        // GET /api/personal
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct = default)
         {
+            // 1️⃣ Traemos los datos desde la BD
             var lista = await _db.Personales
                 .AsNoTracking()
                 .Include(p => p.Usuario)
                 .ThenInclude(u => u.Rol)
                 .OrderBy(p => p.Nombre)
-                .Select(p => new
-                {
-                    id = p.Id,
-                    nombre = p.Nombre,
-                    email = p.Usuario != null ? p.Usuario.Email : null,
-                    telefono = p.Telefono,
-                    direccion = p.Direccion,
-                    especialidad = p.Especialidad,
-                    rol = p.Usuario != null && p.Usuario.Rol != null
-                        ? p.Usuario.Rol.Nombre
-                        : "(Sin rol)",
-                    activo = p.Estado
-                })
                 .ToListAsync(ct);
 
-            return Ok(lista);
+            // 2️⃣ Transformamos en memoria, donde sí se puede usar '?.'
+            var result = lista.Select(p => new
+            {
+                id = p.Id,
+                nombre = p.Nombre,
+                email = p.Usuario?.Email,
+                telefono = p.Telefono,
+                direccion = p.Direccion,
+                especialidad = p.Especialidad,
+                rol = p.Usuario?.Rol?.Nombre ?? "(Sin rol)",
+                activo = p.Estado
+            });
+
+            return Ok(result);
         }
 
         // 🔹 GET /api/personal/{id}
@@ -54,27 +55,26 @@ namespace Api.Controllers
                 .AsNoTracking()
                 .Include(p => p.Usuario)
                 .ThenInclude(u => u.Rol)
-                .Where(x => x.Id == id)
-                .Select(p => new
-                {
-                    id = p.Id,
-                    nombre = p.Nombre,
-                    email = p.Usuario != null ? p.Usuario.Email : null,
-                    telefono = p.Telefono,
-                    direccion = p.Direccion,
-                    especialidad = p.Especialidad,
-                    rolId = p.Usuario != null ? (int?)p.Usuario.RolId : null,
-                    rolNombre = p.Usuario != null && p.Usuario.Rol != null
-                        ? p.Usuario.Rol.Nombre
-                        : null,
-                    activo = p.Estado
-                })
-                .FirstOrDefaultAsync(ct);
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
 
             if (p is null)
                 return NotFound(new { message = "Personal no encontrado." });
 
-            return Ok(p);
+            // proyección en memoria, no en SQL
+            var dto = new
+            {
+                id = p.Id,
+                nombre = p.Nombre,
+                email = p.Usuario?.Email,
+                telefono = p.Telefono,
+                direccion = p.Direccion,
+                especialidad = p.Especialidad,
+                rolId = p.Usuario?.RolId,
+                rolNombre = p.Usuario?.Rol?.Nombre,
+                activo = p.Estado
+            };
+
+            return Ok(dto);
         }
 
         // 🔹 POST /api/personal

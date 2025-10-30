@@ -2,6 +2,7 @@ import { useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import gymApi from "@/api/gymApi";
+import { handleRegistroSocio } from "./RegistroSocio";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,18 +22,29 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // 🔹 Petición al backend
+      // Petición al backend
       const res = await gymApi.post("/usuarios/login", { email, password });
 
-      // ✅ Compatibilidad con Token / token
+      // Compatibilidad con Token / token
       const token = res.data.Token || res.data.token;
       const usuario = res.data.Usuario || res.data.usuario;
+
+      // Normalizar rol para el frontend
+      if (usuario?.rol_id === 4 || usuario?.RolId === 4) {
+        usuario.rol = "Socio";
+      } else if (usuario?.rol_id === 1) {
+        usuario.rol = "Administrador";
+      } else if (usuario?.rol_id === 2) {
+        usuario.rol = "Profesor";
+      } else if (usuario?.rol_id === 3) {
+        usuario.rol = "Recepción";
+      }
 
       if (!token) {
         throw new Error("No se recibió el token JWT del servidor.");
       }
 
-      // 🔹 Guardar sesión en localStorage
+      // Guardar sesión en localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("usuario", JSON.stringify(usuario));
 
@@ -44,9 +56,16 @@ export default function Login() {
         showConfirmButton: false,
       });
 
-      // 🔹 Redirigir al dashboard
-      navigate("/");
-      window.location.reload(); // para refrescar navbar o contexto
+      // Redirigir según rol
+      if (usuario?.rol?.toLowerCase() === "socio") {
+        navigate("/perfil-socio");
+      } else {
+        navigate("/");
+      }
+
+      // Recargar para refrescar navbar o contexto
+      window.location.reload();
+
     } catch (err: any) {
       console.error(err);
       Swal.fire(
@@ -59,7 +78,7 @@ export default function Login() {
     }
   };
 
-  // 🔹 Swal de recuperación de contraseña
+  // Swal de recuperación de contraseña
   const handleForgotPassword = async () => {
     const { value: email } = await Swal.fire<string>({
       title: "Recuperar contraseña",
@@ -92,12 +111,18 @@ export default function Login() {
       }
     }
   };
-
+  
   return (
     <div
-      className="d-flex align-items-center justify-content-center vh-100"
-      style={{ backgroundColor: "#f8f9fa" }}
-    >
+          className="d-flex align-items-center justify-content-center vh-100"
+          style={{
+            backgroundImage: "url('/public/gym.jpg')", 
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+
       <div
         className="card shadow-lg p-4 text-white"
         style={{
@@ -165,6 +190,16 @@ export default function Login() {
               className="text-decoration-none small text-white-50"
             >
               ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+
+          <div className="text-center mt-2">
+            <a
+              href="#"
+              onClick={handleRegistroSocio}
+              className="text-decoration-none small text-white"
+            >
+              Registrarme como socio
             </a>
           </div>
         </form>

@@ -58,7 +58,7 @@ export async function PasswordEditSwal(id: string, onSuccess?: () => void) {
       nueva: formValues.nueva,
     });
 
-    await Swal.fire( "Contraseña actualizada correctamente", "success");
+    await Swal.fire( "Contraseña actualizada correctamente");
 
     onSuccess?.();
   } catch (err: any) {

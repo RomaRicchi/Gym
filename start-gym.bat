@@ -43,7 +43,7 @@ if not exist "%WEB_DIR%\node_modules" (
   popd
 )
 
-echo [WEB] Iniciando Vite (frontend) en http://localhost:5173 ...
+echo [WEB] Iniciando Vite (frontend) en http://localhost:5173/login ...
 start "GYM_WEB" /MIN cmd /c "cd /d "%WEB_DIR%" && npm run dev -- --port 5173"
 
 echo.
@@ -51,7 +51,7 @@ echo ========================================
 echo ✅ Todo lanzado correctamente.
 echo ----------------------------------------
 echo 🌐 API:       http://localhost:5144/swagger
-echo 💻 Frontend:  http://localhost:5173
+echo 💻 Frontend:  http://localhost:5173/login
 echo ----------------------------------------
 echo Presioná Ctrl + C para detener ambos servidores.
 echo ========================================
