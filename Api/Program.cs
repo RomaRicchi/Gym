@@ -88,6 +88,7 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
 builder.Services.AddScoped<IPerfilRepository, PerfilRepository>();
 builder.Services.AddScoped<ICheckinRepository, CheckinRepository>();
+builder.Services.AddHostedService<Api.Services.TurnosSchedulerService>();
 
 
 var app = builder.Build();

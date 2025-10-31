@@ -200,5 +200,89 @@ namespace Api.Repositories
                 await _db.SaveChangesAsync(ct);
             }
         }
+
+        // Cancelar turno (libera cupo)
+        public async Task<bool> CancelarTurnoAsync(int id, CancellationToken ct = default)
+        {       
+            var entity = await _db.SuscripcionTurnos
+                .Include(st => st.TurnoPlantilla)
+                .ThenInclude(tp => tp.Sala)
+                .FirstOrDefaultAsync(st => st.Id == id, ct);
+
+            if (entity == null)
+                return false;
+
+            // ⚙️ Combinar fecha actual + hora del turno (TimeSpan → DateTime)
+            var ahora = DateTime.UtcNow;
+            var horaInicio = entity.TurnoPlantilla?.HoraInicio ?? new TimeSpan(0, 0, 0);
+            var fechaTurno = ahora.Date.Add(horaInicio);
+
+            if (fechaTurno <= ahora.AddHours(1))
+                throw new InvalidOperationException("Demasiado tarde para cancelar el turno (menos de 1 hora).");
+
+            _db.SuscripcionTurnos.Remove(entity);
+            await _db.SaveChangesAsync(ct);
+            return true;
+        }
+
+
+        // Reagendar turno dentro de la misma semana
+        public async Task<(bool ok, string message)> ReagendarTurnoAsync(
+            int suscripcionId, int turnoActualId, int nuevoTurnoId, CancellationToken ct = default)
+        {
+            var suscripcion = await _db.Suscripciones
+                .Include(s => s.Plan)
+                .FirstOrDefaultAsync(s => s.Id == suscripcionId, ct);
+
+            if (suscripcion == null)
+                return (false, "Suscripción no encontrada.");
+
+            // 🔸 Buscar el turno actual
+            var actual = await _db.SuscripcionTurnos.FirstOrDefaultAsync(st => st.Id == turnoActualId, ct);
+            if (actual == null)
+                return (false, "Turno actual no encontrado.");
+
+            // 🔸 Buscar nuevo turno
+            var nuevoTurno = await _db.TurnosPlantilla
+                .Include(t => t.Sala)
+                .Include(t => t.DiaSemana)
+                .FirstOrDefaultAsync(t => t.Id == nuevoTurnoId, ct);
+
+            if (nuevoTurno == null)
+                return (false, "Nuevo turno no encontrado.");
+
+            // 🔸 Validar que sea dentro de la semana actual
+            var hoy = DateTime.UtcNow;
+            var finSemana = hoy.Date.AddDays(7 - (int)hoy.DayOfWeek);
+            var fechaTurno = hoy.Date.Add(nuevoTurno.HoraInicio);
+
+            if (fechaTurno.Date > finSemana.Date)
+                return (false, "Solo se puede reagendar dentro de esta semana.");
+
+            // 🔸 Liberar el turno anterior
+            _db.SuscripcionTurnos.Remove(actual);
+
+            // 🔸 Verificar cupo disponible
+            var inscriptos = await _db.SuscripcionTurnos
+                .CountAsync(st => st.TurnoPlantillaId == nuevoTurnoId, ct);
+
+            var cupo = nuevoTurno.Sala?.Cupo ?? 0;
+            if (inscriptos >= cupo)
+                return (false, "No hay cupos disponibles para el nuevo turno.");
+
+            // 🔸 Registrar nuevo turno
+            var nuevoST = new SuscripcionTurno
+            {
+                SuscripcionId = suscripcionId,
+                TurnoPlantillaId = nuevoTurnoId
+            };
+
+            _db.SuscripcionTurnos.Add(nuevoST);
+            await _db.SaveChangesAsync(ct);
+
+            return (true, "Turno reagendado correctamente.");
+        }
+
+
     }
 }

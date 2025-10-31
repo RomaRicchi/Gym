@@ -1,0 +1,94 @@
+.turnos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* CARD */
+.turno-card {
+  background: linear-gradient(180deg, #ff7b00 0%, #e65a00 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: auto;
+}
+
+.turno-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 14px rgba(255, 107, 0, 0.45);
+}
+
+/* CONTENIDO */
+.turno-contenido {
+  flex: 1;
+}
+
+.turno-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.turno-body {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #fff;
+}
+
+/* BOTÓN */
+.turno-btn {
+  background: #ffffff;
+  color: #ff6b00;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: center;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.turno-btn:hover {
+  background: #fff4e6;
+}
+
+.turno-btn svg {
+  color: #ff6b00;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .turnos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.turno-acciones {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.turno-btn.reagendar {
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid #fff;
+}
+
+.turno-btn.reagendar:hover {
+  background: #fff;
+  color: #ff6b00;
+}

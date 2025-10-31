@@ -4,39 +4,62 @@ import {
   faClock,
   faCalendarAlt,
   faDumbbell,
-  faCheckCircle,
+  faUser,
+  faDoorOpen,
   faTimesCircle,
+  faSyncAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import gymApi from "@/api/gymApi";
+import Swal from "sweetalert2";
+import "@/styles/TurnosSocio.css";
+import { reagendarTurnoModal } from "./reagendarTurno";
+import { cancelarTurnoModal } from "./cancelarTurno";
 
-interface Turno {
+interface TurnoSocio {
   id: number;
-  fechaHora: string;
-  sala: string;
-  estado: boolean;
+  suscripcionId: number;
+  turnoPlantilla?: {
+    id: number;
+    horaInicio: string;
+    duracionMin: number;
+    diaSemana?: { id: number; nombre: string };
+    sala?: { nombre: string; cupo?: number; cupoDisponible?: number };
+    personal?: { nombre: string };
+  };
 }
 
 const TurnosSocio: React.FC = () => {
-  const [turnos, setTurnos] = useState<Turno[]>([]);
+  const [turnos, setTurnos] = useState<TurnoSocio[]>([]);
   const [loading, setLoading] = useState(true);
-
   const socioId = localStorage.getItem("socioId");
 
   useEffect(() => {
-    const fetchTurnos = async () => {
-      try {
-        const res = await fetch(`/api/turnos?socioId=${socioId}`);
-        if (!res.ok) throw new Error("Error al obtener los turnos");
-        const data = await res.json();
-        setTurnos(data.items || []);
-      } catch (err) {
-        console.error("Error al obtener turnos:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTurnos();
   }, [socioId]);
+
+  const fetchTurnos = async () => {
+    try {
+      const { data } = await gymApi.get(`/suscripcionturno/socio/${socioId}`);
+      setTurnos(data.items || data);
+    } catch (err) {
+      console.error("❌ Error al obtener turnos:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelar = async (turnoId: number) => {
+    await cancelarTurnoModal(turnoId, fetchTurnos);
+  };
+
+  const handleReagendar = async (t: TurnoSocio) => {
+    await reagendarTurnoModal(
+      t.suscripcionId,
+      t.id,
+      t.turnoPlantilla?.id || 0,
+      fetchTurnos
+    );
+  };
 
   if (loading) {
     return (
@@ -50,7 +73,7 @@ const TurnosSocio: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-gray-300">
         <FontAwesomeIcon icon={faDumbbell} size="3x" className="text-[#ff6b00] mb-4" />
-        <p className="text-xl">No tenés turnos reservados</p>
+        <p className="text-xl">No tenés turnos asignados todavía</p>
       </div>
     );
   }
@@ -61,44 +84,59 @@ const TurnosSocio: React.FC = () => {
         Mis Turnos 🧡
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="turnos-grid">
         {turnos.map((t) => {
-          const fecha = new Date(t.fechaHora).toLocaleDateString();
-          const hora = new Date(t.fechaHora).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
+          const turno = t.turnoPlantilla;
+          if (!turno) return null;
+
+          const horaInicio = turno.horaInicio?.slice(0, 5) || "--:--";
+          const duracion = turno.duracionMin || 0;
+          const horaFin = calcularHoraFin(turno.horaInicio, duracion);
+          const dia = turno.diaSemana?.nombre || "Día sin asignar";
+          const sala = turno.sala?.nombre || "Sala no definida";
+          const profesor = turno.personal?.nombre || "Profesor no asignado";
 
           return (
-            <div
-              key={t.id}
-              className="bg-[#1e1e1e] border border-[#ff6b00]/40 rounded-2xl shadow-lg p-6 hover:scale-105 transition-all duration-300"
-            >
-              <div className="flex items-center mb-4 space-x-3">
-                <FontAwesomeIcon icon={faDumbbell} className="text-[#ff6b00]" />
-                <h2 className="text-xl font-semibold">Turno #{t.id}</h2>
+            <div key={t.id} className="turno-card">
+              <div className="turno-contenido">
+                <div className="turno-header">
+                  <FontAwesomeIcon icon={faCalendarAlt} />
+                  <h2>{dia}</h2>
+                </div>
+
+                <div className="turno-body">
+                  <p>
+                    <FontAwesomeIcon icon={faClock} className="mr-2" />
+                    {horaInicio} - {horaFin} hs
+                  </p>
+                  <p>
+                    <FontAwesomeIcon icon={faDoorOpen} className="mr-2" />
+                    {sala}
+                  </p>
+                  <p>
+                    <FontAwesomeIcon icon={faUser} className="mr-2" />
+                    {profesor}
+                  </p>
+                  <p className="italic text-sm">Duración: {duracion} min</p>
+                </div>
               </div>
 
-              <div className="space-y-2 text-gray-300 text-sm">
-                <p>
-                  <FontAwesomeIcon icon={faCalendarAlt} className="text-[#ff6b00] mr-2" />
-                  {fecha}
-                </p>
+              <div className="turno-acciones">
+                <button
+                  onClick={() => handleCancelar(t.id)}
+                  className="turno-btn cancelar flex items-center justify-center gap-2"
+                >
+                  <FontAwesomeIcon icon={faTimesCircle} />
+                  Cancelar
+                </button>
 
-                <p>
-                  <FontAwesomeIcon icon={faClock} className="text-[#ff6b00] mr-2" />
-                  {hora}
-                </p>
-
-                <p className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={t.estado ? faCheckCircle : faTimesCircle}
-                    className={`mr-2 ${t.estado ? "text-green-500" : "text-red-500"}`}
-                  />
-                  {t.estado ? "Confirmado" : "Cancelado"}
-                </p>
-
-                <p className="text-sm text-gray-400 italic">Sala: {t.sala}</p>
+                <button
+                  onClick={() => handleReagendar(t)}
+                  className="turno-btn reagendar flex items-center justify-center gap-2"
+                >
+                  <FontAwesomeIcon icon={faSyncAlt} />
+                  Reagendar
+                </button>
               </div>
             </div>
           );
@@ -107,5 +145,13 @@ const TurnosSocio: React.FC = () => {
     </div>
   );
 };
+
+function calcularHoraFin(horaInicio: string, duracionMin: number): string {
+  if (!horaInicio) return "--:--";
+  const [h, m] = horaInicio.split(":").map(Number);
+  const date = new Date();
+  date.setHours(h, m + duracionMin);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
 export default TurnosSocio;

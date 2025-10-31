@@ -302,5 +302,105 @@ namespace Api.Controllers
             var result = await _repo.GetAllWithCheckinAsync(ct);
             return Ok(new { ok = true, items = result });
         }
+
+        // Cancelar turno con al menos 1h de anticipación
+        [HttpPost("{id:int}/cancelar")]
+        public async Task<IActionResult> CancelarTurno(int id, CancellationToken ct = default)
+        {
+            try
+            {
+                var turno = await _db.SuscripcionTurnos
+                    .Include(t => t.TurnoPlantilla)
+                    .ThenInclude(tp => tp.Sala)
+                    .FirstOrDefaultAsync(t => t.Id == id, ct);
+
+                if (turno == null)
+                    return NotFound(new { message = "Turno no encontrado." });
+
+                var ahora = DateTime.UtcNow;
+                var horaInicio = turno.TurnoPlantilla?.HoraInicio ?? new TimeSpan(0, 0, 0);
+                var fechaTurno = ahora.Date.Add(horaInicio); // combina fecha de hoy + hora del turno
+
+                if (fechaTurno <= ahora.AddHours(1))
+                    return BadRequest(new { message = "Solo se puede cancelar con al menos 1 hora de anticipación." });
+
+                _db.SuscripcionTurnos.Remove(turno);
+                await _db.SaveChangesAsync(ct);
+
+                return Ok(new { ok = true, message = "Turno cancelado correctamente. Cupo liberado." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // Reagendar turno dentro de la misma semana
+        [HttpPost("reagendar")]
+        public async Task<IActionResult> Reagendar([FromBody] dynamic body, CancellationToken ct = default)
+        {
+            try
+            {
+                int suscripcionId = (int)body.suscripcionId;
+                int turnoActualId = (int)body.turnoActualId;
+                int nuevoTurnoId = (int)body.nuevoTurnoId;
+
+                var suscripcion = await _db.Suscripciones
+                    .Include(s => s.Plan)
+                    .FirstOrDefaultAsync(s => s.Id == suscripcionId, ct);
+
+                if (suscripcion == null)
+                    return NotFound(new { message = "Suscripción no encontrada." });
+
+                var actual = await _db.SuscripcionTurnos.FirstOrDefaultAsync(st => st.Id == turnoActualId, ct);
+                if (actual == null)
+                    return NotFound(new { message = "Turno actual no encontrado." });
+
+                var nuevo = await _db.TurnosPlantilla
+                    .Include(t => t.Sala)
+                    .Include(t => t.DiaSemana)
+                    .FirstOrDefaultAsync(t => t.Id == nuevoTurnoId, ct);
+
+                if (nuevo == null)
+                    return NotFound(new { message = "Nuevo turno no encontrado." });
+
+                // 📅 Validar que el nuevo turno esté dentro de la semana actual
+                var hoy = DateTime.UtcNow;
+                var finSemana = hoy.Date.AddDays(7 - (int)hoy.DayOfWeek);
+                var fechaCompleta = hoy.Date.Add(nuevo.HoraInicio);
+
+                if (fechaCompleta.Date > finSemana.Date)
+                    return BadRequest(new { message = "Solo se puede reagendar dentro de esta semana." });
+
+                // ✅ Liberar turno anterior
+                _db.SuscripcionTurnos.Remove(actual);
+
+                // ✅ Verificar cupo
+                var inscriptos = await _db.SuscripcionTurnos
+                    .CountAsync(st => st.TurnoPlantillaId == nuevoTurnoId, ct);
+
+                var cupo = nuevo.Sala?.Cupo ?? 0;
+                if (inscriptos >= cupo)
+                    return BadRequest(new { message = "No hay cupos disponibles en el turno seleccionado." });
+
+                // ✅ Crear nuevo turno
+                var nuevoST = new SuscripcionTurno
+                {
+                    SuscripcionId = suscripcionId,
+                    TurnoPlantillaId = nuevoTurnoId
+                };
+
+                _db.SuscripcionTurnos.Add(nuevoST);
+                await _db.SaveChangesAsync(ct);
+
+                return Ok(new { ok = true, message = "Turno reagendado correctamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
     }
 }

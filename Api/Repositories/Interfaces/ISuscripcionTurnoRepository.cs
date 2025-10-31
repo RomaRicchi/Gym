@@ -12,5 +12,8 @@ namespace Api.Repositories.Interfaces
         Task<SuscripcionTurno> AddAsync(SuscripcionTurno entity, CancellationToken ct = default);
         Task UpdateAsync(SuscripcionTurno entity, CancellationToken ct = default);
         Task DeleteAsync(int id, CancellationToken ct = default);
+        Task<bool> CancelarTurnoAsync(int id, CancellationToken ct = default);
+        Task<(bool ok, string message)> ReagendarTurnoAsync(int idSuscripcion, int turnoActualId, int nuevoTurnoId, CancellationToken ct = default);
+
     }
 }
