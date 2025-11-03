@@ -13,7 +13,6 @@ import gymApi from "@/api/gymApi";
 import Swal from "sweetalert2";
 import "@/styles/TurnosSocio.css";
 import { reagendarTurnoModal } from "./reagendarTurno";
-import { cancelarTurnoModal } from "./cancelarTurno";
 
 interface TurnoSocio {
   id: number;
@@ -46,10 +45,6 @@ const TurnosSocio: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCancelar = async (turnoId: number) => {
-    await cancelarTurnoModal(turnoId, fetchTurnos);
   };
 
   const handleReagendar = async (t: TurnoSocio) => {
@@ -122,14 +117,6 @@ const TurnosSocio: React.FC = () => {
               </div>
 
               <div className="turno-acciones">
-                <button
-                  onClick={() => handleCancelar(t.id)}
-                  className="turno-btn cancelar flex items-center justify-center gap-2"
-                >
-                  <FontAwesomeIcon icon={faTimesCircle} />
-                  Cancelar
-                </button>
-
                 <button
                   onClick={() => handleReagendar(t)}
                   className="turno-btn reagendar flex items-center justify-center gap-2"

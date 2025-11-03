@@ -5,6 +5,8 @@ using Api.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
 
 namespace Api.Controllers
 {
@@ -67,45 +69,60 @@ namespace Api.Controllers
             return Ok(new { ok = true, items = turnos });
         }
 
+        // Obtener todos los turnos activos (para cualquier semana)
         [HttpGet("activos")]
         public async Task<IActionResult> GetActivos(CancellationToken ct = default)
         {
-            var turnos = await _db.TurnosPlantilla
-                .Include(t => t.Sala)
-                .Include(t => t.Personal)
-                .Include(t => t.DiaSemana)
-                .Where(t => t.Activo)
-                .OrderBy(t => t.DiaSemanaId)
-                .ThenBy(t => t.HoraInicio)
-                .Select(t => new
+            try
+            {
+                var turnos = await _db.TurnosPlantilla
+                    .Include(t => t.Sala)
+                    .Include(t => t.Personal)
+                    .Include(t => t.DiaSemana)
+                    .Where(t => t.Activo)
+                    .OrderBy(t => t.DiaSemanaId)
+                    .ThenBy(t => t.HoraInicio)
+                    .Select(t => new
+                    {
+                        t.Id,
+                        t.HoraInicio,
+                        t.DuracionMin,
+                        Dia = new
+                        {
+                            t.DiaSemana.Id,
+                            t.DiaSemana.Nombre
+                        },
+                        Sala = new
+                        {
+                            t.Sala.Id,
+                            t.Sala.Nombre,
+                            CupoTotal = t.Sala.Cupo,
+                            // 🔹 Cálculo dinámico del cupo disponible
+                            CupoDisponible = t.Sala.Cupo - _db.SuscripcionTurnos.Count(st => st.TurnoPlantillaId == t.Id)
+                        },
+                        Profesor = t.Personal != null
+                            ? new { t.Personal.Id, t.Personal.Nombre }
+                            : new { Id = 0, Nombre = "(sin profesor)" },
+                        t.Activo
+                    })
+                    .ToListAsync(ct);
+
+                return Ok(new
                 {
-                    t.Id,
-                    t.HoraInicio,
-                    t.DuracionMin,
-                    t.Activo,
-
-                    Sala = new
-                    {
-                        t.Sala.Id,
-                        t.Sala.Nombre,
-                        CupoTotal = t.Sala.Cupo,
-                        CupoDisponible = t.Sala.Cupo -
-                            _db.SuscripcionTurnos.Count(st => st.TurnoPlantillaId == t.Id)
-                    },
-                    Profesor = new
-                    {
-                        t.Personal.Id,
-                        t.Personal.Nombre
-                    },
-                    Dia = new
-                    {
-                        t.DiaSemana.Id,
-                        t.DiaSemana.Nombre
-                    }
-                })
-                .ToListAsync(ct);
-
-            return Ok(new { ok = true, items = turnos });
+                    ok = true,
+                    count = turnos.Count,
+                    items = turnos
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    ok = false,
+                    message = "Error al obtener los turnos activos.",
+                    detail = ex.Message
+                });
+            }
         }
 
 
@@ -181,12 +198,26 @@ namespace Api.Controllers
             if (dto == null)
                 return BadRequest(new { message = "El cuerpo de la solicitud está vacío." });
 
-            // 🔹 Validar existencia de la suscripción
-            var suscripcionExiste = await _db.Suscripciones.AnyAsync(s => s.Id == dto.SuscripcionId, ct);
-            if (!suscripcionExiste)
+            // Validar existencia de la suscripción + traer plan para conocer el cupo
+            var suscripcion = await _db.Suscripciones
+                .Include(s => s.Plan)
+                .FirstOrDefaultAsync(s => s.Id == dto.SuscripcionId, ct);
+
+            if (suscripcion == null)
                 return BadRequest(new { message = "❌ La suscripción especificada no existe." });
 
-            // 🔹 Buscar el turno con su sala
+            var cupoMaximo = suscripcion.Plan?.DiasPorSemana ?? 0;
+            if (cupoMaximo <= 0)
+                return BadRequest(new { message = "❌ El plan no tiene cupo configurado." });
+
+            // Tope: no permitir crear si ya alcanzó el máximo
+            var asignadosActuales = await _db.SuscripcionTurnos
+                .CountAsync(st => st.SuscripcionId == suscripcion.Id, ct);
+
+            if (asignadosActuales >= cupoMaximo)
+                return BadRequest(new { message = "⚠️ Ya alcanzaste el máximo de turnos para esta suscripción." });
+
+            // 🔎 Buscar el turno con sus relaciones
             var turno = await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
@@ -199,39 +230,33 @@ namespace Api.Controllers
             if (!turno.Activo)
                 return BadRequest(new { message = "⚠️ El turno está inactivo y no puede asignarse." });
 
-            // 🔹 Validar duplicado
+            //  Duplicado dentro de la misma suscripción
             bool yaAsignado = await _db.SuscripcionTurnos
-                .AnyAsync(st => st.SuscripcionId == dto.SuscripcionId && st.TurnoPlantillaId == dto.TurnoPlantillaId, ct);
+                .AnyAsync(st => st.SuscripcionId == suscripcion.Id && st.TurnoPlantillaId == dto.TurnoPlantillaId, ct);
             if (yaAsignado)
                 return Conflict(new { message = "⚠️ Este turno ya fue asignado a esta suscripción." });
 
-            // 🔹 Calcular cupo disponible dinámico
+            // Cupo por sala
             var inscriptos = await _db.SuscripcionTurnos
                 .CountAsync(st => st.TurnoPlantillaId == turno.Id, ct);
-
-            var cupoDisponible = turno.Sala.Cupo - inscriptos;
-
-            if (cupoDisponible <= 0)
+            var cupoSala = turno.Sala?.Cupo ?? 0;
+            if (inscriptos >= cupoSala)
                 return BadRequest(new { message = "⚠️ No hay más lugares disponibles en esta sala para este turno." });
 
-            // 🔹 Crear la nueva asignación
             var nuevo = new SuscripcionTurno
             {
-                SuscripcionId = dto.SuscripcionId,
+                SuscripcionId = suscripcion.Id,
                 TurnoPlantillaId = dto.TurnoPlantillaId
             };
 
             _db.SuscripcionTurnos.Add(nuevo);
             await _db.SaveChangesAsync(ct);
 
-            // 🔹 Devolver datos enriquecidos
+            // Respuesta enriquecida
             var creado = await _db.SuscripcionTurnos
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.Sala)
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.Personal)
-                .Include(st => st.TurnoPlantilla)
-                    .ThenInclude(tp => tp.DiaSemana)
+                .Include(st => st.TurnoPlantilla).ThenInclude(tp => tp.Sala)
+                .Include(st => st.TurnoPlantilla).ThenInclude(tp => tp.Personal)
+                .Include(st => st.TurnoPlantilla).ThenInclude(tp => tp.DiaSemana)
                 .FirstAsync(st => st.Id == nuevo.Id, ct);
 
             return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, new
@@ -247,10 +272,11 @@ namespace Api.Controllers
                     creado.TurnoPlantilla.HoraInicio,
                     creado.TurnoPlantilla.DuracionMin,
                     CupoTotal = creado.TurnoPlantilla.Sala?.Cupo,
-                    CupoDisponible = cupoDisponible - 1 // 🔸 cuenta regresiva en respuesta
+                    CupoDisponible = (cupoSala - inscriptos - 1)
                 }
             });
         }
+
 
         // PUT: api/SuscripcionTurno/{id}
         [HttpPut("{id:int}")]
@@ -303,56 +329,25 @@ namespace Api.Controllers
             return Ok(new { ok = true, items = result });
         }
 
-        // Cancelar turno con al menos 1h de anticipación
-        [HttpPost("{id:int}/cancelar")]
-        public async Task<IActionResult> CancelarTurno(int id, CancellationToken ct = default)
-        {
-            try
-            {
-                var turno = await _db.SuscripcionTurnos
-                    .Include(t => t.TurnoPlantilla)
-                    .ThenInclude(tp => tp.Sala)
-                    .FirstOrDefaultAsync(t => t.Id == id, ct);
-
-                if (turno == null)
-                    return NotFound(new { message = "Turno no encontrado." });
-
-                var ahora = DateTime.UtcNow;
-                var horaInicio = turno.TurnoPlantilla?.HoraInicio ?? new TimeSpan(0, 0, 0);
-                var fechaTurno = ahora.Date.Add(horaInicio); // combina fecha de hoy + hora del turno
-
-                if (fechaTurno <= ahora.AddHours(1))
-                    return BadRequest(new { message = "Solo se puede cancelar con al menos 1 hora de anticipación." });
-
-                _db.SuscripcionTurnos.Remove(turno);
-                await _db.SaveChangesAsync(ct);
-
-                return Ok(new { ok = true, message = "Turno cancelado correctamente. Cupo liberado." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        // Reagendar turno dentro de la misma semana
         [HttpPost("reagendar")]
-        public async Task<IActionResult> Reagendar([FromBody] dynamic body, CancellationToken ct = default)
+        public async Task<IActionResult> Reagendar([FromBody] JsonElement body, CancellationToken ct = default)
         {
             try
             {
-                int suscripcionId = (int)body.suscripcionId;
-                int turnoActualId = (int)body.turnoActualId;
-                int nuevoTurnoId = (int)body.nuevoTurnoId;
+                // 🔸 Extraer datos del JSON
+                int suscripcionId = body.GetProperty("suscripcionId").GetInt32();
+                int turnoActualId = body.GetProperty("turnoActualId").GetInt32();
+                int nuevoTurnoId = body.GetProperty("nuevoTurnoId").GetInt32();
 
                 var suscripcion = await _db.Suscripciones
                     .Include(s => s.Plan)
                     .FirstOrDefaultAsync(s => s.Id == suscripcionId, ct);
-
                 if (suscripcion == null)
                     return NotFound(new { message = "Suscripción no encontrada." });
 
-                var actual = await _db.SuscripcionTurnos.FirstOrDefaultAsync(st => st.Id == turnoActualId, ct);
+                var actual = await _db.SuscripcionTurnos
+                    .Include(st => st.TurnoPlantilla)
+                    .FirstOrDefaultAsync(st => st.Id == turnoActualId, ct);
                 if (actual == null)
                     return NotFound(new { message = "Turno actual no encontrado." });
 
@@ -360,30 +355,34 @@ namespace Api.Controllers
                     .Include(t => t.Sala)
                     .Include(t => t.DiaSemana)
                     .FirstOrDefaultAsync(t => t.Id == nuevoTurnoId, ct);
-
                 if (nuevo == null)
                     return NotFound(new { message = "Nuevo turno no encontrado." });
 
-                // 📅 Validar que el nuevo turno esté dentro de la semana actual
-                var hoy = DateTime.UtcNow;
-                var finSemana = hoy.Date.AddDays(7 - (int)hoy.DayOfWeek);
-                var fechaCompleta = hoy.Date.Add(nuevo.HoraInicio);
+                // Validar que al turno actual le falte más de 1 hora
+                var ahora = DateTime.UtcNow;
+                var horaInicioActual = actual.TurnoPlantilla?.HoraInicio ?? TimeSpan.Zero;
+                var fechaTurnoActual = ahora.Date.Add(horaInicioActual); // simula el turno de hoy
 
-                if (fechaCompleta.Date > finSemana.Date)
+                if (fechaTurnoActual <= ahora.AddHours(1))
+                    return BadRequest(new { message = "Solo se puede reagendar con al menos 1 hora de anticipación." });
+
+                // Validar que el nuevo turno esté dentro de esta semana
+                var finSemana = ahora.Date.AddDays(7 - (int)ahora.DayOfWeek);
+                var fechaNuevoTurno = ahora.Date.Add(nuevo.HoraInicio);
+                if (fechaNuevoTurno.Date > finSemana.Date)
                     return BadRequest(new { message = "Solo se puede reagendar dentro de esta semana." });
 
-                // ✅ Liberar turno anterior
+                // Eliminar el turno anterior
                 _db.SuscripcionTurnos.Remove(actual);
 
-                // ✅ Verificar cupo
+                // Verificar cupo real
                 var inscriptos = await _db.SuscripcionTurnos
                     .CountAsync(st => st.TurnoPlantillaId == nuevoTurnoId, ct);
-
                 var cupo = nuevo.Sala?.Cupo ?? 0;
                 if (inscriptos >= cupo)
                     return BadRequest(new { message = "No hay cupos disponibles en el turno seleccionado." });
 
-                // ✅ Crear nuevo turno
+                // Crear el nuevo turno
                 var nuevoST = new SuscripcionTurno
                 {
                     SuscripcionId = suscripcionId,
@@ -397,10 +396,9 @@ namespace Api.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return StatusCode(500, new { message = $"Error interno: {ex.Message}" });
             }
         }
-
 
     }
 }

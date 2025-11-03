@@ -1,9 +1,9 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/asignarTurnos.css"; // ✅ usa los mismos estilos naranjas
 
 /**
- * Muestra un modal para reagendar un turno dentro de la semana actual.
- * Retorna `true` si el turno fue reagendado correctamente.
+ * Modal unificado de reagendado (idéntico en diseño al de asignarTurnos)
  */
 export async function reagendarTurnoModal(
   suscripcionId: number,
@@ -12,71 +12,116 @@ export async function reagendarTurnoModal(
   fetchTurnos: () => void
 ) {
   try {
-    const hoy = new Date();
-    const finSemana = new Date(hoy);
-    finSemana.setDate(hoy.getDate() + (7 - hoy.getDay()));
+    // 📅 Obtener lista de días
+    const { data: diasRes } = await gymApi.get("/diasemana");
+    const dias = diasRes.items || diasRes;
 
-    // 🔹 Obtener turnos activos
-    const { data } = await gymApi.get(`/turnosplantilla/activos`);
-    const disponibles = (data.items || data).filter((turno: any) => {
-      const fechaTurno = new Date(turno.horaInicio);
-      return fechaTurno >= hoy && fechaTurno <= finSemana;
-    });
-
-    if (!disponibles.length) {
-      await Swal.fire("Sin turnos", "No hay turnos disponibles para esta semana.", "info");
-      return false;
-    }
-
-    const opciones = disponibles
-      .filter(
-        (turno: any) =>
-          turno.sala?.cupoDisponible > 0 &&
-          turno.id !== turnoPlantillaId
-      )
-      .map(
-        (turno: any) =>
-          `<option value="${turno.id}">
-            ${turno.diaSemana?.nombre} ${turno.horaInicio.slice(0, 5)} (${turno.sala?.nombre})
-          </option>`
-      )
-      .join("");
-
-    // 🔹 Modal de selección
-    const { value: nuevoTurnoId } = await Swal.fire({
-      title: "🔁 Reagendar turno",
-      html: `
-        <label><b>Nuevo turno disponible (esta semana):</b></label><br/>
-        <select id="nuevo-turno" class="swal2-select" style="width:100%; padding:8px;">
-          <option value="">Seleccionar turno</option>
-          ${opciones}
-        </select>
-      `,
+    // 🪄 Modal principal
+    await Swal.fire({
+      title: "🔁 Reagendar Turno",
+      width: 600,
       showCancelButton: true,
-      confirmButtonText: "Reagendar",
-      cancelButtonText: "Cancelar",
-      preConfirm: () => {
-        const select = document.getElementById("nuevo-turno") as HTMLSelectElement;
-        return select?.value;
+      cancelButtonText: "Cerrar",
+      customClass: { popup: "swal2-card-style" },
+      html: `
+        <div class="turnos-modal">
+          <p><strong>Elegí un nuevo día y horario para tu turno:</strong></p>
+          <hr/>
+
+          <div class="turno-grupo">
+            <label><b>Seleccionar día</b></label>
+            <select id="select-dia" class="turno-input">
+              <option value="">-- Elegí un día --</option>
+              ${dias.map((d: any) => `<option value="${d.id}">${d.nombre}</option>`).join("")}
+            </select>
+
+            <label><b>Turno disponible</b></label>
+            <select id="select-turno" class="turno-input">
+              <option value="">Seleccione un día primero</option>
+            </select>
+
+            <button id="btn-reagendar" class="turno-btn">🔁 Reagendar</button>
+          </div>
+        </div>
+      `,
+      didOpen: () => {
+        const diaSelect = document.getElementById("select-dia") as HTMLSelectElement;
+        const turnoSelect = document.getElementById("select-turno") as HTMLSelectElement;
+        const btnReagendar = document.getElementById("btn-reagendar") as HTMLButtonElement;
+
+        // 📅 Cargar turnos del día
+        diaSelect.addEventListener("change", async () => {
+          const diaId = diaSelect.value;
+          if (!diaId) return;
+          turnoSelect.innerHTML = `<option>Cargando...</option>`;
+
+          try {
+            const { data } = await gymApi.get(`/turnosplantilla/dia/${diaId}`);
+            const turnos = data.items || data;
+
+            // filtrar el actual
+            const disponibles = turnos.filter((t: any) => t.id !== turnoPlantillaId);
+
+            turnoSelect.innerHTML = disponibles.length
+              ? disponibles.map((t: any) => {
+                  const id = t.id ?? t.Id;
+                  const hora = t.horaInicio ?? t.HoraInicio ?? "--:--";
+                  const profe = t.profesor ?? t.Personal?.Nombre ?? "(sin profesor)";
+                  const sala = t.sala?.nombre ?? t.Sala?.Nombre ?? "Sala";
+                  const cupoDisp = t.sala?.cupoDisponible ?? t.Sala?.CupoDisponible ?? 0;
+                  const cupoTot = t.sala?.cupoTotal ?? t.Sala?.CupoTotal ?? 0;
+                  return `<option value="${id}">
+                    ${hora} hs - ${profe} (${sala}) | Cupo: ${cupoDisp}/${cupoTot}
+                  </option>`;
+                }).join("")
+              : `<option>No hay turnos disponibles ese día</option>`;
+          } catch {
+            turnoSelect.innerHTML = `<option>Error al cargar turnos</option>`;
+          }
+        });
+
+        // 💾 Reagendar turno
+        btnReagendar.addEventListener("click", async () => {
+          const nuevoTurnoId = parseInt(turnoSelect.value || "0", 10);
+          if (!nuevoTurnoId) {
+            Swal.fire("⚠️ Atención", "Seleccioná un turno válido", "warning");
+            return;
+          }
+
+          try {
+            const payload = {
+              suscripcionId,
+              turnoActualId,
+              nuevoTurnoId,
+            };
+            const res = await gymApi.post("/suscripcionturno/reagendar", payload);
+
+            btnReagendar.textContent = "✅ Reagendado";
+            btnReagendar.classList.add("guardado");
+            btnReagendar.disabled = true;
+
+            await Swal.fire({
+              icon: "success",
+              title: "Turno reagendado",
+              text: res.data.message || "El turno fue cambiado correctamente.",
+              confirmButtonColor: "#ff6b00",
+            });
+
+            fetchTurnos();
+          } catch (error: any) {
+            const msg = error.response?.data?.message;
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: msg || "No se pudo reagendar el turno.",
+              confirmButtonColor: "#ff6600",
+            });
+          }
+        });
       },
     });
-
-    if (!nuevoTurnoId) return false;
-
-    const payload = {
-      suscripcionId,
-      turnoActualId,
-      nuevoTurnoId: parseInt(nuevoTurnoId),
-    };
-
-    const res = await gymApi.post("/suscripcionturno/reagendar", payload);
-    await Swal.fire("✅ Reagendado", res.data.message, "success");
-
-    fetchTurnos(); // recarga los turnos
-    return true;
-  } catch (err: any) {
-    const msg = err.response?.data?.message || "Error al reagendar turno.";
-    await Swal.fire("⚠️ Error", msg, "warning");
-    return false;
+  } catch (err) {
+    console.error("Error en reagendarTurnoModal:", err);
+    Swal.fire("Error", "No se pudieron cargar los datos.", "error");
   }
 }

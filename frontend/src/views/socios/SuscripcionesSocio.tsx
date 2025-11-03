@@ -84,6 +84,8 @@ const SuscripcionesSocio: React.FC = () => {
           const turnos = s.turnosAsignados ?? 0;
           const cupo = s.cupoMaximo ?? 0;
 
+          const sinCupos = turnos >= cupo;
+
           return (
             <div key={s.id} className="suscripcion-card">
               <FontAwesomeIcon icon={faDumbbell} className="icon-top" />
@@ -109,12 +111,21 @@ const SuscripcionesSocio: React.FC = () => {
                 {s.estado ? "Activa" : "Inactiva"}
               </div>
 
-              {/* ✅ Pasar objeto completo, no solo el ID */}
+              {/* ✅ Botón bloqueado si ya alcanzó el máximo de turnos */}
               <button
-                className="suscripcion-btn"
-                onClick={() => asignarTurnos(s)}
+                className={`suscripcion-btn ${sinCupos ? "disabled" : ""}`}
+                onClick={() => !sinCupos && asignarTurnos(s)}
+                disabled={sinCupos}
               >
-                Seleccionar Turnos <FontAwesomeIcon icon={faArrowRight} />
+                {sinCupos ? (
+                  <>
+                    Turnos completados <FontAwesomeIcon icon={faCheckCircle} />
+                  </>
+                ) : (
+                  <>
+                    Seleccionar Turnos <FontAwesomeIcon icon={faArrowRight} />
+                  </>
+                )}
               </button>
             </div>
           );

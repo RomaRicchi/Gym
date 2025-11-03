@@ -219,7 +219,7 @@ export default function Sidebar() {
                 </NavLink>
               </li>
 
-              {/* 💰 Ingresos (nuevo enlace solo para admin) */}
+              {/* Ingresos (solo para admin) */}
               <li className="nav-item">
                 <NavLink
                   to="/pagos/ingresos"

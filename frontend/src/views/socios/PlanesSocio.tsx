@@ -51,7 +51,7 @@ const PlanesSocio: React.FC = () => {
       title: `Generar orden de pago`,
       html: `
         <p style="font-size:1rem; margin-bottom:0.5rem;">Plan seleccionado: <b>${plan.nombre}</b></p>
-        <p style="font-size:1rem;">Precio: <b>$${plan.precio}</b></p>
+        <p style="font-size:1rem;">Precio: <b>${plan.precio}</b></p>
         <input type="file" id="comprobante" class="swal2-input custom-file-input" accept="image/*,application/pdf">
       `,
       confirmButtonText: "Enviar orden",
@@ -131,7 +131,7 @@ const PlanesSocio: React.FC = () => {
                 {plan.diasPorSemana} días por semana
               </p>
               <p>
-                <FontAwesomeIcon icon={faDollarSign} /> ${plan.precio.toFixed(2)}
+                <FontAwesomeIcon icon={faDollarSign} /> {plan.precio.toFixed(2)}
               </p>
             </div>
           </button>

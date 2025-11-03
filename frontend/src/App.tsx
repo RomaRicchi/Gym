@@ -50,14 +50,15 @@ function ScrollToTop() {
 }
 
 function RedirectByRole() {
-  const storedUser = localStorage.getItem("user");
+  const storedUser = localStorage.getItem("usuario"); 
   const user = storedUser ? JSON.parse(storedUser) : null;
   const rol = user?.rol;
 
-  if (!rol) return <Navigate to="/login" />;
+  if (!rol) return <Navigate to="/login" replace />;
 
-  return <Navigate to={rol === "Socio" ? "/dashboardSocio" : "/dashboard"} />;
+  return <Navigate to={rol === "Socio" ? "/dashboardSocio" : "/dashboard"} replace />;
 }
+
 
 
 export default function App() {

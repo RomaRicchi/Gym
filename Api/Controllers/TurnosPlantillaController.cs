@@ -52,13 +52,31 @@ namespace Api.Controllers
         [HttpGet("dia/{id:int}")]
         public async Task<IActionResult> GetByDia(int id, CancellationToken ct = default)
         {
-            var turnos = await _repo.GetByDiaAsync(id, ct);
-            if (turnos == null || !turnos.Any())
-                return Ok(new { ok = true, items = new List<object>() }); //  devuelve array vacío
+            var turnos = await _db.TurnosPlantilla
+                .Include(t => t.Sala)
+                .Include(t => t.Personal)
+                .Include(t => t.DiaSemana)
+                .Where(t => t.Activo && t.DiaSemanaId == id)
+                .OrderBy(t => t.HoraInicio)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.HoraInicio,
+                    t.DuracionMin,
+                    Dia = new { t.DiaSemana.Id, t.DiaSemana.Nombre },
+                    Sala = new
+                    {
+                        t.Sala.Id,
+                        t.Sala.Nombre,
+                        CupoTotal = t.Sala.Cupo,
+                        CupoDisponible = t.Sala.Cupo - _db.SuscripcionTurnos.Count(st => st.TurnoPlantillaId == t.Id)
+                    },
+                    Profesor = t.Personal != null ? t.Personal.Nombre : "(sin profesor)"
+                })
+                .ToListAsync(ct);
 
             return Ok(new { ok = true, items = turnos });
         }
-
 
         // Crear nuevo turno plantilla
         [HttpPost("crear")]
