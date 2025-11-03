@@ -11,7 +11,9 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    "types": ["vite/client"],
+
+    "types": ["vite/client", "jquery"],
+
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
@@ -19,6 +21,7 @@
   },
   "include": [
     "src",
+    "src/types/select2.d.ts",
     "tailwind.config.ts"
   ]
 }

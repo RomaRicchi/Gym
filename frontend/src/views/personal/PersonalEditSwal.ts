@@ -1,163 +1,154 @@
+// @ts-nocheck
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
 /**
- * 🧩 Modal reutilizable para editar datos personales o de usuario
- * @param id ID del personal o usuario logueado
- * @param modo "admin" → usa /personal y permite roles/usuarios, "perfil" → usa /perfil y solo datos personales
- * @param onSuccess función callback a ejecutar tras guardado exitoso
+ * @param id ID del usuario
+ * @param context "perfil" → edición desde el perfil personal (sin editar estado)
+ *                 "admin"  → edición completa desde administración
+ * @param onSuccess callback opcional tras guardar
  */
-export async function PersonalEditSwal(
-  id: string,
-  modo: "admin" | "perfil" = "admin",
-  onSuccess?: () => void
-) {
+export async function PersonalEditSwal(id: number, context: "perfil" | "admin" = "admin", onSuccess?: () => void) {
   try {
-    // 🔹 Cargar datos del personal y roles (solo si es modo admin)
-    const [resPersonal, resRoles] = await Promise.all([
-      gymApi.get(modo === "perfil" ? `/perfil/${id}` : `/personal/${id}`),
-      modo === "admin" ? gymApi.get("/roles") : Promise.resolve({ data: [] }),
-    ]);
+    const { data: personal } = await gymApi.get(`/personal/${id}`);
 
-    const data = resPersonal.data;
-    const roles = resRoles.data.items || resRoles.data;
-
-    const personal = modo === "perfil" ? data.personal ?? data : data;
-    const tieneUsuario = modo === "admin" && !!data.email;
-
-    // 🧾 Modal principal
     const { value: formValues } = await Swal.fire({
-      title: modo === "perfil" ? "✏️ Editar Perfil" : "✏️ Editar Personal",
+      title: "✏️ Editar Datos Personales",
       html: `
-        <div class="swal2-card-style">
-          <h6 class="text-start mb-2 fw-bold text-black">Datos personales</h6>
-
-          <div class="row mb-3">
-            <div class="col-md-12">
-              <label class="form-label">Nombre</label>
-              <input id="nombre" type="text" class="form-control"
-                value="${personal.nombre || ""}" required />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Teléfono</label>
-              <input id="telefono" type="text" class="form-control"
-                value="${personal.telefono || ""}" />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Especialidad</label>
-              <input id="especialidad" type="text" class="form-control"
-                value="${personal.especialidad || ""}" />
-            </div>
-            <div class="col-md-12">
-              <label class="form-label">Dirección</label>
-              <input id="direccion" type="text" class="form-control"
-                value="${personal.direccion || ""}" placeholder="Ej: Av. Mitre 1234" />
-            </div>
+        <form id="form-editar-personal" style="text-align:left;overflow-x:hidden;margin-top:0.5rem;">
+          
+          <div style="margin-bottom:0.8rem;">
+            <label for="nombre" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Nombre</label>
+            <input id="nombre" type="text"
+              value="${personal.nombre || ""}"
+              placeholder="Nombre completo"
+              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
           </div>
 
-          <div class="form-check text-start mb-3">
-            <input id="activo" type="checkbox" class="form-check-input" ${
-              personal.estado || personal.activo ? "checked" : ""
-            } />
-            <label class="form-check-label" for="activo">Activo</label>
+          <div style="margin-bottom:0.8rem;">
+            <label for="telefono" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Teléfono</label>
+            <input id="telefono" type="text"
+              value="${personal.telefono || ""}"
+              placeholder="Teléfono de contacto"
+              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+          </div>
+
+          <div style="margin-bottom:0.8rem;">
+            <label for="direccion" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Dirección</label>
+            <input id="direccion" type="text"
+              value="${personal.direccion || ""}"
+              placeholder="Dirección completa"
+              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+          </div>
+
+          <div style="margin-bottom:0.8rem;">
+            <label for="especialidad" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Especialidad</label>
+            <input id="especialidad" type="text"
+              value="${personal.especialidad || ""}"
+              placeholder="Área o especialidad"
+              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
           </div>
 
           ${
-            modo === "admin"
-              ? tieneUsuario
-                ? `
-                <hr class="my-3" />
-                <h6 class="text-start text-success fw-bold">Usuario asociado</h6>
-                <div class="mb-2">
-                  <p class="mb-0"><strong>Email:</strong> ${data.email}</p>
-                  <p class="mb-0"><strong>Rol:</strong> ${data.rol}</p>
-                </div>
-                <small class="text-muted fst-italic">El usuario ya está vinculado a este personal.</small>
-              `
-                : `
-                <hr class="my-3" />
-                <h6 class="text-start text-success fw-bold">Crear usuario (opcional)</h6>
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Alias</label>
-                    <input id="alias" type="text" class="form-control" placeholder="Nombre de usuario" />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Email</label>
-                    <input id="email" type="email" class="form-control" placeholder="correo@ejemplo.com" />
-                  </div>
-                </div>
-
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Rol</label>
-                    <select id="rol_id" class="form-select">
-                      <option value="">Seleccionar rol...</option>
-                      ${roles
-                        .map((r: any) => `<option value="${r.id}">${r.nombre}</option>`)
-                        .join("")}
-                    </select>
-                  </div>
+            context === "admin"
+              ? `
+                <div style="display:flex;align-items:center;gap:0.6rem;margin-top:0.8rem;white-space:nowrap;width:fit-content;">
+                  <input id="estado" type="checkbox" ${personal.estado === 1 ? "checked" : ""}
+                    style="transform:scale(1.3);accent-color:#ff6600;cursor:pointer;margin:0;">
+                  <label for="estado" style="font-weight:600;color:#222;margin:0;line-height:1;">Activo</label>
                 </div>
               `
-              : ""
+              : `
+                <div style="margin-top:0.8rem;">
+                  <label style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Estado</label>
+                  <input type="text"
+                    value="${personal.estado === 1 ? "Activo" : "Inactivo"}"
+                    disabled
+                    style="width:100%;background:#eee;color:#555;border:1px solid #ccc;border-radius:6px;
+                           padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+                </div>
+              `
           }
-        </div>
+        </form>
       `,
       showCancelButton: true,
       confirmButtonText: "💾 Guardar cambios",
       cancelButtonText: "Cancelar",
       focusConfirm: false,
+      confirmButtonColor: "#ff6b00",
+
+      didOpen: () => {
+        const popup = Swal.getPopup();
+        if (popup) {
+          popup.style.overflowX = "hidden";
+          popup.style.maxWidth = "520px";
+          popup.style.textAlign = "left";
+        }
+
+        const htmlContainer = popup?.querySelector(".swal2-html-container") as HTMLElement;
+        if (htmlContainer) {
+          htmlContainer.style.width = "100%";
+          htmlContainer.style.maxWidth = "none";
+          htmlContainer.style.display = "block";
+          htmlContainer.style.textAlign = "left";
+        }
+
+        const form = document.getElementById("form-editar-personal") as HTMLElement;
+        if (form) {
+          form.style.width = "100%";
+          form.style.maxWidth = "480px";
+          form.style.display = "block";
+        }
+
+        // Ajustar inputs
+        document
+          .querySelectorAll<HTMLInputElement>(
+            "#form-editar-personal input"
+          )
+          .forEach((el) => {
+            el.classList.remove("swal2-input");
+            el.style.width = "100%";
+            el.style.margin = "0.3rem 0";
+            el.style.display = "block";
+            el.style.boxSizing = "border-box";
+            el.style.maxWidth = "none";
+            el.style.fontSize = "1rem";
+            el.style.padding = "0.7rem 1rem";
+          });
+      },
 
       preConfirm: () => {
-        const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
-        const telefono = (document.getElementById("telefono") as HTMLInputElement).value.trim();
-        const especialidad = (document.getElementById("especialidad") as HTMLInputElement).value.trim();
-        const direccion = (document.getElementById("direccion") as HTMLInputElement).value.trim();
-        const activo = (document.getElementById("activo") as HTMLInputElement).checked;
+        const nombre = (document.getElementById("nombre") as HTMLInputElement)?.value.trim();
+        const telefono = (document.getElementById("telefono") as HTMLInputElement)?.value.trim();
+        const direccion = (document.getElementById("direccion") as HTMLInputElement)?.value.trim();
+        const especialidad = (document.getElementById("especialidad") as HTMLInputElement)?.value.trim();
 
-        const alias = (document.getElementById("alias") as HTMLInputElement)?.value.trim();
-        const email = (document.getElementById("email") as HTMLInputElement)?.value.trim();
-        const rol_id = (document.getElementById("rol_id") as HTMLSelectElement)?.value;
+        // Si se abre desde perfil, no permitir editar estado
+        const estadoInput = document.getElementById("estado") as HTMLInputElement;
+        const estado = context === "admin" ? (estadoInput?.checked ? 1 : 0) : personal.estado;
 
         if (!nombre) {
           Swal.showValidationMessage("El nombre es obligatorio");
-          return false;
+          return;
         }
 
-        return { nombre, telefono, especialidad, direccion, activo, alias, email, rol_id };
+        return { nombre, telefono, direccion, especialidad, estado };
       },
     });
 
     if (!formValues) return;
 
-    // 🔹 Lógica diferenciada según el modo
-    if (modo === "perfil") {
-      await gymApi.put(`/perfil/${id}`, {
-        nombre: formValues.nombre,
-        telefono: formValues.telefono,
-        especialidad: formValues.especialidad,
-        direccion: formValues.direccion,
-        estado: formValues.activo, // bool
-      });
-    } else {
-      await gymApi.put(`/personal/${id}`, {
-        nombre: formValues.nombre,
-        telefono: formValues.telefono,
-        especialidad: formValues.especialidad,
-        direccion: formValues.direccion,
-        activo: formValues.activo,
-        email: formValues.email || null,
-        rolId: formValues.rol_id ? parseInt(formValues.rol_id) : null,
-      });
-    }
+    await gymApi.put(`/personal/${id}`, formValues);
 
     await Swal.fire({
       icon: "success",
-      title: "Actualizado",
-      text: modo === "perfil"
-        ? "Tu perfil se actualizó correctamente."
-        : "El registro fue modificado correctamente.",
+      title: "✅ Datos actualizados",
+      text: "Los cambios fueron guardados correctamente.",
+      confirmButtonColor: "#ff6b00",
       timer: 1500,
       showConfirmButton: false,
     });
@@ -165,6 +156,6 @@ export async function PersonalEditSwal(
     onSuccess?.();
   } catch (err) {
     console.error(err);
-    Swal.fire("Error", "No se pudo cargar o actualizar el registro", "error");
+    Swal.fire("❌ Error", "No se pudo actualizar la información del personal", "error");
   }
 }

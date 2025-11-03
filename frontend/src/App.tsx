@@ -37,6 +37,7 @@ import PlanesSocio from "@/views/socios/PlanesSocio";
 import SuscripcionesSocio from "@/views/socios/SuscripcionesSocio";
 import TurnosSocio from "@/views/socios/TurnosSocio";
 import RutinasSocio from "@/views/socios/RutinasSocio";
+import LayoutSocio from "./components/LayoutSocio";
 
 /* Scroll automático */
 function ScrollToTop() {
@@ -46,6 +47,17 @@ function ScrollToTop() {
   }, [pathname]);
   return null;
 }
+
+function RedirectByRole() {
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const rol = user?.rol;
+
+  if (!rol) return <Navigate to="/login" />;
+
+  return <Navigate to={rol === "Socio" ? "/dashboardSocio" : "/dashboard"} />;
+}
+
 
 export default function App() {
   return (
@@ -76,9 +88,9 @@ export default function App() {
           <Route path="/estados" element={<EstadosList />} />
           <Route path="/roles" element={<RolesList />} />
           <Route path="/usuarios" element={<UsuariosList />} />
-       
-
-          {/* 🧡 Panel del Socio */}
+        </Route>
+        {/* 🧡 Panel del Socio */}
+        <Route element={<LayoutSocio />}>
           <Route path="/dashboardSocio" element={<DashboardSocio />} />
           <Route path="/socio/planesSocio" element={<PlanesSocio />} />
           <Route path="/socio/suscripcionesSocio" element={<SuscripcionesSocio />} />
@@ -90,7 +102,7 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Redirección general */}
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<RedirectByRole />} />
       </Routes>
     </Router>
   );

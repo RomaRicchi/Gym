@@ -77,16 +77,12 @@ export default function PerfilView() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // 🔹 Espera breve para asegurar que el archivo ya esté accesible
       await new Promise((r) => setTimeout(r, 500));
 
-      const newUrl = res.data.url; // "/uploads/avatars/xxxx.jpg"
       Swal.fire("✅ Avatar actualizado", "Tu nuevo avatar se aplicará al instante", "success");
 
-      // 🧠 Actualiza el perfil en la vista actual
       await fetchPerfil();
 
-      // 🔐 Sincroniza el usuario del localStorage con la nueva URL
       const stored = localStorage.getItem("usuario");
       if (stored) {
         const user = JSON.parse(stored);
@@ -94,16 +90,13 @@ export default function PerfilView() {
         localStorage.setItem("usuario", JSON.stringify(user));
       }
 
-      // 🚀 Dispara evento global con un pequeño delay (para evitar race condition)
       setTimeout(() => {
         window.dispatchEvent(new Event("authChange"));
       }, 200);
-
     } catch (err) {
       Swal.fire("Error", "No se pudo subir el avatar", "error");
       console.error(err);
     }
-
   };
 
   if (loading) return <p className="text-center mt-5">Cargando perfil...</p>;
@@ -148,6 +141,7 @@ export default function PerfilView() {
           >
             ✏️
           </button>
+
           <p>
             <strong>Nombre:</strong> {personal.nombre || "—"}
           </p>
@@ -161,7 +155,8 @@ export default function PerfilView() {
             <strong>Especialidad:</strong> {personal.especialidad || "—"}
           </p>
           <p>
-            <strong>Estado:</strong> {personal.estado === 1 ? "Inactivo" : "Activo"}
+            <strong>Estado:</strong>{" "}
+            {personal.estado === 1 ? "Activo" : "Inactivo"}
           </p>
         </div>
 

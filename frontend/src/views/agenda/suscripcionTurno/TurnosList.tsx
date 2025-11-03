@@ -26,37 +26,45 @@ interface Turno {
 
 export default function TurnosList() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
- 
   const [socios, setSocios] = useState<any[]>([]);
+  const [profesores, setProfesores] = useState<any[]>([]);
+  const [dias, setDias] = useState<any[]>([]);
+
   const [selectedSocio, setSelectedSocio] = useState<number | null>(null);
+  const [selectedProfesor, setSelectedProfesor] = useState<string | null>(null);
+  const [selectedDia, setSelectedDia] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  
- const filteredTurnos = selectedSocio
-  ? turnos.filter((t) => t.suscripcion?.socio?.id === selectedSocio)
-  : turnos;
 
+  // 🔹 Filtros combinados
+  const filteredTurnos = turnos.filter((t) => {
+    const socioOk = selectedSocio ? t.suscripcion?.socio?.id === selectedSocio : true;
+    const profOk = selectedProfesor
+      ? t.turnoPlantilla?.personal?.nombre === selectedProfesor
+      : true;
+    const diaOk = selectedDia ? t.turnoPlantilla?.diaSemana?.nombre === selectedDia : true;
+    return socioOk && profOk && diaOk;
+  });
+
+  // 🔹 Recalcular paginación cuando cambian filtros
   useEffect(() => {
-    const total = turnos.length;
+    const total = filteredTurnos.length;
     setTotalPages(Math.ceil(total / itemsPerPage));
-
     if (currentPage > Math.ceil(total / itemsPerPage)) {
       setCurrentPage(1);
     }
-  }, [turnos, itemsPerPage, currentPage]);
+  }, [filteredTurnos, itemsPerPage, currentPage]);
 
-
-  // 🔹 Cargar turnos desde la API
+  // 🔹 Cargar datos
   const fetchTurnos = async () => {
     try {
       const res = await gymApi.get("/SuscripcionTurno/con-checkin");
       const data = res.data.items || res.data;
-      console.log("📦 Datos de turnos:", data);
       setTurnos(data);
     } catch (err) {
-      console.error(err);
       Swal.fire("Error", "No se pudieron cargar los turnos asignados", "error");
     } finally {
       setLoading(false);
@@ -67,24 +75,44 @@ export default function TurnosList() {
     try {
       const res = await gymApi.get("/socios");
       setSocios(res.data.items || res.data);
-    } catch (err) {
-      console.error("⚠️ No se pudieron cargar los socios:", err);
-    }
+    } catch {}
+  };
+
+  const fetchProfesores = async () => {
+    try {
+      const res = await gymApi.get("/personal");
+      setProfesores(res.data.items || res.data);
+    } catch {}
+  };
+
+  const fetchDias = async () => {
+    try {
+      const res = await gymApi.get("/diasemana");
+      setDias(
+        res.data.items || res.data || [
+          { id: 1, nombre: "Lunes" },
+          { id: 2, nombre: "Martes" },
+          { id: 3, nombre: "Miércoles" },
+          { id: 4, nombre: "Jueves" },
+          { id: 5, nombre: "Viernes" },
+          { id: 6, nombre: "Sábado" },
+          { id: 7, nombre: "Domingo" },
+        ]
+      );
+    } catch {}
   };
 
   useEffect(() => {
     fetchTurnos();
     fetchSocios();
+    fetchProfesores();
+    fetchDias();
   }, []);
 
-  // 🔹 Registrar check-in
+  // 🔹 Check-in
   const handleCheckin = async (socioId: number, turnoPlantillaId: number) => {
     try {
-      const payload = { socioId, turnoPlantillaId };
-      console.log("📤 Enviando payload:", payload);
-
-      await gymApi.post("/Checkin", payload);
-
+      await gymApi.post("/Checkin", { socioId, turnoPlantillaId });
       Swal.fire({
         title: "✅ Check-in registrado",
         text: "Asistencia marcada correctamente.",
@@ -92,13 +120,9 @@ export default function TurnosList() {
         timer: 1300,
         showConfirmButton: false,
       });
-
       fetchTurnos();
     } catch (error: any) {
-      console.error(error);
-      const msg =
-        error.response?.data?.message || "No se pudo registrar el check-in";
-      Swal.fire("Error", msg, "error");
+      Swal.fire("Error", error.response?.data?.message || "No se pudo registrar", "error");
     }
   };
 
@@ -113,15 +137,13 @@ export default function TurnosList() {
       cancelButtonText: "Cancelar",
       confirmButtonColor: "#d33",
     });
-
     if (!result.isConfirmed) return;
 
     try {
       await gymApi.delete(`/SuscripcionTurno/${id}`);
       Swal.fire("Eliminado", "Turno eliminado correctamente", "success");
       fetchTurnos();
-    } catch (err) {
-      console.error(err);
+    } catch {
       Swal.fire("Error", "No se pudo eliminar el turno", "error");
     }
   };
@@ -133,27 +155,30 @@ export default function TurnosList() {
         <p className="mt-3">Cargando turnos asignados...</p>
       </div>
     );
+
+  // 🔹 Paginación
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const visibleTurnos = filteredTurnos.slice(startIndex, endIndex);
-  const total = filteredTurnos.length; // cuántos turnos hay (filtrados)
 
   return (
-    <div className="mt-4 container">
+    <div className="container mt-4">
       <h1
         className="text-center fw-bold mb-4"
-        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "1px" }}
       >
         TURNOS ASIGNADOS
       </h1>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="flex-grow-1 w-100">
+
+      {/* 🔸 Filtros */}
+      <div className="d-flex flex-wrap gap-3 mb-3">
+        <div style={{ flex: 1 }}>
           <Select
             options={socios.map((s) => ({
               value: s.id,
               label: `${s.nombre} (${s.email ?? "sin email"})`,
             }))}
-            placeholder="Seleccionar socio..."
+            placeholder="Filtrar por socio..."
             isClearable
             onChange={(opt) => setSelectedSocio(opt ? opt.value : null)}
             styles={{
@@ -163,7 +188,45 @@ export default function TurnosList() {
                 boxShadow: "none",
                 "&:hover": { borderColor: "#ff6b00" },
                 borderRadius: "8px",
-                fontWeight: 500,
+              }),
+            }}
+          />
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <Select
+            options={dias.map((d) => ({ value: d.nombre, label: d.nombre }))}
+            placeholder="Filtrar por día..."
+            isClearable
+            onChange={(opt) => setSelectedDia(opt ? opt.value : null)}
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: "#ff6b00",
+                boxShadow: "none",
+                "&:hover": { borderColor: "#ff6b00" },
+                borderRadius: "8px",
+              }),
+            }}
+          />
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <Select
+            options={profesores.map((p) => ({
+              value: p.nombre,
+              label: p.nombre,
+            }))}
+            placeholder="Filtrar por profesor..."
+            isClearable
+            onChange={(opt) => setSelectedProfesor(opt ? opt.value : null)}
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: "#ff6b00",
+                boxShadow: "none",
+                "&:hover": { borderColor: "#ff6b00" },
+                borderRadius: "8px",
               }),
             }}
           />
@@ -176,20 +239,19 @@ export default function TurnosList() {
             border: "none",
             borderRadius: "8px",
             color: "white",
-            transition: "all 0.2s ease",
+            height: "fit-content",
           }}
-          onMouseOver={(e) =>
-            ((e.target as HTMLButtonElement).style.backgroundColor = "#e65100")
-          }
-          onMouseOut={(e) =>
-            ((e.target as HTMLButtonElement).style.backgroundColor = "#ff6600")
-          }
-          onClick={() => setSelectedSocio(null)}
+          onClick={() => {
+            setSelectedSocio(null);
+            setSelectedProfesor(null);
+            setSelectedDia(null);
+          }}
         >
-          Limpiar
+          Limpiar filtros
         </button>
       </div>
-     
+
+      {/* 🔸 Tabla */}
       <table className="table table-striped table-hover align-middle text-center shadow-sm">
         <thead className="table-dark">
           <tr>
@@ -204,35 +266,29 @@ export default function TurnosList() {
             <th>Acciones</th>
           </tr>
         </thead>
-
         <tbody>
-          {turnos.length > 0 ? (
+          {visibleTurnos.length > 0 ? (
             visibleTurnos.map((t) => {
               const socio = t.suscripcion?.socio?.nombre || "—";
               const socioId = t.suscripcion?.socio?.id;
               const turno = t.turnoPlantilla;
               const turnoId = t.turnoPlantillaId ?? turno?.id;
               const dia = turno?.diaSemana?.nombre || "—";
-              const hora = turno?.horaInicio
-                ? turno.horaInicio.slice(0, 5)
-                : "—";
+              const hora = turno?.horaInicio?.slice(0, 5) || "—";
               const sala = turno?.sala?.nombre || "—";
               const profesor = turno?.personal?.nombre || "—";
               const duracion = turno?.duracionMin || 0;
 
-              // ✅ Cupos dinámicos
               const cupoTotal = turno?.sala?.cupoTotal ?? 0;
               const cupoDisponible = turno?.sala?.cupoDisponible ?? 0;
-
-              const cupoColor =
+              const color =
                 cupoDisponible === 0
                   ? "text-danger"
                   : cupoDisponible <= 3
                   ? "text-warning"
                   : "text-success";
-
               const checkinHecho = t.checkinHecho ?? false;
-              
+
               return (
                 <tr key={t.id}>
                   <td>{socio}</td>
@@ -241,7 +297,7 @@ export default function TurnosList() {
                   <td>{sala}</td>
                   <td>{profesor}</td>
                   <td>{duracion} min</td>
-                  <td className={`${cupoColor} fw-bold`}>
+                  <td className={`${color} fw-bold`}>
                     {cupoDisponible}/{cupoTotal}
                   </td>
                   <td>
@@ -249,15 +305,10 @@ export default function TurnosList() {
                       className={`btn btn-sm fw-bold ${
                         checkinHecho ? "btn-success" : "btn-outline-success"
                       }`}
-                      title={
-                        checkinHecho
-                          ? "Asistencia registrada"
-                          : "Registrar asistencia"
-                      }
-                      onClick={() =>
-                        !checkinHecho &&
-                        handleCheckin(socioId || 0, turnoId || 0)
-                      }
+                      onClick={() => {
+                        if (!checkinHecho && socioId && turnoId)
+                          handleCheckin(socioId, turnoId);
+                      }}
                       disabled={checkinHecho}
                     >
                       {checkinHecho ? "✅" : "☑️"}
@@ -266,7 +317,6 @@ export default function TurnosList() {
                   <td>
                     <button
                       className="btn btn-sm btn-danger"
-                      title="Eliminar turno"
                       onClick={() => handleDelete(t.id)}
                     >
                       🗑️
@@ -284,6 +334,8 @@ export default function TurnosList() {
           )}
         </tbody>
       </table>
+
+      {/* 🔹 Paginación */}
       <Pagination
         currentPage={currentPage}
         totalPages={Math.ceil(filteredTurnos.length / itemsPerPage)}

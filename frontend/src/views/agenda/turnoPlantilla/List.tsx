@@ -14,7 +14,7 @@ interface Turno {
   hora_inicio: string;
   duracion_min: number;
   activo: boolean | number;
-  cupo: number; // se completa desde la sala
+  cupo: number; 
   sala_id?: number;
   personal_id?: number;
   dia_semana_id?: number;
@@ -32,7 +32,7 @@ export default function TurnosPlantillaList() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10); // cantidad por página
+  const [itemsPerPage] = useState(10); 
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
@@ -44,7 +44,6 @@ export default function TurnosPlantillaList() {
     }
   }, [filtered, itemsPerPage, currentPage]);
 
-  // 🔹 Cargar turnos, profesores, salas y días
   const fetchTurnos = async () => {
     try {
       const [resTurnos, resProfesores, resSalas, resDias] = await Promise.all([
@@ -53,8 +52,6 @@ export default function TurnosPlantillaList() {
         gymApi.get("/salas"),
         gymApi.get("/diasemana"), 
       ]);
-
-      console.log("✅ TURNOS:", resTurnos.data);
 
       const data = resTurnos.data.items || resTurnos.data;
       if (!Array.isArray(data)) throw new Error("Formato inesperado de datos");
@@ -70,7 +67,7 @@ export default function TurnosPlantillaList() {
           personal_id: t.personal_id ?? t.personalId ?? t.personal?.id,
           sala_id: t.sala_id ?? t.salaId ?? t.sala?.id,
           dia_semana: t.dia_semana ?? t.diaSemana ?? null,
-          cupo: t.sala?.cupo ?? 0, // ✅ cupo traído desde la sala
+          cupo: t.sala?.cupo ?? 0, 
         }))
         .sort(
           (a: any, b: any) =>
@@ -111,7 +108,7 @@ export default function TurnosPlantillaList() {
     setFiltered(temp);
   }, [filtroDia, filtroProfesor, filtroSala, turnos]);
 
-  // 🔹 Eliminar turno
+  // Eliminar turno
   const handleDelete = async (id: number) => {
     const result = await Swal.fire({
       title: "¿Eliminar turno?",
@@ -148,7 +145,7 @@ export default function TurnosPlantillaList() {
         PLANILLA DE TURNOS
       </h1>
 
-      {/* 🔸 FILTROS */}
+      {/* FILTROS */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="flex-grow-1 w-100 row g-3">
           <div className="col-md-4 col-sm-12">
@@ -190,7 +187,7 @@ export default function TurnosPlantillaList() {
               <option value="">Todas las salas</option>
               {salas.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {`${s.nombre} (${s.cupo} cupos)`} {/* ✅ cupo visible */}
+                  {`${s.nombre} (${s.cupo} cupos)`} 
                 </option>
               ))}
             </select>
@@ -222,7 +219,7 @@ export default function TurnosPlantillaList() {
           </button>
           <button
             className="btn btn-success"
-            onClick={() => crearTurnoPlantilla(fetchTurnos)} // ✅ refresca lista
+            onClick={() => crearTurnoPlantilla(fetchTurnos)}
           >
             ➕ Nuevo Turno
           </button>

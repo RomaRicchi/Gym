@@ -54,7 +54,7 @@ namespace Api.Controllers
         {
             var turnos = await _repo.GetByDiaAsync(id, ct);
             if (turnos == null || !turnos.Any())
-                return Ok(new { ok = true, items = new List<object>() }); // 🔸 devuelve array vacío
+                return Ok(new { ok = true, items = new List<object>() }); //  devuelve array vacío
 
             return Ok(new { ok = true, items = turnos });
         }
@@ -109,33 +109,54 @@ namespace Api.Controllers
             if (turnoExistente is null)
                 return NotFound(new { message = "Turno no encontrado." });
 
-            // Validar solapamiento
-            var existe = await _repo.ExisteSolapamientoAsync(
-                dto.SalaId, dto.DiaSemanaId, dto.HoraInicio, dto.DuracionMin, ct);
+            // Evitar validar solapamiento si no cambian sala, día u hora
+            bool requiereValidacion =
+                turnoExistente.SalaId != dto.SalaId ||
+                turnoExistente.DiaSemanaId != dto.DiaSemanaId ||
+                turnoExistente.HoraInicio != dto.HoraInicio ||
+                turnoExistente.DuracionMin != dto.DuracionMin;
 
-            if (existe)
-                return BadRequest(new { message = "Ya existe un turno que se solapa en ese horario." });
+            if (requiereValidacion)
+            {
+                var existe = await _repo.ExisteSolapamientoAsync(
+                    dto.SalaId, dto.DiaSemanaId, dto.HoraInicio, dto.DuracionMin, ct);
 
+                if (existe)
+                    return BadRequest(new { message = "Ya existe un turno que se solapa en ese horario." });
+            }
+
+            // Actualizar datos
             turnoExistente.SalaId = dto.SalaId;
             turnoExistente.PersonalId = dto.PersonalId;
             turnoExistente.DiaSemanaId = dto.DiaSemanaId;
             turnoExistente.HoraInicio = dto.HoraInicio;
             turnoExistente.DuracionMin = dto.DuracionMin;
-            turnoExistente.Activo = dto.Activo;
 
             await _repo.UpdateAsync(turnoExistente, ct);
             return Ok(new { ok = true, message = "Turno actualizado correctamente." });
-        }
+}
 
-        // Eliminar turno
+        // Eliminar turno- Borrado lógico
         [HttpDelete("{id}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct = default)
         {
-            var eliminado = await _repo.DeleteAsync(id, ct);
-            if (!eliminado)
+            var turno = await _repo.GetByIdAsync(id, ct);
+            if (turno is null)
                 return NotFound(new { message = "Turno no encontrado." });
 
-            return Ok(new { ok = true, message = "Turno eliminado correctamente." });
+            if (!turno.Activo)
+                return BadRequest(new { message = "El turno ya se encuentra inactivo." });
+
+            turno.Activo = false;
+
+            await _repo.UpdateAsync(turno, ct);
+
+            return Ok(new
+            {
+                ok = true,
+                message = "Turno desactivado correctamente (borrado lógico)."
+            });
         }
+
     }
 }

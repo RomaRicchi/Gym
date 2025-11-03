@@ -1,20 +1,14 @@
-﻿using System;
-
-namespace Api.Data.Models;
-
-public partial class VSuscripcionesAr
+﻿namespace Api.Data.Models
 {
-    public int Id { get; set; }
+    public class VSuscripcionesAr
+    {
+        public int id { get; set; }
+        public int socio_id { get; set; }
+        public int plan_id { get; set; }
+        public DateTime inicio_ar { get; set; }
+        public DateTime? fin_ar { get; set; }
+        public int estado { get; set; }
 
-    public int SocioId { get; set; }
-
-    public int PlanId { get; set; }
-
-    public DateTime? InicioAr { get; set; }
-
-    public DateTime? FinAr { get; set; }
-
-    public string Estado { get; set; } = null!;
-
-    public DateTime CreadoEn { get; set; }
+       
+    }
 }

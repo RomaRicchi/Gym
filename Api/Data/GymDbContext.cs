@@ -35,6 +35,7 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<VOrdenesAr> VOrdenesAr { get; set; }
     public virtual DbSet<VSuscripcionesAr> VSuscripcionesAr { get; set; }
     public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+    public virtual DbSet<VCupoReservado> VCupoReservado { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -91,12 +92,12 @@ public partial class GymDbContext : DbContext
                 .HasConstraintName("FK_Usuario_Avatar");
         });
 
-      
+
         modelBuilder.Entity<VOcupacionHoy>().ToTable("v_ocupacion_hoy").HasNoKey();
         modelBuilder.Entity<VOrdenesAr>().ToTable("v_ordenes_ar").HasNoKey();
         modelBuilder.Entity<VSuscripcionesAr>().ToTable("v_suscripciones_ar").HasNoKey();
+        modelBuilder.Entity<VCupoReservado>().ToTable("v_cupo_reservado").HasNoKey();
 
-        
 
         // 🔽 Mapeo automático a snake_case
         foreach (var entity in modelBuilder.Model.GetEntityTypes())

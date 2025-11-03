@@ -14,7 +14,7 @@ namespace Api.Repositories
             _db = db;
         }
 
-        // 🔹 Obtener todos
+        // Obtener todos
         public async Task<IReadOnlyList<TurnoPlantilla>> GetAllAsync(CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
@@ -27,7 +27,7 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
-        // 🔹 Obtener activos
+        // Obtener activos
         public async Task<IReadOnlyList<TurnoPlantilla>> GetActivosAsync(CancellationToken ct = default)
         {
             return await _db.TurnosPlantilla
@@ -41,7 +41,7 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
-        // 🔹 Obtener turnos por día con cupos dinámicos
+        // Obtener turnos por día con cupos dinámicos
         public async Task<List<object>> GetByDiaAsync(int diaId, CancellationToken ct = default)
         {
             var turnos = await _db.TurnosPlantilla
@@ -73,7 +73,7 @@ namespace Api.Repositories
 
 
 
-        // 🔹 Obtener por personal
+        // Obtener por personal
         public async Task<IReadOnlyList<TurnoPlantilla>> GetByPersonalAsync(int personalId, CancellationToken ct = default)
         {
             Console.WriteLine($"👤 [Repo] Buscando turnos por personal_id={personalId}");
@@ -88,7 +88,7 @@ namespace Api.Repositories
                 .ToListAsync(ct);
         }
 
-        // 🔹 Obtener por ID
+        // Obtener por ID
         public async Task<TurnoPlantilla?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             Console.WriteLine($"🔎 [Repo] Buscando turno_plantilla id={id}");
@@ -101,7 +101,7 @@ namespace Api.Repositories
                 .FirstOrDefaultAsync(t => t.Id == id, ct);
         }
 
-        // 🔹 Crear — log detallado
+        // Crear — log detallado
         public async Task<TurnoPlantilla> AddAsync(TurnoPlantilla turno, CancellationToken ct = default)
         {
             try
@@ -128,7 +128,7 @@ namespace Api.Repositories
             }
         }
 
-        // 🔹 Actualizar
+        // Actualizar
         public async Task<bool> UpdateAsync(TurnoPlantilla updated, CancellationToken ct = default)
         {
             Console.WriteLine($"✏️ [UPDATE] Intentando actualizar ID={updated.Id}");
@@ -152,10 +152,10 @@ namespace Api.Repositories
             return true;
         }
 
-        // 🔹 Eliminar
+        // Borrado lógico
         public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         {
-            Console.WriteLine($"🗑 [DELETE] Eliminando turno id={id}");
+            Console.WriteLine($"🗑 [DELETE] Borrado lógico del turno id={id}");
 
             var turno = await _db.TurnosPlantilla.FindAsync(new object[] { id }, ct);
             if (turno == null)
@@ -164,13 +164,20 @@ namespace Api.Repositories
                 return false;
             }
 
-            _db.TurnosPlantilla.Remove(turno);
+            if (!turno.Activo)
+            {
+                Console.WriteLine("⚠️ [DELETE] Turno ya se encuentra inactivo");
+                return false;
+            }
+            turno.Activo = false;
             await _db.SaveChangesAsync(ct);
-            Console.WriteLine("✅ [DELETE] Turno eliminado correctamente");
+
+            Console.WriteLine("✅ [DELETE] Turno marcado como inactivo (borrado lógico)");
             return true;
         }
 
-        // 🔹 Validar solapamientos
+
+        // Validar solapamientos
         public async Task<bool> ExisteSolapamientoAsync(
             int salaId,
             byte diaSemana,

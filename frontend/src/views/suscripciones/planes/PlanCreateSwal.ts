@@ -5,27 +5,88 @@ export async function PlanCreateSwal(onSuccess?: () => void) {
   const { value: formValues } = await Swal.fire({
     title: "➕ Nuevo Plan",
     html: `
-      <div class="swal2-card-style">
-        <div class="mb-3 text-start">
-          <label class="form-label">Nombre</label>
-          <input id="nombre" type="text" class="form-control" placeholder="Ej: Plan mensual"/>
+      <form id="form-crear-plan" style="text-align:left;overflow-x:hidden;margin-top:0.5rem;">
+        <div style="margin-bottom:0.8rem;">
+          <label for="nombre" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Nombre</label>
+          <input id="nombre" type="text" placeholder="Ej: Plan mensual"
+            style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                   padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
         </div>
-        <div class="mb-3 text-start">
-          <label class="form-label">Días por semana</label>
-          <input id="dias_por_semana" type="number" class="form-control" min="1" max="7" placeholder="3"/>
+
+        <div style="margin-bottom:0.8rem;">
+          <label for="dias_por_semana" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Días por semana</label>
+          <input id="dias_por_semana" type="number" min="1" max="7" placeholder="3"
+            style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                   padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
         </div>
-        <div class="mb-3 text-start">
-          <label class="form-label">Precio</label>
-          <input id="precio" type="number" class="form-control" min="0" step="0.01" placeholder="10000"/>
+
+        <div style="margin-bottom:0.8rem;">
+          <label for="precio" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Precio</label>
+          <input id="precio" type="number" min="0" step="0.01" placeholder="10000"
+            style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                   padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
         </div>
-        <div class="form-check text-start">
-          <input id="activo" type="checkbox" class="form-check-input" checked/>
-          <label class="form-check-label" for="activo">Activo</label>
+
+        <div
+          style="
+            display:flex;
+            align-items:center;
+            gap:0.6rem;
+            margin-top:0.8rem;
+            white-space:nowrap;
+            width:fit-content;
+          "
+        >
+          <input
+            type="checkbox"
+            id="activo"
+            checked
+            style="transform: scale(1.3); accent-color:#ff6600; cursor:pointer; margin:0;"
+          >
+          <label
+            for="activo"
+            style="font-weight:600;color:#222;margin:0;line-height:1;"
+          >
+            Activo
+          </label>
         </div>
-      </div>
+      </form>
     `,
     showCancelButton: true,
-    confirmButtonText: "Guardar",
+    confirmButtonText: "💾 Guardar",
+    cancelButtonText: "Cancelar",
+    focusConfirm: false,
+
+    didOpen: () => {
+      const popup = Swal.getPopup();
+      if (popup) {
+        popup.style.overflowX = "hidden";
+        popup.style.maxWidth = "520px";
+        popup.style.textAlign = "left";
+      }
+
+      // 🔧 Alinear y expandir el contenedor interno
+      const htmlContainer = popup?.querySelector(".swal2-html-container") as HTMLElement;
+      if (htmlContainer) {
+        htmlContainer.style.width = "100%";
+        htmlContainer.style.maxWidth = "none";
+        htmlContainer.style.display = "block";
+        htmlContainer.style.textAlign = "left";
+      }
+
+      // 🔧 Inputs a ancho completo
+      document.querySelectorAll<HTMLInputElement>("#form-crear-plan input").forEach((input) => {
+        input.classList.remove("swal2-input");
+        input.style.width = "100%";
+        input.style.margin = "0.3rem 0";
+        input.style.display = "block";
+        input.style.boxSizing = "border-box";
+        input.style.maxWidth = "none";
+        input.style.fontSize = "1rem";
+        input.style.padding = "0.7rem 1rem";
+      });
+    },
+
     preConfirm: () => {
       const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
       const dias_por_semana = (document.getElementById("dias_por_semana") as HTMLInputElement).value;
@@ -44,9 +105,18 @@ export async function PlanCreateSwal(onSuccess?: () => void) {
   if (formValues) {
     try {
       await gymApi.post("/planes", formValues);
-      Swal.fire("Guardado", "Plan creado correctamente", "success");
+
+      await Swal.fire({
+        icon: "success",
+        title: "✅ Plan creado",
+        text: "El nuevo plan se guardó correctamente.",
+        timer: 1600,
+        showConfirmButton: false,
+      });
+
       onSuccess?.();
-    } catch {
+    } catch (err) {
+      console.error(err);
       Swal.fire("Error", "No se pudo crear el plan", "error");
     }
   }

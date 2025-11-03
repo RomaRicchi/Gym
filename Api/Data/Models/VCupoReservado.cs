@@ -1,16 +1,14 @@
 ﻿using System;
 
-namespace Api.Data.Models;
-
-public partial class VCupoReservado
+namespace Api.Data.Models
 {
-    public int TurnoId { get; set; }
-
-    public byte DiaSemana { get; set; }
-
-    public TimeOnly HoraInicio { get; set; }
-
-    public int Cupo { get; set; }
-
-    public long Reservados { get; set; }
+    /// <summary>
+    /// Vista que muestra la cantidad de cupos reservados por turno (v_cupo_reservado)
+    /// </summary>
+    public class VCupoReservado
+    {
+        public int turno_id { get; set; }
+        public int reservados { get; set; }
+        public DateTime fecha { get; set; }
+    }
 }

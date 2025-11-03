@@ -1,38 +1,32 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 
-export async function SalaEditSwal(id: string, onSuccess?: () => void) {
+export async function SalaEditSwal(id: string, onSuccess: () => void) {
   try {
-    const res = await gymApi.get(`/salas/${id}`);
-    const data = res.data;
+    // Obtener datos actuales de la sala
+    const { data } = await gymApi.get(`/salas/${id}`);
 
     const { value: formValues } = await Swal.fire({
-      title: "✏️ Editar Sala",
+      title: "Editar Sala",
       html: `
-        <div class="swal2-card-style">
-          <div class="mb-3 text-start">
-            <label class="form-label">Nombre</label>
-            <input id="nombre" type="text" class="form-control" value="${data.nombre || ""}"/>
-          </div>
-          <div class="mb-3 text-start">
-            <label class="form-label">Cupo</label>
-            <input id="cupo" type="number" class="form-control" value="${data.cupo || 1}" min="1"/>
-          </div>
-          <div class="form-check mb-3 text-start">
-            <input id="activa" type="checkbox" class="form-check-input" ${data.activa ? "checked" : ""}/>
-            <label class="form-check-label" for="activa">Activa</label>
-          </div>
-        </div>
+        <input id="nombre" class="swal2-input" placeholder="Nombre" value="${data.nombre || ""}">
+        <input id="cupo" type="number" class="swal2-input" placeholder="Cupo" value="${data.cupo || 0}">
+        <select id="activa" class="swal2-input">
+          <option value="true" ${data.activa ? "selected" : ""}>Activa</option>
+          <option value="false" ${!data.activa ? "selected" : ""}>Inactiva</option>
+        </select>
       `,
-      showCancelButton: true,
       confirmButtonText: "Guardar cambios",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      focusConfirm: false,
       preConfirm: () => {
         const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
         const cupo = (document.getElementById("cupo") as HTMLInputElement).value;
-        const activa = (document.getElementById("activa") as HTMLInputElement).checked;
+        const activa = (document.getElementById("activa") as HTMLSelectElement).value;
 
-        if (!nombre) {
-          Swal.showValidationMessage("El nombre es obligatorio");
+        if (!nombre || !cupo) {
+          Swal.showValidationMessage("Todos los campos son obligatorios");
           return false;
         }
 
@@ -40,15 +34,22 @@ export async function SalaEditSwal(id: string, onSuccess?: () => void) {
       },
     });
 
-    if (formValues) {
-      await gymApi.put(`/salas/${id}`, {
-        ...formValues,
-        activa: formValues.activa ? 1 : 0,
-      });
-      Swal.fire("Actualizada", "Sala modificada correctamente", "success");
-      onSuccess?.();
-    }
-  } catch {
-    Swal.fire("Error", "No se pudo cargar o actualizar la sala", "error");
+    if (!formValues) return; // usuario canceló
+
+    // Conversión de tipos correcta para el backend
+    const payload = {
+      nombre: formValues.nombre,
+      cupo: Number(formValues.cupo),
+      activa: formValues.activa === "true" || formValues.activa === true,
+    };
+
+    // Enviar PUT al backend
+    await gymApi.put(`/salas/${id}`, payload);
+
+    Swal.fire("Actualizado", "La sala fue actualizada correctamente", "success");
+    onSuccess();
+  } catch (error) {
+    console.error("Error al editar sala:", error);
+    Swal.fire("Error", "No se pudo actualizar la sala", "error");
   }
 }

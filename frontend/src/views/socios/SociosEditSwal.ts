@@ -23,33 +23,43 @@ export async function mostrarFormEditarSocio(id: number): Promise<boolean> {
             <label for="dni" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">DNI</label>
             <input id="dni" type="text" value="${socio.dni || ""}" placeholder="Ingrese DNI"
               style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                     padding:0.6rem 0.8rem;font-size:0.95rem;box-sizing:border-box;">
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
           </div>
 
           <div style="margin-bottom:0.8rem;">
             <label for="nombre" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Nombre</label>
             <input id="nombre" type="text" value="${socio.nombre || ""}" placeholder="Ingrese nombre"
               style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                     padding:0.6rem 0.8rem;font-size:0.95rem;box-sizing:border-box;">
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
           </div>
 
           <div style="margin-bottom:0.8rem;">
             <label for="email" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Email</label>
             <input id="email" type="email" value="${socio.email || ""}" placeholder="Ingrese email"
               style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                     padding:0.6rem 0.8rem;font-size:0.95rem;box-sizing:border-box;">
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
           </div>
 
           <div style="margin-bottom:0.8rem;">
             <label for="telefono" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Teléfono</label>
             <input id="telefono" type="text" value="${socio.telefono || ""}" placeholder="Ingrese teléfono"
               style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                     padding:0.6rem 0.8rem;font-size:0.95rem;box-sizing:border-box;">
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
           </div>
 
-          <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem;">
-            <input type="checkbox" id="activo" ${socio.activo ? "checked" : ""}>
-            <label for="activo" style="font-weight:600;color:#222;margin:0;">Activo</label>
+          <div style=" display:flex; align-items:center; gap:0.6rem; margin-top:0.8rem; white-space:nowrap;
+              width:fit-content; ">
+            <input
+              type="checkbox"
+              id="activo"
+              ${socio.activo ? "checked" : ""}
+              style="transform: scale(1.3); accent-color:#ff6600; cursor:pointer; margin:0;"
+            >
+            <label
+              for="activo"
+              style=" font-weight:600; color:#222; margin:0; line-height:1;"
+            > Activo
+            </label>
           </div>
         </form>
       `,
@@ -58,19 +68,45 @@ export async function mostrarFormEditarSocio(id: number): Promise<boolean> {
       confirmButtonText: "💾 Guardar Cambios",
       cancelButtonText: "Cancelar",
 
-      didOpen: () => {
-        const popup = Swal.getPopup();
-        if (popup) {
-          popup.style.overflowX = "hidden";
-          popup.style.maxWidth = "460px";
-          popup.style.textAlign = "left";
-        }
+didOpen: () => {
+  const popup = Swal.getPopup();
+  if (popup) {
+    popup.style.overflowX = "hidden";
+    popup.style.maxWidth = "520px";
+    popup.style.textAlign = "left";
+  }
 
-        // 🔧 Eliminar estilos nativos de SweetAlert2 para inputs
-        document.querySelectorAll<HTMLInputElement>("#form-editar-socio input").forEach((input) => {
-          input.classList.remove("swal2-input");
-        });
-      },
+  // 🔧 Forzar el contenedor interno a ocupar todo el ancho
+  const htmlContainer = popup?.querySelector(".swal2-html-container") as HTMLElement;
+  if (htmlContainer) {
+    htmlContainer.style.width = "100%";
+    htmlContainer.style.maxWidth = "none";
+    htmlContainer.style.display = "block";
+    htmlContainer.style.textAlign = "left";
+  }
+
+  // 🔧 Ajustar el propio formulario
+  const form = document.getElementById("form-editar-socio") as HTMLElement;
+  if (form) {
+    form.style.width = "100%";
+    form.style.maxWidth = "480px";
+    form.style.display = "block";
+  }
+
+  // 🔧 Forzar ancho completo en inputs
+  document.querySelectorAll<HTMLInputElement>("#form-editar-socio input").forEach((input) => {
+    input.classList.remove("swal2-input");
+    input.style.width = "100%";
+    input.style.margin = "0.3rem 0";
+    input.style.display = "block";
+    input.style.boxSizing = "border-box";
+    input.style.maxWidth = "none";
+    input.style.fontSize = "1rem";
+    input.style.padding = "0.7rem 1rem";
+  });
+},
+
+
 
       preConfirm: () => {
         const dni = (document.getElementById("dni") as HTMLInputElement)?.value.trim();

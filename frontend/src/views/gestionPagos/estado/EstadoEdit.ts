@@ -4,37 +4,90 @@ import gymApi from "@/api/gymApi";
 
 export async function editarEstado(id: number) {
   try {
-    // 🔹 Obtener datos actuales del estado
+    // 🔹 Obtener datos actuales
     const { data: estado } = await gymApi.get(`/estadoOrdenPago/${id}`);
 
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Estado de Pago",
       html: `
-        <div class="text-start" style="font-size: 0.95rem;">
-          <label class="fw-bold">Nombre</label>
-          <input id="nombreInput" type="text" class="form-control mb-3" value="${
-            estado.nombre || ""
-          }" placeholder="Nombre del estado" />
+        <form id="form-editar-estado" style="text-align:left;overflow-x:hidden;margin-top:0.5rem;">
+          <div style="margin-bottom:0.8rem;">
+            <label for="nombreInput" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">
+              Nombre
+            </label>
+            <input id="nombreInput" type="text"
+              value="${estado.nombre || ""}"
+              placeholder="Nombre del estado"
+              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+          </div>
 
-          <label class="fw-bold">Descripción</label>
-          <textarea id="descInput" class="form-control" rows="3" placeholder="Descripción...">${
-            estado.descripcion || ""
-          }</textarea>
-        </div>
+          <div style="margin-bottom:0.8rem;">
+            <label for="descInput" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">
+              Descripción
+            </label>
+            <textarea id="descInput" rows="3"
+              placeholder="Descripción..."
+              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
+                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;resize:vertical;">${
+                estado.descripcion || ""
+              }</textarea>
+          </div>
+        </form>
       `,
-      focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: "💾 Guardar cambios",
       cancelButtonText: "Cancelar",
+      focusConfirm: false,
       confirmButtonColor: "#ff6b00",
-      width: "500px",
+
+      didOpen: () => {
+        const popup = Swal.getPopup();
+        if (popup) {
+          popup.style.overflowX = "hidden";
+          popup.style.maxWidth = "520px";
+          popup.style.textAlign = "left";
+        }
+
+        const htmlContainer = popup?.querySelector(".swal2-html-container") as HTMLElement;
+        if (htmlContainer) {
+          htmlContainer.style.width = "100%";
+          htmlContainer.style.maxWidth = "none";
+          htmlContainer.style.display = "block";
+          htmlContainer.style.textAlign = "left";
+        }
+
+        const form = document.getElementById("form-editar-estado") as HTMLElement;
+        if (form) {
+          form.style.width = "100%";
+          form.style.maxWidth = "480px";
+          form.style.display = "block";
+        }
+
+        // 🔧 Ajustar inputs y textarea
+        document
+          .querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+            "#form-editar-estado input, #form-editar-estado textarea"
+          )
+          .forEach((el) => {
+            el.classList.remove("swal2-input");
+            el.style.width = "100%";
+            el.style.margin = "0.3rem 0";
+            el.style.display = "block";
+            el.style.boxSizing = "border-box";
+            el.style.maxWidth = "none";
+            el.style.fontSize = "1rem";
+            el.style.padding = "0.7rem 1rem";
+          });
+      },
+
       preConfirm: () => {
-        const nombre = (document.getElementById("nombreInput") as HTMLInputElement).value.trim();
-        const descripcion = (document.getElementById("descInput") as HTMLTextAreaElement).value.trim();
+        const nombre = (document.getElementById("nombreInput") as HTMLInputElement)?.value.trim();
+        const descripcion = (document.getElementById("descInput") as HTMLTextAreaElement)?.value.trim();
 
         if (!nombre) {
           Swal.showValidationMessage("⚠️ El nombre es obligatorio");
-          return false;
+          return;
         }
 
         return { nombre, descripcion };
@@ -43,17 +96,18 @@ export async function editarEstado(id: number) {
 
     if (!formValues) return;
 
-    // 🔹 Enviar cambios al backend
+    // 🔹 Guardar cambios
     await gymApi.put(`/estadoOrdenPago/${id}`, formValues);
 
     await Swal.fire({
       icon: "success",
-      title: "✅ Actualizado",
-      text: "Estado modificado correctamente.",
+      title: "✅ Estado actualizado",
+      text: "Los cambios fueron guardados correctamente.",
       confirmButtonColor: "#ff6b00",
+      timer: 1600,
+      showConfirmButton: false,
     });
 
-    // Recargar lista de estados
     window.location.reload();
   } catch (err) {
     console.error(err);

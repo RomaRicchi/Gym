@@ -15,6 +15,8 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@/styles/swal-theme.css";
 import "./styles/main.css";
 
+
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
