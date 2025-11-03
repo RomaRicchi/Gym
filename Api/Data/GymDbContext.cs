@@ -31,6 +31,7 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<TurnoPlantilla> TurnosPlantilla { get; set; }
     public virtual DbSet<Usuario> Usuarios { get; set; }
     public virtual DbSet<Avatar> Avatares { get; set; } = null!;
+    public virtual DbSet<EvolucionFisica> EvolucionFisica { get; set; }
     public virtual DbSet<VOcupacionHoy> VOcupacionHoy { get; set; }
     public virtual DbSet<VOrdenesAr> VOrdenesAr { get; set; }
     public virtual DbSet<VSuscripcionesAr> VSuscripcionesAr { get; set; }
@@ -64,6 +65,13 @@ public partial class GymDbContext : DbContext
         modelBuilder.Entity<RegistroItem>().ToTable("registro_item");
         modelBuilder.Entity<DiaSemana>().ToTable("dia_semana");
         modelBuilder.Entity<PasswordResetToken>().ToTable("password_reset_tokens");
+        modelBuilder.Entity<EvolucionFisica>().ToTable("evolucion_fisica");
+        modelBuilder.Entity<EvolucionFisica>()
+            .HasOne<Socio>()
+            .WithMany()
+            .HasForeignKey(e => e.SocioId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("fk_evolucion_socio");
         modelBuilder.Entity<PasswordResetToken>()
             .HasOne(p => p.Usuario)
             .WithMany()
@@ -99,18 +107,22 @@ public partial class GymDbContext : DbContext
         modelBuilder.Entity<VCupoReservado>().ToTable("v_cupo_reservado").HasNoKey();
 
 
-        // 🔽 Mapeo automático a snake_case
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
             var tableName = entity.GetTableName();
             if (tableName != null)
                 entity.SetTableName(ToSnakeCase(tableName));
 
+            // Evitar transformar manualmente EvolucionFisica
+            if (entity.Name.EndsWith("EvolucionFisica"))
+                continue;
+
             foreach (var property in entity.GetProperties())
             {
                 property.SetColumnName(ToSnakeCase(property.Name));
             }
         }
+
     }
 
 

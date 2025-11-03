@@ -40,6 +40,7 @@ import TurnosSocio from "@/views/socios/TurnosSocio";
 import RutinasSocio from "@/views/socios/RutinasSocio";
 import LayoutSocio from "./components/LayoutSocio";
 import TurnosSocioCalendar from "@/views/socios/TurnosSocioCalendar";
+import EvolucionFisicaSocio from "@/views/socios/EvolucionFisicaSocio";
 
 /* Scroll automático */
 function ScrollToTop() {
@@ -101,6 +102,7 @@ export default function App() {
           <Route path="/socio/turnosSocio" element={<TurnosSocio />} />
           <Route path="/socio/rutinasSocio" element={<RutinasSocio />} />
           <Route path="/socio/turnos" element={<TurnosSocioCalendar />} />
+          <Route path="/evolucionfisica" element={<EvolucionFisicaSocio />} />
         </Route>
         {/* 🌐 Rutas públicas */}
         <Route path="/login" element={<Login />} />

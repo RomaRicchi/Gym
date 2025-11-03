@@ -91,6 +91,7 @@ builder.Services.AddScoped<IRolRepository, RolRepository>();
 builder.Services.AddScoped<IPerfilRepository, PerfilRepository>();
 builder.Services.AddScoped<ICheckinRepository, CheckinRepository>();
 builder.Services.AddHostedService<Api.Services.TurnosSchedulerService>();
+builder.Services.AddScoped<IEvolucionFisicaRepository, EvolucionFisicaRepository>();
 
 
 var app = builder.Build();

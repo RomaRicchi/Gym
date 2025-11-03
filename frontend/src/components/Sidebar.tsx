@@ -15,6 +15,7 @@ import {
   faUser,
   faListCheck,
   faCalendarCheck,
+  faWeightScale,
 } from "@fortawesome/free-solid-svg-icons";
 import "@/styles/Sidebar.css";
 
@@ -58,6 +59,19 @@ export default function Sidebar() {
               </NavLink>
             </li>
 
+            <hr className="sidebar-divider" />
+            <li className="nav-item">
+              <NavLink
+                to="/evolucionfisica"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active-link" : ""}`
+                }
+              >
+                <FontAwesomeIcon icon={faWeightScale} className="me-2" />
+                Evolución Física
+              </NavLink>
+            </li>
+            
             <hr className="sidebar-divider" />
           </>
         )}

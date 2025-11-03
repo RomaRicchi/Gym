@@ -75,7 +75,14 @@ const TurnosSocio: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#121212] text-white px-6 py-10">
-      <h1 className="text-3xl font-bold text-center text-[#ff6b00] mb-10">
+       <h1
+        className="text-center fw-bold mb-4"
+        style={{
+          color: "#ff6600",
+          fontSize: "2.5rem",
+          letterSpacing: "2px",
+        }}
+      >
         Mis Turnos 🧡
       </h1>
 

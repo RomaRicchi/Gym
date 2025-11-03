@@ -23,43 +23,47 @@ export default function TurnosSocioCalendar() {
   const [eventos, setEventos] = useState<any[]>([]);
   const calendarRef = useRef<any>(null);
 
-  // 🧠 Detectar socio logueado de forma robusta
+  // Detectar socio logueado de forma robusta
   const socioId =
     localStorage.getItem("socioId") ||
     JSON.parse(localStorage.getItem("usuario") || "{}")?.socio_id ||
     null;
 
-  // ⚡ Cargar los turnos del socio
+  // Cargar los turnos del socio
   const cargarTurnosSocio = async () => {
     try {
-      if (!socioId) {
+        if (!socioId) {
         await Swal.fire("Sin suscripción", "No se detectó ningún socio logueado.", "info");
         return;
-      }
+        }
 
-      // 📦 Obtener suscripción activa del socio
-      const { data: susRes } = await gymApi.get(`/suscripciones?socioId=${socioId}`);
-      const suscripciones = susRes.items || susRes || [];
-      const suscripcionActiva = suscripciones.find((s: any) => s.estado);
+        // 📦 Obtener suscripción activa del socio
+        const { data: susRes } = await gymApi.get(`/suscripciones?socioId=${socioId}`);
+        const suscripciones = susRes.items || susRes || [];
+        const suscripcionActiva = suscripciones.find((s: any) => s.estado);
 
-      if (!suscripcionActiva) {
+        if (!suscripcionActiva) {
         await Swal.fire("Sin suscripción", "No tenés una suscripción activa.", "info");
         return;
-      }
+        }
 
-      // 📅 Obtener turnos asociados a la suscripción activa
-      const { data: turnosRes } = await gymApi.get(
+        // Rango de validez
+        const inicioSus = new Date(suscripcionActiva.inicio);
+        const finSus = new Date(suscripcionActiva.fin);
+
+        //Obtener turnos asociados a la suscripción activa
+        const { data: turnosRes } = await gymApi.get(
         `/suscripcionturno/suscripcion/${suscripcionActiva.id}`
-      );
-      const turnos: TurnoSocio[] = turnosRes || [];
+        );
+        const turnos: TurnoSocio[] = turnosRes || [];
 
-      if (!turnos.length) {
+        if (!turnos.length) {
         await Swal.fire("Sin turnos", "No tenés turnos asignados actualmente.", "info");
         return;
-      }
+        }
 
-      // 🔄 Mapear turnos a eventos de calendario
-      const eventosMapeados = turnos.map((t) => {
+        // Mapear turnos a eventos de calendario (con límites de recurrencia)
+        const eventosMapeados = turnos.map((t) => {
         const tp = t.turnoPlantilla;
         const [hora, minuto] = tp.horaInicio.split(":").map(Number);
         const duracionHoras = Math.floor(tp.duracionMin / 60);
@@ -69,33 +73,38 @@ export default function TurnosSocioCalendar() {
         const minutoFin = (minuto + duracionMinutos) % 60;
 
         return {
-          id: t.id.toString(),
-          title: `${tp.sala?.nombre || "Sala"} — ${tp.personal?.nombre || "Profesor"}`,
-          daysOfWeek: [tp.diaSemana?.id || 1],
-          startTime: `${hora.toString().padStart(2, "0")}:${minuto
+            id: t.id.toString(),
+            title: `${tp.sala?.nombre || "Sala"} — ${tp.personal?.nombre || "Profesor"}`,
+            daysOfWeek: [tp.diaSemana?.id || 1],
+            startTime: `${hora.toString().padStart(2, "0")}:${minuto
             .toString()
             .padStart(2, "0")}`,
-          endTime: `${horaFin.toString().padStart(2, "0")}:${minutoFin
+            endTime: `${horaFin.toString().padStart(2, "0")}:${minutoFin
             .toString()
             .padStart(2, "0")}`,
-          backgroundColor: "#ff6b00",
-          borderColor: "#ff6b00",
-          textColor: "#fff",
-          extendedProps: {
+            startRecur: inicioSus.toISOString().split("T")[0],
+            endRecur: finSus.toISOString().split("T")[0],
+            backgroundColor: "#ff6b00",
+            borderColor: "#ff6b00",
+            textColor: "#fff",
+            extendedProps: {
             dia: tp.diaSemana?.nombre,
             sala: tp.sala?.nombre,
             profesor: tp.personal?.nombre,
             duracion: tp.duracionMin,
-          },
+            inicioSus: inicioSus.toLocaleDateString(),
+            finSus: finSus.toLocaleDateString(),
+            },
         };
-      });
+    });
 
-      setEventos(eventosMapeados);
+        setEventos(eventosMapeados);
     } catch (err) {
-      console.error("❌ Error al cargar turnos del socio:", err);
-      Swal.fire("Error", "No se pudieron cargar los turnos del socio.", "error");
+        console.error("❌ Error al cargar turnos del socio:", err);
+        Swal.fire("Error", "No se pudieron cargar los turnos del socio.", "error");
     }
-  };
+    };
+
 
   useEffect(() => {
     cargarTurnosSocio();
