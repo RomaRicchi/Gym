@@ -206,6 +206,7 @@ export default function Sidebar() {
             </li>
 
             {rol === "Administrador" && (
+            <>
               <li className="nav-item">
                 <NavLink
                   to="/estados"
@@ -217,7 +218,21 @@ export default function Sidebar() {
                   Estados
                 </NavLink>
               </li>
-            )}
+
+              {/* 💰 Ingresos (nuevo enlace solo para admin) */}
+              <li className="nav-item">
+                <NavLink
+                  to="/pagos/ingresos"
+                  className={({ isActive }) =>
+                    `nav-link ${isActive ? "active-link" : ""}`
+                  }
+                >
+                  <FontAwesomeIcon icon={faMoneyBill} className="me-2" />
+                  Ingresos
+                </NavLink>
+              </li>
+            </>
+          )}
 
             <hr className="sidebar-divider" />
 

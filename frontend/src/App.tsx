@@ -30,6 +30,7 @@ import EstadosList from "@/views/gestionPagos/estado/List";
 import RolesList from "@/views/usuarios/rol/List";
 import UsuariosList from "@/views/usuarios/List";
 import ResetPassword from "@/views/usuarios/ResetPassword";
+import AdminIngresos from "@/views/gestionPagos/AdminIngresos";
 
 /* === Vistas del SOCIO === */
 import DashboardSocio from "@/views/DashboardSocio";
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/estados" element={<EstadosList />} />
           <Route path="/roles" element={<RolesList />} />
           <Route path="/usuarios" element={<UsuariosList />} />
+          <Route path="/pagos/ingresos" element={<AdminIngresos />} />
         </Route>
         {/* 🧡 Panel del Socio */}
         <Route element={<LayoutSocio />}>

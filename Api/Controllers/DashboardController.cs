@@ -79,5 +79,42 @@ namespace Api.Controllers
                 return StatusCode(500, new { error = ex.Message, inner = ex.InnerException?.Message });
             }
         }
+
+        // Ingresos mensuales (solo administrador)
+        [HttpGet("ingresos-mensuales")]
+        public IActionResult GetIngresosMensuales()
+        {
+            try
+            {
+                var result = _db.VSuscripcionesAr
+                    .Join(_db.Planes,
+                        v => v.plan_id,
+                        p => p.Id,
+                        (v, p) => new { v, p })
+                    .AsEnumerable() 
+                    .GroupBy(x => new { x.v.inicio_ar.Year, x.v.inicio_ar.Month })
+                    .Select(g => new
+                    {
+                        mes = new DateTime(g.Key.Year, g.Key.Month, 1),
+                        ingresos = g.Sum(x => (decimal)x.p.Precio)
+                    })
+                    .OrderBy(g => g.mes)
+                    .ToList();
+
+                var formatted = result.Select(r => new
+                {
+                    mes = r.mes.ToString("yyyy-MM"),
+                    nombreMes = r.mes.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-ES")),
+                    ingresos = r.ingresos
+                });
+
+                return Ok(formatted);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message, inner = ex.InnerException?.Message });
+            }
+        }
+
     }
 }
