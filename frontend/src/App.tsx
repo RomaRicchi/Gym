@@ -39,6 +39,7 @@ import SuscripcionesSocio from "@/views/socios/SuscripcionesSocio";
 import TurnosSocio from "@/views/socios/TurnosSocio";
 import RutinasSocio from "@/views/socios/RutinasSocio";
 import LayoutSocio from "./components/LayoutSocio";
+import TurnosSocioCalendar from "@/views/socios/TurnosSocioCalendar";
 
 /* Scroll automático */
 function ScrollToTop() {
@@ -99,6 +100,7 @@ export default function App() {
           <Route path="/socio/suscripcionesSocio" element={<SuscripcionesSocio />} />
           <Route path="/socio/turnosSocio" element={<TurnosSocio />} />
           <Route path="/socio/rutinasSocio" element={<RutinasSocio />} />
+          <Route path="/socio/turnos" element={<TurnosSocioCalendar />} />
         </Route>
         {/* 🌐 Rutas públicas */}
         <Route path="/login" element={<Login />} />

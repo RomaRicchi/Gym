@@ -46,6 +46,19 @@ export default function Sidebar() {
             </li>
 
             <hr className="sidebar-divider" />
+            <li className="nav-item">
+              <NavLink
+                to="/socio/turnos"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active-link" : ""}`
+                }
+              >
+                <FontAwesomeIcon icon={faCalendarDays} className="me-2" />
+                Calendario
+              </NavLink>
+            </li>
+
+            <hr className="sidebar-divider" />
           </>
         )}
 
