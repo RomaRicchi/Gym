@@ -208,6 +208,8 @@ Exportar la colección desde Postman: docs/GymAPI.postman_collection.json
 | ------------- | ------------------------------------- | ---------- |
 | Administrador | [admin@gym.com](mailto:admin@gym.com) | admin123   |
 | Recepcionista | [rece@gym.com](mailto:rece@gym.com)   | rece123    |
+| Socio         | [socio@gym.com](mailto:socio@gym.com) | Socio123   |
+
 
 ## ✅ Cumplimiento de los Requerimientos
 
