@@ -1,23 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Api.Data.Models;
-
-public partial class Plan
+namespace Api.Data.Models
 {
-    public int Id { get; set; }
+    [Table("plan")]
+    public class Plan
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
 
-    public string Nombre { get; set; } = null!;
+        [Column("nombre")]
+        public string Nombre { get; set; } = string.Empty;
 
-    public int DiasPorSemana { get; set; }
+        [Column("dias_por_semana")]
+        public int DiasPorSemana { get; set; }
 
-    public decimal Precio { get; set; }
+        [Column("precio")]
+        public decimal Precio { get; set; }
 
-    public bool? Activo { get; set; }
+        [Column("activo")]
+        public bool Activo { get; set; }
 
-    public virtual ICollection<OrdenPago> OrdenesPago { get; set; } = new List<OrdenPago>();
-
-    public virtual ICollection<RutinaPlantilla> RutinasPlantilla { get; set; } = new List<RutinaPlantilla>();
-
-    public virtual ICollection<Suscripcion> Suscripciones { get; set; } = new List<Suscripcion>();
+        // Relaciones
+        public virtual ICollection<RutinaAsignada>? RutinasAsignadas { get; set; }
+        public virtual ICollection<Suscripcion>? Suscripciones { get; set; }
+    }
 }

@@ -386,7 +386,7 @@ namespace Api.Controllers
 
             if (orden.Comprobante is not null)
             {
-                var filePath = Path.Combine("wwwroot", orden.Comprobante.FileUrl.Replace('/', Path.DirectorySeparatorChar));
+                var filePath = Path.Combine("wwwroot", orden.Comprobante.FileUrl!.Replace('/', Path.DirectorySeparatorChar));
                 if (System.IO.File.Exists(filePath))
                     System.IO.File.Delete(filePath);
 

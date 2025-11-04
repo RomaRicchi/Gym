@@ -63,10 +63,10 @@ namespace Api.Controllers
                     t.Id,
                     t.HoraInicio,
                     t.DuracionMin,
-                    Dia = new { t.DiaSemana.Id, t.DiaSemana.Nombre },
+                    Dia = new { t.DiaSemana!.Id, t.DiaSemana.Nombre },
                     Sala = new
                     {
-                        t.Sala.Id,
+                        t.Sala!.Id,
                         t.Sala.Nombre,
                         CupoTotal = t.Sala.Cupo,
                         CupoDisponible = t.Sala.Cupo - _db.SuscripcionTurnos.Count(st => st.TurnoPlantillaId == t.Id)

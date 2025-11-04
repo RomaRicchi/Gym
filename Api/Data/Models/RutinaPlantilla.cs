@@ -1,21 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Api.Data.Models;
-
-public partial class RutinaPlantilla
+namespace Api.Data.Models
 {
-    public int Id { get; set; }
+    public class RutinaPlantilla
+    {
+        public int Id { get; set; }
 
-    public string Nombre { get; set; } = null!;
+        [Required]
+        [StringLength(120)]
+        public string Nombre { get; set; } = string.Empty;
 
-    public string? Objetivo { get; set; }
+        [StringLength(120)]
+        public string? Objetivo { get; set; }
 
-    public int? PlanId { get; set; }
-
-    public virtual Plan? Plan { get; set; }
-
-    public virtual ICollection<RutinaAsignada> RutinasAsignadas { get; set; } = new List<RutinaAsignada>();
-
-    public virtual ICollection<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; } = new List<RutinaPlantillaEjercicio>();
+        //  Relación con la tabla intermedia
+        public virtual ICollection<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; } 
+            = new List<RutinaPlantillaEjercicio>();
+    }
 }

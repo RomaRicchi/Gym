@@ -1,25 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Api.Data.Models;
-
-public partial class RutinaPlantillaEjercicio
+namespace Api.Data.Models
 {
-    public int Id { get; set; }
+    public class RutinaPlantillaEjercicio
+    {
+        public int Id { get; set; }
 
-    public int RutinaId { get; set; }
+        [ForeignKey(nameof(RutinaPlantilla))]
+        public int RutinaId { get; set; }
 
-    public int EjercicioId { get; set; }
+        [ForeignKey(nameof(Ejercicio))]
+        public int EjercicioId { get; set; }
 
-    public int Orden { get; set; }
+        public int Orden { get; set; }
+        public int Series { get; set; }
+        public int Repeticiones { get; set; }
+        public int DescansoSeg { get; set; }
 
-    public int? Series { get; set; }
-
-    public int? Repeticiones { get; set; }
-
-    public int? DescansoSeg { get; set; }
-
-    public virtual Ejercicio Ejercicio { get; set; } = null!;
-
-    public virtual RutinaPlantilla Rutina { get; set; } = null!;
+        public virtual RutinaPlantilla RutinaPlantilla { get; set; } = null!;
+        public virtual Ejercicio Ejercicio { get; set; } = null!;
+    }
 }

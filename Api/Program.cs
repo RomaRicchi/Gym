@@ -10,23 +10,19 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
-// === ⚙️ Configuración básica ===
-
+// === Configuración básica ===
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
     {
         o.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-        o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase; 
+        o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-
-// === 🌐 CORS (para frontend React/Vite en puerto 5173) ===
+// === CORS (para frontend React/Vite en puerto 5173) ===
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("dev", policy =>
@@ -47,7 +43,7 @@ builder.Services.AddDbContext<GymDbContext>(options =>
     options.UseMySql(cs, serverVersion,
         mySqlOptions => mySqlOptions.SchemaBehavior(MySqlSchemaBehavior.Ignore)));
 
-// === 🔐 Autenticación JWT ===
+// === Autenticación JWT ===
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -64,15 +60,47 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-            RoleClaimType = ClaimTypes.Role 
+            RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
         };
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// === 💾 Servicios y Repositorios ===
+// === Swagger con soporte para JWT ===
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Gym API", Version = "v1" });
+
+    // Configuración para token JWT
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "Ingrese el token JWT en este formato: **Bearer {token}**",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+});
+
+// === Servicios y Repositorios ===
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();
@@ -92,20 +120,23 @@ builder.Services.AddScoped<IPerfilRepository, PerfilRepository>();
 builder.Services.AddScoped<ICheckinRepository, CheckinRepository>();
 builder.Services.AddHostedService<Api.Services.TurnosSchedulerService>();
 builder.Services.AddScoped<IEvolucionFisicaRepository, EvolucionFisicaRepository>();
-
+builder.Services.AddScoped<IEjercicioRepository, EjercicioRepository>();
+builder.Services.AddScoped<IRutinaPlantillaRepository, RutinaPlantillaRepository>();
+builder.Services.AddScoped<IRutinaPlantillaEjercicioRepository, RutinaPlantillaEjercicioRepository>();
+builder.Services.AddScoped<IRutinaAsignadaRepository, RutinaAsignadaRepository>();
 
 var app = builder.Build();
 
-// === 🧪 Swagger ===
+// === Swagger ===
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// === 🧩 Middleware global (orden correcto) ===
-// ⚠️ Importante: CORS debe ir antes de Authentication/Authorization
+// === Middleware global ===
 app.UseCors("dev");
+
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -119,11 +150,10 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// === 🚀 Run ===
+// === Run ===
 app.Run();

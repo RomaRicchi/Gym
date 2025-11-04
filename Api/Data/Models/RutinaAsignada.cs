@@ -1,25 +1,44 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Api.Data.Models;
-
-public partial class RutinaAsignada
+namespace Api.Data.Models
 {
-    public int Id { get; set; }
+    [Table("rutina_asignada")]
+    public class RutinaAsignada
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
 
-    public int SocioId { get; set; }
+        [Column("socio_id")]
+        public int SocioId { get; set; }
 
-    public int RutinaId { get; set; }
+        [Column("rutina_id")]
+        public int RutinaId { get; set; }
 
-    public DateOnly Inicio { get; set; }
+        [Column("plan_id")]
+        public int? PlanId { get; set; }
 
-    public DateOnly? Fin { get; set; }
+        [Column("inicio")]
+        public DateTime Inicio { get; set; }
 
-    public string? Notas { get; set; }
+        [Column("fin")]
+        public DateTime Fin { get; set; }
 
-    public virtual ICollection<RegistroEntrenamiento> RegistrosEntrenamiento { get; set; } = new List<RegistroEntrenamiento>();
+        [Column("notas")]
+        public string? Notas { get; set; }
 
-    public virtual RutinaPlantilla Rutina { get; set; } = null!;
+        // Relaciones
+        [ForeignKey(nameof(SocioId))]
+        public virtual Socio Socio { get; set; } = null!;
 
-    public virtual Socio Socio { get; set; } = null!;
+        [ForeignKey(nameof(RutinaId))]
+        public virtual RutinaPlantilla RutinasPlantilla { get; set; } = null!;
+
+        [ForeignKey(nameof(PlanId))]
+        public virtual Plan? Plan { get; set; }
+
+        public virtual ICollection<Evaluacion>? Evaluaciones { get; set; }
+    }
 }

@@ -39,18 +39,18 @@ namespace Api.Controllers
                     t.Id,
                     Sala = new
                     {
-                        t.Sala.Id,
+                        t.Sala!.Id,
                         t.Sala.Nombre,
                         t.Sala.Cupo
                     },
                     Profesor = new
                     {
-                        t.Personal.Id,
+                        t.Personal!.Id,
                         t.Personal.Nombre
                     },
                     Dia = new
                     {
-                        t.DiaSemana.Id,
+                        t.DiaSemana!.Id,
                         t.DiaSemana.Nombre
                     },
                     t.HoraInicio,
@@ -89,15 +89,14 @@ namespace Api.Controllers
                         t.DuracionMin,
                         Dia = new
                         {
-                            t.DiaSemana.Id,
+                            t.DiaSemana!.Id,
                             t.DiaSemana.Nombre
                         },
                         Sala = new
                         {
-                            t.Sala.Id,
+                            t.Sala!.Id,
                             t.Sala.Nombre,
                             CupoTotal = t.Sala.Cupo,
-                            // 🔹 Cálculo dinámico del cupo disponible
                             CupoDisponible = t.Sala.Cupo - _db.SuscripcionTurnos.Count(st => st.TurnoPlantillaId == t.Id)
                         },
                         Profesor = t.Personal != null
@@ -139,13 +138,13 @@ namespace Api.Controllers
             if (turno is null)
                 return NotFound(new { message = $"No se encontró el turno con ID {id}" });
 
-            // 🔹 Calcular cupo disponible dinámicamente
+            // Calcular cupo disponible dinámicamente
             var inscriptos = await _db.SuscripcionTurnos
                 .CountAsync(st => st.TurnoPlantillaId == turno.Id, ct);
 
-            var cupoDisponible = turno.Sala.Cupo - inscriptos;
+            var cupoDisponible = turno.Sala!.Cupo - inscriptos;
 
-            // 🔹 Devolver objeto enriquecido con relaciones
+            // Devolver objeto enriquecido con relaciones
             var result = new
             {
                 turno.Id,
@@ -162,12 +161,12 @@ namespace Api.Controllers
                 },
                 Profesor = new
                 {
-                    turno.Personal.Id,
+                    turno.Personal!.Id,
                     turno.Personal.Nombre
                 },
                 Dia = new
                 {
-                    turno.DiaSemana.Id,
+                    turno.DiaSemana!.Id,
                     turno.DiaSemana.Nombre
                 }
             };

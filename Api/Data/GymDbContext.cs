@@ -10,40 +10,44 @@ public partial class GymDbContext : DbContext
     public GymDbContext(DbContextOptions<GymDbContext> options)
         : base(options) { }
 
+    // === Tablas principales ===
     public virtual DbSet<Checkin> Checkins { get; set; }
     public virtual DbSet<Comprobante> Comprobantes { get; set; }
-    public virtual DbSet<Ejercicio> Ejercicios { get; set; }
-    public virtual DbSet<OrdenPago> OrdenesPago { get; set; }= null!;
-    public virtual DbSet<EstadoOrdenPago> EstadoOrdenPago { get; set; }= null!;
+    public virtual DbSet<OrdenPago> OrdenesPago { get; set; } = null!;
+    public virtual DbSet<EstadoOrdenPago> EstadoOrdenPago { get; set; } = null!;
     public virtual DbSet<Rol> Roles { get; set; }
     public virtual DbSet<DiaSemana> DiasSemana { get; set; }
-    public virtual DbSet<Plan> Planes { get; set; }= null!;
+    public virtual DbSet<Plan> Planes { get; set; } = null!;
     public virtual DbSet<Personal> Personales { get; set; }
-    public virtual DbSet<RegistroEntrenamiento> RegistrosEntrenamiento { get; set; }
-    public virtual DbSet<RegistroItem> RegistrosItem { get; set; }
-    public virtual DbSet<RutinaAsignada> RutinasAsignadas { get; set; }
-    public virtual DbSet<RutinaPlantilla> RutinasPlantilla { get; set; }
-    public virtual DbSet<RutinaPlantillaEjercicio> RutinasPlantillaEjercicios { get; set; }
     public virtual DbSet<Sala> Salas { get; set; }
-    public virtual DbSet<Socio> Socios { get; set; }= null!;
+    public virtual DbSet<Socio> Socios { get; set; } = null!;
     public virtual DbSet<Suscripcion> Suscripciones { get; set; }
-    public DbSet<SuscripcionTurno> SuscripcionTurnos { get; set; }
+    public virtual DbSet<SuscripcionTurno> SuscripcionTurnos { get; set; }
     public virtual DbSet<TurnoPlantilla> TurnosPlantilla { get; set; }
     public virtual DbSet<Usuario> Usuarios { get; set; }
     public virtual DbSet<Avatar> Avatares { get; set; } = null!;
     public virtual DbSet<EvolucionFisica> EvolucionFisica { get; set; }
+    public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
+    // === Tablas del módulo de rutinas ===
+    public virtual DbSet<Ejercicio> Ejercicios { get; set; } = null!;
+    public virtual DbSet<RutinaPlantilla> RutinasPlantilla { get; set; } = null!;
+    public virtual DbSet<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; } = null!;
+    public virtual DbSet<RutinaAsignada> RutinasAsignadas { get; set; } = null!;
+    public virtual DbSet<Evaluacion> Evaluaciones { get; set; }
+
+
+    // === Vistas ===
     public virtual DbSet<VOcupacionHoy> VOcupacionHoy { get; set; }
     public virtual DbSet<VOrdenesAr> VOrdenesAr { get; set; }
     public virtual DbSet<VSuscripcionesAr> VSuscripcionesAr { get; set; }
-    public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     public virtual DbSet<VCupoReservado> VCupoReservado { get; set; }
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Mapeo explícito de todas las tablas principales
+        // Mapeo explícito
         modelBuilder.Entity<Usuario>().ToTable("usuario");
         modelBuilder.Entity<Rol>().ToTable("rol");
         modelBuilder.Entity<Socio>().ToTable("socio");
@@ -61,28 +65,30 @@ public partial class GymDbContext : DbContext
         modelBuilder.Entity<RutinaPlantilla>().ToTable("rutina_plantilla");
         modelBuilder.Entity<RutinaPlantillaEjercicio>().ToTable("rutina_plantilla_ejercicio");
         modelBuilder.Entity<RutinaAsignada>().ToTable("rutina_asignada");
-        modelBuilder.Entity<RegistroEntrenamiento>().ToTable("registro_entrenamiento");
-        modelBuilder.Entity<RegistroItem>().ToTable("registro_item");
+        modelBuilder.Entity<Evaluacion>().ToTable("evaluacion");
         modelBuilder.Entity<DiaSemana>().ToTable("dia_semana");
         modelBuilder.Entity<PasswordResetToken>().ToTable("password_reset_tokens");
         modelBuilder.Entity<EvolucionFisica>().ToTable("evolucion_fisica");
+
+        // Relaciones
         modelBuilder.Entity<EvolucionFisica>()
             .HasOne<Socio>()
             .WithMany()
             .HasForeignKey(e => e.SocioId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("fk_evolucion_socio");
+
         modelBuilder.Entity<PasswordResetToken>()
             .HasOne(p => p.Usuario)
             .WithMany()
             .HasForeignKey(p => p.UsuarioId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Avatar
         modelBuilder.Entity<Avatar>(entity =>
         {
             entity.ToTable("avatar");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id)
-                .HasColumnName("id");
             entity.Property(e => e.Url)
                 .HasColumnName("url")
                 .HasMaxLength(255)
@@ -100,31 +106,26 @@ public partial class GymDbContext : DbContext
                 .HasConstraintName("FK_Usuario_Avatar");
         });
 
-
+        // Vistas sin clave
         modelBuilder.Entity<VOcupacionHoy>().ToTable("v_ocupacion_hoy").HasNoKey();
         modelBuilder.Entity<VOrdenesAr>().ToTable("v_ordenes_ar").HasNoKey();
         modelBuilder.Entity<VSuscripcionesAr>().ToTable("v_suscripciones_ar").HasNoKey();
         modelBuilder.Entity<VCupoReservado>().ToTable("v_cupo_reservado").HasNoKey();
 
-
+        // Conversión de nombres a snake_case
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
             var tableName = entity.GetTableName();
             if (tableName != null)
                 entity.SetTableName(ToSnakeCase(tableName));
 
-            // Evitar transformar manualmente EvolucionFisica
             if (entity.Name.EndsWith("EvolucionFisica"))
                 continue;
 
             foreach (var property in entity.GetProperties())
-            {
                 property.SetColumnName(ToSnakeCase(property.Name));
-            }
         }
-
     }
-
 
     private static string ToSnakeCase(string input)
     {

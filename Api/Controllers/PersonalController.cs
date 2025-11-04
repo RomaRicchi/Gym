@@ -26,8 +26,8 @@ namespace Api.Controllers
             // 1️⃣ Traemos los datos desde la BD
             var lista = await _db.Personales
                 .AsNoTracking()
-                .Include(p => p.Usuario)
-                .ThenInclude(u => u.Rol)
+                .Include(p => p.Usuario!)
+                .ThenInclude(u => u.Rol!)
                 .OrderBy(p => p.Nombre)
                 .ToListAsync(ct);
 
@@ -53,8 +53,8 @@ namespace Api.Controllers
         {
             var p = await _db.Personales
                 .AsNoTracking()
-                .Include(p => p.Usuario)
-                .ThenInclude(u => u.Rol)
+                .Include(p => p.Usuario!)
+                .ThenInclude(u => u.Rol!)
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
 
             if (p is null)

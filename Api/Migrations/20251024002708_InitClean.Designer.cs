@@ -991,34 +991,8 @@ namespace Api.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("Api.Data.Models.RegistroEntrenamiento", b =>
-                {
-                    b.HasOne("Api.Data.Models.RutinaAsignada", "RutinaAsignada")
-                        .WithMany("RegistrosEntrenamiento")
-                        .HasForeignKey("RutinaAsignadaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RutinaAsignada");
-                });
-
-            modelBuilder.Entity("Api.Data.Models.RegistroItem", b =>
-                {
-                    b.HasOne("Api.Data.Models.Ejercicio", "Ejercicio")
-                        .WithMany("RegistroItems")
-                        .HasForeignKey("EjercicioId");
-
-                    b.HasOne("Api.Data.Models.RegistroEntrenamiento", "Registro")
-                        .WithMany("RegistrosItem")
-                        .HasForeignKey("RegistroId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Ejercicio");
-
-                    b.Navigation("Registro");
-                });
-
+           
+           
             modelBuilder.Entity("Api.Data.Models.RutinaAsignada", b =>
                 {
                     b.HasOne("Api.Data.Models.RutinaPlantilla", "Rutina")
@@ -1188,7 +1162,6 @@ namespace Api.Migrations
 
             modelBuilder.Entity("Api.Data.Models.Ejercicio", b =>
                 {
-                    b.Navigation("RegistroItems");
 
                     b.Navigation("RutinaPlantillaEjercicios");
                 });
@@ -1224,10 +1197,6 @@ namespace Api.Migrations
                     b.Navigation("Usuarios");
                 });
 
-            modelBuilder.Entity("Api.Data.Models.RutinaAsignada", b =>
-                {
-                    b.Navigation("RegistrosEntrenamiento");
-                });
 
             modelBuilder.Entity("Api.Data.Models.RutinaPlantilla", b =>
                 {

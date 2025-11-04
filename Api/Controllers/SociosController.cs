@@ -27,7 +27,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 GET /api/socios
+    //  GET /api/socios
     // ================================
     [HttpGet]
     public async Task<IActionResult> Get(
@@ -83,7 +83,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 GET /api/socios/{id}
+    //  GET /api/socios/{id}
     // ================================
     [HttpGet("{id:int:min(1)}")]
     public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
@@ -100,7 +100,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 POST /api/socios
+    // POST /api/socios
     // ================================
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] SocioCreateDto body, CancellationToken ct)
@@ -144,7 +144,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 PUT /api/socios/{id}
+    // PUT /api/socios/{id}
     // ================================
     [HttpPut("{id:int:min(1)}")]
     public async Task<IActionResult> Put([FromRoute] int id, [FromBody] SocioUpdateDto body, CancellationToken ct)
@@ -176,7 +176,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 PATCH /api/socios/{id}/bajaLogica
+    // PATCH /api/socios/{id}/bajaLogica
     // ================================
     [HttpPatch("{id:int:min(1)}/bajaLogica")]
     public async Task<IActionResult> BajaLogica([FromRoute] int id, [FromQuery] bool value = true, CancellationToken ct = default)
@@ -186,7 +186,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 GET /api/socios/buscar
+    // GET /api/socios/buscar
     // ================================
     [HttpGet("buscar")]
     public async Task<IActionResult> BuscarPorNombreYDni(
@@ -226,7 +226,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 GET /api/socios/cumpleanios
+    // GET /api/socios/cumpleanios
     // ================================
     [HttpGet("cumpleanios")]
     public async Task<IActionResult> GetCumpleaniosMes([FromQuery] int? mes = null, CancellationToken ct = default)
@@ -238,7 +238,7 @@ public class SociosController : ControllerBase
         var socios = await _db.Socios
             .AsNoTracking()
             .Where(s => s.FechaNacimiento.HasValue && s.FechaNacimiento.Value.Month == mesActual)
-            .OrderBy(s => s.FechaNacimiento.Value.Day)
+            .OrderBy(s => s.FechaNacimiento!.Value.Day)
             .Select(s => new
             {
                 s.Id,
@@ -256,7 +256,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 GET /api/socios/por-plan/{planId}
+    // GET /api/socios/por-plan/{planId}
     // ================================
     [HttpGet("por-plan/{planId:int:min(1)}")]
     public async Task<IActionResult> GetByPlanPaginado(
@@ -303,7 +303,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 POST /api/socios/registro-publico
+    //  POST /api/socios/registro-publico
     // ================================
     [AllowAnonymous]
     [HttpPost("registro-publico")]
@@ -357,7 +357,7 @@ public class SociosController : ControllerBase
     }
 
     // ================================
-    // 🔹 GET /api/socios/perfil
+    //  GET /api/socios/perfil
     // ================================
     [HttpGet("perfil")]
     [Authorize(Roles = "Socio")]

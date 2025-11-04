@@ -172,7 +172,7 @@ namespace Api.Controllers
             {
                 var filePath = Path.Combine(
                     _env.WebRootPath ?? "wwwroot",
-                    comprobante.FileUrl.Replace('/', Path.DirectorySeparatorChar)
+                    comprobante.FileUrl!.Replace('/', Path.DirectorySeparatorChar)
                 );
                 if (System.IO.File.Exists(filePath))
                     System.IO.File.Delete(filePath);
@@ -208,12 +208,12 @@ namespace Api.Controllers
             if (comprobante == null)
                 return NotFound("Comprobante no encontrado.");
 
-            var path = Path.Combine(_env.WebRootPath ?? "wwwroot", comprobante.FileUrl.Replace('/', Path.DirectorySeparatorChar));
+            var path = Path.Combine(_env.WebRootPath ?? "wwwroot", comprobante.FileUrl!.Replace('/', Path.DirectorySeparatorChar));
             if (!System.IO.File.Exists(path))
                 return NotFound("Archivo físico no encontrado.");
 
             var bytes = await System.IO.File.ReadAllBytesAsync(path, ct);
-            return File(bytes, comprobante.MimeType, Path.GetFileName(path));
+            return File(bytes, comprobante.MimeType!, Path.GetFileName(path));
         }
     }
 }
