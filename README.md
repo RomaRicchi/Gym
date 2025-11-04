@@ -202,7 +202,6 @@ Iniciar el backend con: dotnet run
 Acceder a Swagger:
 👉 http://localhost:5144/swagger
 
-Exportar la colección desde Postman: docs/GymAPI.postman_collection.json
 
 | Rol           | Email                                 | Contraseña |
 | ------------- | ------------------------------------- | ---------- |
