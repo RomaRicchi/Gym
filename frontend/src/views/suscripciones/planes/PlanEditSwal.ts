@@ -1,6 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/main.css";
+import "@/styles/swal-planes.css";
 
 export async function PlanEditSwal(id: string, onSuccess?: () => void) {
   try {

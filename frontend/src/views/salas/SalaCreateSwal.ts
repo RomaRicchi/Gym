@@ -1,6 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/swal-ejercicio.css"; // ✅ usamos el mismo estilo naranja global
+import "@/styles/swal-ejercicio.css"; 
 
 export async function SalaCreateSwal(onSuccess?: () => void) {
   const { value: formValues } = await Swal.fire({
@@ -34,9 +34,9 @@ export async function SalaCreateSwal(onSuccess?: () => void) {
     cancelButtonText: "Cancelar",
     focusConfirm: false,
     customClass: {
-      popup: "swal2-card-ejercicio",      // 🧡 fondo naranja suave
-      confirmButton: "btn btn-orange",    // 🟠 botón principal
-      cancelButton: "btn btn-secondary",  // ⚪ botón secundario
+      popup: "swal2-card-ejercicio",      //fondo naranja suave
+      confirmButton: "btn btn-orange",    // botón principal
+      cancelButton: "btn btn-secondary",  // botón secundario
     },
     buttonsStyling: false,
 

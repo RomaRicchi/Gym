@@ -14,7 +14,6 @@ export async function RutinaPlantillaEjercicioCreateSwal(onSuccess?: () => void)
     const { value: formValues } = await Swal.fire({
       title: "➕ Agregar Ejercicio a Rutina",
       width: 650,
-      customClass: { popup: "swal2-card-style" },
       html: `
         <div class="container-fluid text-start">
           
@@ -70,6 +69,12 @@ export async function RutinaPlantillaEjercicioCreateSwal(onSuccess?: () => void)
       confirmButtonText: "Guardar",
       cancelButtonText: "Cancelar",
       focusConfirm: false,
+      customClass: {
+        popup: "swal2-card-style",
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
+      },
+      buttonsStyling: false,
       preConfirm: () => {
         const rutinaId = (document.getElementById("rutina") as HTMLSelectElement).value;
         const ejercicioId = (document.getElementById("ejercicio") as HTMLSelectElement).value;
@@ -78,8 +83,10 @@ export async function RutinaPlantillaEjercicioCreateSwal(onSuccess?: () => void)
         const repeticiones = (document.getElementById("reps") as HTMLInputElement).value;
         const descansoSeg = (document.getElementById("descanso") as HTMLInputElement).value;
 
-        if (!rutinaId || !ejercicioId)
-          return Swal.showValidationMessage("Seleccioná una rutina y un ejercicio");
+        if (!rutinaId || !ejercicioId) {
+          Swal.showValidationMessage("Seleccioná una rutina y un ejercicio");
+          return false;
+        }
 
         return { rutinaId, ejercicioId, orden, series, repeticiones, descansoSeg };
       },
@@ -97,10 +104,32 @@ export async function RutinaPlantillaEjercicioCreateSwal(onSuccess?: () => void)
       descansoSeg: Number(formValues.descansoSeg),
     });
 
-    await Swal.fire("✅ Guardado", "Ejercicio agregado correctamente", "success");
+    await Swal.fire({
+      icon: "success",
+      title: "✅ Guardado",
+      text: "Ejercicio agregado correctamente",
+      customClass: {
+        popup: "swal2-card-style",
+        confirmButton: "btn btn-orange",
+      },
+      buttonsStyling: false,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
     onSuccess?.();
   } catch (err) {
     console.error("Error al crear ejercicio de rutina:", err);
-    Swal.fire("❌ Error", "No se pudo crear el registro", "error");
+    await Swal.fire({
+      icon: "error",
+      title: "❌ Error",
+      text: "No se pudo crear el registro",
+      customClass: {
+        popup: "swal2-card-style",
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
+      },
+      buttonsStyling: false,
+    });
   }
 }
