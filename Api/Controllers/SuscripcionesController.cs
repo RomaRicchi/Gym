@@ -78,8 +78,6 @@ namespace Api.Controllers
             });
         }
 
-
-        // GET: api/suscripciones/activas
         [HttpGet("activas")]
         public async Task<IActionResult> GetActivas(CancellationToken ct = default)
         {
@@ -88,97 +86,96 @@ namespace Api.Controllers
         }
 
         [Authorize(Roles = "Socio")]
-[HttpGet("socio")]
-public async Task<IActionResult> GetSuscripcionesPorSocio(CancellationToken ct = default)
-{
-    try
-    {
-        // Extrae el email del socio logueado desde el token JWT
-        var userEmail = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
-
-        if (string.IsNullOrEmpty(userEmail))
-            return Unauthorized("No se encontró el email del socio en el token.");
-
-        Console.WriteLine($"[SuscripcionesController] Solicitando suscripciones del socio: {userEmail}");
-
-        // Busca el socio correspondiente
-        var socio = await _db.Socios.FirstOrDefaultAsync(s => s.Email == userEmail, ct);
-        if (socio == null)
-            return NotFound(new { message = "Socio no encontrado." });
-
-        // Recupera sus suscripciones con plan y socio incluidos
-        var suscripciones = await _db.Suscripciones
-            .Include(s => s.Plan)
-            .Include(s => s.Socio)
-            .AsNoTracking()
-            .Where(s => s.SocioId == socio.Id)
-            .OrderByDescending(s => s.CreadoEn)
-            .Select(s => new
-            {
-                s.Id,
-                s.Inicio,
-                s.Fin,
-                s.Estado,
-                Plan = new { s.Plan.Id, s.Plan.Nombre },
-                Socio = new { s.Socio.Id, s.Socio.Nombre },
-                TurnosAsignados = _db.SuscripcionTurnos.Count(t => t.SuscripcionId == s.Id),
-                CupoMaximo = _db.Planes
-                    .Where(p => p.Id == s.PlanId)
-                    .Select(p => p.DiasPorSemana)
-                    .FirstOrDefault()
-            })
-            .ToListAsync(ct);
-
-        return Ok(new { items = suscripciones });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[ERROR GetSuscripcionesPorSocio] {ex.Message}");
-        return StatusCode(500, new { message = "Error al obtener las suscripciones del socio." });
-    }
-}
-
-        // GET: api/suscripciones/socio/{id}
-        // GET: api/suscripciones/socio/{id}
-[HttpGet("socio/{id:int}")]
-public async Task<IActionResult> GetBySocio([FromRoute] int id, CancellationToken ct)
-{
-    var suscripciones = await _db.Suscripciones
-        .Include(s => s.Plan)
-        .Include(s => s.Socio)
-        .Where(s => s.SocioId == id)
-        .OrderByDescending(s => s.CreadoEn)
-        .Select(s => new
+        [HttpGet("socio")]
+        public async Task<IActionResult> GetSuscripcionesPorSocio(CancellationToken ct = default)
         {
-            s.Id,
-            s.Inicio,
-            s.Fin,
-            s.Estado,
-            Socio = new
+            try
             {
-                s.Socio.Id,
-                s.Socio.Nombre
-            },
-            Plan = new
+                // Extrae el email del socio logueado desde el token JWT
+                var userEmail = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+
+                if (string.IsNullOrEmpty(userEmail))
+                    return Unauthorized("No se encontró el email del socio en el token.");
+
+                Console.WriteLine($"[SuscripcionesController] Solicitando suscripciones del socio: {userEmail}");
+
+                // Busca el socio correspondiente
+                var socio = await _db.Socios.FirstOrDefaultAsync(s => s.Email == userEmail, ct);
+                if (socio == null)
+                    return NotFound(new { message = "Socio no encontrado." });
+
+                // Recupera sus suscripciones con plan y socio incluidos
+                var suscripciones = await _db.Suscripciones
+                    .Include(s => s.Plan)
+                    .Include(s => s.Socio)
+                    .AsNoTracking()
+                    .Where(s => s.SocioId == socio.Id)
+                    .OrderByDescending(s => s.CreadoEn)
+                    .Select(s => new
+                    {
+                        s.Id,
+                        s.Inicio,
+                        s.Fin,
+                        s.Estado,
+                        Plan = new { s.Plan.Id, s.Plan.Nombre },
+                        Socio = new { s.Socio.Id, s.Socio.Nombre },
+                        TurnosAsignados = _db.SuscripcionTurnos.Count(t => t.SuscripcionId == s.Id),
+                        CupoMaximo = _db.Planes
+                            .Where(p => p.Id == s.PlanId)
+                            .Select(p => p.DiasPorSemana)
+                            .FirstOrDefault()
+                    })
+                    .ToListAsync(ct);
+
+                return Ok(new { items = suscripciones });
+            }
+            catch (Exception ex)
             {
-                s.Plan.Id,
-                s.Plan.Nombre,
-                s.Plan.DiasPorSemana
-            },
-            TurnosAsignados = _db.SuscripcionTurnos.Count(t => t.SuscripcionId == s.Id),
-            CupoMaximo = s.Plan.DiasPorSemana
-        })
-        .ToListAsync(ct);
+                Console.WriteLine($"[ERROR GetSuscripcionesPorSocio] {ex.Message}");
+                return StatusCode(500, new { message = "Error al obtener las suscripciones del socio." });
+            }
+        }
 
-    if (!suscripciones.Any())
-        return NotFound(new { message = "No se encontraron suscripciones para este socio." });
+                
+        [HttpGet("socio/{id:int}")]
+        public async Task<IActionResult> GetBySocio([FromRoute] int id, CancellationToken ct)
+        {
+            var suscripciones = await _db.Suscripciones
+                .Include(s => s.Plan)
+                .Include(s => s.Socio)
+                .Where(s => s.SocioId == id)
+                .OrderByDescending(s => s.CreadoEn)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Inicio,
+                    s.Fin,
+                    s.Estado,
+                    Socio = new
+                    {
+                        s.Socio.Id,
+                        s.Socio.Nombre
+                    },
+                    Plan = new
+                    {
+                        s.Plan.Id,
+                        s.Plan.Nombre,
+                        s.Plan.DiasPorSemana
+                    },
+                    TurnosAsignados = _db.SuscripcionTurnos.Count(t => t.SuscripcionId == s.Id),
+                    CupoMaximo = s.Plan.DiasPorSemana
+                })
+                .ToListAsync(ct);
 
-    return Ok(new
-    {
-        ok = true,
-        items = suscripciones
-    });
-}
+            if (!suscripciones.Any())
+                return NotFound(new { message = "No se encontraron suscripciones para este socio." });
+
+            return Ok(new
+            {
+                ok = true,
+                items = suscripciones
+            });
+        }
 
 
 
@@ -192,15 +189,33 @@ public async Task<IActionResult> GetBySocio([FromRoute] int id, CancellationToke
             return Ok(sus);
         }
 
-        // GET: api/suscripciones/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct = default)
         {
-            var sus = await _repo.GetByIdAsync(id, ct);
+            var sus = await _db.Suscripciones
+                .Include(s => s.Socio)
+                .Include(s => s.Plan)
+                .AsNoTracking()
+                .Where(s => s.Id == id)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.SocioId,
+                    SocioNombre = s.Socio != null ? s.Socio.Nombre : "(sin socio)",
+                    s.PlanId,
+                    PlanNombre = s.Plan != null ? s.Plan.Nombre : "(sin plan)",
+                    s.Inicio,
+                    s.Fin,
+                    s.Estado
+                })
+                .FirstOrDefaultAsync(ct);
+
             if (sus is null)
                 return NotFound("Suscripción no encontrada");
+
             return Ok(sus);
         }
+
 
         // POST: api/suscripciones
         [HttpPost]

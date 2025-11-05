@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace Api.Data.Models
 {
@@ -18,7 +20,12 @@ namespace Api.Data.Models
         public int Repeticiones { get; set; }
         public int DescansoSeg { get; set; }
 
+        [ValidateNever]
+        [JsonIgnore]
         public virtual RutinaPlantilla RutinaPlantilla { get; set; } = null!;
+
+        [ValidateNever]
+        [JsonIgnore]
         public virtual Ejercicio Ejercicio { get; set; } = null!;
     }
 }

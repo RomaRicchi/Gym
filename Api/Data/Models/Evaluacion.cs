@@ -8,14 +8,15 @@ namespace Api.Data.Models
     public class Evaluacion
     {
         [Key]
-        [Column("id")]
         public int Id { get; set; }
 
         [Column("rutina_asignada_id")]
+        [ForeignKey(nameof(RutinaAsignada))]
         public int RutinaAsignadaId { get; set; }
 
         [Column("profesor_id")]
-        public int? ProfesorId { get; set; }
+        [ForeignKey(nameof(Profesor))]
+        public int ProfesorId { get; set; }
 
         [Column("fecha")]
         public DateTime Fecha { get; set; }
@@ -23,11 +24,8 @@ namespace Api.Data.Models
         [Column("observaciones")]
         public string? Observaciones { get; set; }
 
-        // Relaciones
-        [ForeignKey(nameof(RutinaAsignadaId))]
-        public virtual RutinaAsignada RutinasAsignadas { get; set; } = null!;
-
-        [ForeignKey(nameof(ProfesorId))]
-        public virtual Personal? Profesor { get; set; } = null!;
+        // Relaciones opcionales
+        public virtual RutinaAsignada? RutinaAsignada { get; set; }
+        public virtual Personal? Profesor { get; set; }
     }
 }

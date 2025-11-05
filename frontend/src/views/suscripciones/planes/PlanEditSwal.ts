@@ -1,5 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/main.css";
 
 export async function PlanEditSwal(id: string, onSuccess?: () => void) {
   try {
@@ -9,7 +10,7 @@ export async function PlanEditSwal(id: string, onSuccess?: () => void) {
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Plan",
       html: `
-        <form id="form-editar-plan" style="text-align:left;overflow-x:hidden;margin-top:0.5rem;">
+        <form class="swal-form-main" id="form-editar-plan" style="text-align:left;overflow-x:hidden;margin-top:0.5rem;">
           <div style="margin-bottom:0.8rem;">
             <label for="nombre" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Nombre</label>
             <input id="nombre" type="text" value="${data.nombre || ""}" placeholder="Ingrese nombre"
@@ -60,6 +61,12 @@ export async function PlanEditSwal(id: string, onSuccess?: () => void) {
       confirmButtonText: "💾 Guardar cambios",
       cancelButtonText: "Cancelar",
       focusConfirm: false,
+      customClass: {
+        popup: "swal2-card-main",
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
+      },
+      buttonsStyling: false,
 
       didOpen: () => {
         const popup = Swal.getPopup();

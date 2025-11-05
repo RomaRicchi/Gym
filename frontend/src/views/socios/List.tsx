@@ -47,10 +47,15 @@ export default function SociosList() {
     }
   };
 
-
   useEffect(() => {
-    fetchSocios();
+    const delay = setTimeout(() => {
+      if (search.length >= 3 || search.length === 0) {
+        fetchSocios();
+      }
+    }, 400); 
+    return () => clearTimeout(delay);
   }, [page, search]);
+
 
   const handleDelete = async (id: number, nombre: string) => {
     const result = await Swal.fire({

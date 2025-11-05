@@ -16,6 +16,12 @@ import {
   faListCheck,
   faCalendarCheck,
   faWeightScale,
+  faChevronDown,
+  faChevronUp,
+  faClipboardList,
+  faFileAlt,
+  faCheckSquare,
+  faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 import "@/styles/Sidebar.css";
 
@@ -23,278 +29,250 @@ export default function Sidebar() {
   const [usuario, setUsuario] = useState<{ rol?: string }>({});
   const rol = usuario?.rol || "Invitado";
 
+  const [open, setOpen] = useState({
+    gestion: true,
+    rutinas: false,
+    agenda: false,
+    instalaciones: false,
+    pagos: false,
+    usuarios: false,
+  });
+
   useEffect(() => {
     const stored = localStorage.getItem("usuario");
     if (stored) setUsuario(JSON.parse(stored));
   }, []);
 
+  const toggle = (section: keyof typeof open) =>
+    setOpen({ ...open, [section]: !open[section] });
+
   return (
-    <div className="sidebar">
+    <div className="sidebar" style={{ overflowY: "auto", height: "100vh" }}>
       <ul className="nav flex-column">
-        {/* === 🧡 Panel del Socio === */}
+
+        {/* === 🧡 PANEL SOCIO === */}
         {rol === "Socio" && (
           <>
             <li className="nav-item mt-3">
-              <NavLink
-                to="/dashboardSocio"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
+              <NavLink to="/dashboardSocio" className="nav-link fw-bold">
                 <FontAwesomeIcon icon={faHouse} className="me-2" />
                 Mi Panel
               </NavLink>
             </li>
 
-            <hr className="sidebar-divider" />
             <li className="nav-item">
-              <NavLink
-                to="/socio/turnos"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
+              <NavLink to="/socio/turnos" className="nav-link">
                 <FontAwesomeIcon icon={faCalendarDays} className="me-2" />
                 Calendario
               </NavLink>
             </li>
 
-            <hr className="sidebar-divider" />
             <li className="nav-item">
-              <NavLink
-                to="/evolucionfisica"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
+              <NavLink to="/evolucionfisica" className="nav-link">
                 <FontAwesomeIcon icon={faWeightScale} className="me-2" />
                 Evolución Física
               </NavLink>
             </li>
-            
+
             <hr className="sidebar-divider" />
           </>
         )}
 
-        {/* === 🧑‍💼 Panel Administrativo / Staff === */}
+        {/* === 🧑‍💼 PANEL ADMIN / STAFF === */}
         {rol !== "Socio" && (
           <>
-            {/* 🏠 Dashboard */}
             <li className="nav-item">
-              <NavLink
-                to="/dashboard"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
+              <NavLink to="/dashboard" className="nav-link fw-bold">
                 <FontAwesomeIcon icon={faHouse} className="me-2" />
                 Dashboard
               </NavLink>
             </li>
 
-            {/* Gestión */}
-            <li className="nav-section mt-3">
-              <span className="text-uppercase small text-muted">Gestión</span>
-            </li>
-
-            <li className="nav-item">
-              <NavLink
-                to="/socios"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
-                <FontAwesomeIcon icon={faUsers} className="me-2" />
-                Socios
-              </NavLink>
-            </li>
-
-            <li className="nav-item">
-              <NavLink
-                to="/suscripciones"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
-                <FontAwesomeIcon icon={faCreditCard} className="me-2" />
-                Suscripciones
-              </NavLink>
-            </li>
-
-            <li className="nav-item">
-              <NavLink
-                to="/planes"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
-                <FontAwesomeIcon icon={faMoneyBill} className="me-2" />
-                Planes
-              </NavLink>
-            </li>
-
+            {/* === Gestión === */}
             <hr className="sidebar-divider" />
-
-            {/* Agenda */}
-            <li className="nav-section">
-              <span className="text-uppercase small text-muted">Agenda</span>
+            <li className="nav-section" onClick={() => toggle("gestion")}>
+              <span className="sidebar-title">
+                GESTIÓN{" "}
+                <FontAwesomeIcon
+                  icon={open.gestion ? faChevronUp : faChevronDown}
+                  className="ms-1"
+                />
+              </span>
             </li>
-
-            <li className="nav-item">
-              <NavLink
-                to="/agenda/calendario"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
-                <FontAwesomeIcon icon={faCalendarDays} className="me-2" />
-                Calendario
-              </NavLink>
-            </li>
-
-            <li className="nav-item">
-              <NavLink
-                to="/turnos"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
-                <FontAwesomeIcon icon={faListCheck} className="me-2" />
-                Turnos Plantilla
-              </NavLink>
-            </li>
-
-            <li className="nav-item">
-              <NavLink
-                to="/suscripciones/turnos"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
-                <FontAwesomeIcon icon={faCalendarCheck} className="me-2" />
-                Turnos por Socio
-              </NavLink>
-            </li>
-
-            <hr className="sidebar-divider" />
-
-            {/* Instalaciones */}
-            {rol === "Administrador" && (
+            {open.gestion && (
               <>
-                <li className="nav-section">
-                  <span className="text-uppercase small text-muted">
-                    Instalaciones
-                  </span>
-                </li>
-
                 <li className="nav-item">
-                  <NavLink
-                    to="/salas"
-                    className={({ isActive }) =>
-                      `nav-link ${isActive ? "active-link" : ""}`
-                    }
-                  >
-                    <FontAwesomeIcon icon={faDumbbell} className="me-2" />
-                    Salas
+                  <NavLink to="/socios" className="nav-link">
+                    <FontAwesomeIcon icon={faUsers} className="me-2" /> Socios
                   </NavLink>
                 </li>
-
                 <li className="nav-item">
-                  <NavLink
-                    to="/personal"
-                    className={({ isActive }) =>
-                      `nav-link ${isActive ? "active-link" : ""}`
-                    }
-                  >
-                    <FontAwesomeIcon icon={faUserTie} className="me-2" />
-                    Personal
+                  <NavLink to="/suscripciones" className="nav-link">
+                    <FontAwesomeIcon icon={faCreditCard} className="me-2" /> Suscripciones
                   </NavLink>
                 </li>
-
-                <hr className="sidebar-divider" />
+                <li className="nav-item">
+                  <NavLink to="/planes" className="nav-link">
+                    <FontAwesomeIcon icon={faMoneyBill} className="me-2" /> Planes
+                  </NavLink>
+                </li>
               </>
             )}
 
-            {/* Pagos */}
-            <li className="nav-section">
-              <span className="text-uppercase small text-muted">Pagos</span>
-            </li>
-
-            <li className="nav-item">
-              <NavLink
-                to="/ordenes"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active-link" : ""}`
-                }
-              >
-                <FontAwesomeIcon icon={faFileInvoice} className="me-2" />
-                Órdenes
-              </NavLink>
-            </li>
-
-            {rol === "Administrador" && (
-            <>
-              <li className="nav-item">
-                <NavLink
-                  to="/estados"
-                  className={({ isActive }) =>
-                    `nav-link ${isActive ? "active-link" : ""}`
-                  }
-                >
-                  <FontAwesomeIcon icon={faGears} className="me-2" />
-                  Estados
-                </NavLink>
-              </li>
-
-              {/* Ingresos (solo para admin) */}
-              <li className="nav-item">
-                <NavLink
-                  to="/pagos/ingresos"
-                  className={({ isActive }) =>
-                    `nav-link ${isActive ? "active-link" : ""}`
-                  }
-                >
-                  <FontAwesomeIcon icon={faMoneyBill} className="me-2" />
-                  Ingresos
-                </NavLink>
-              </li>
-            </>
-          )}
-
+            {/* === Rutinas === */}
             <hr className="sidebar-divider" />
+            <li className="nav-section" onClick={() => toggle("rutinas")}>
+              <span className="sidebar-title">
+                RUTINAS{" "}
+                <FontAwesomeIcon
+                  icon={open.rutinas ? faChevronUp : faChevronDown}
+                  className="ms-1"
+                />
+              </span>
+            </li>
+            {open.rutinas && (
+              <>
+                <li className="nav-item">
+                  <NavLink to="/rutinas/ejercicios" className="nav-link">
+                    <FontAwesomeIcon icon={faDumbbell} className="me-2" /> Ejercicios
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/rutinas/plantillas" className="nav-link">
+                    <FontAwesomeIcon icon={faClipboardList} className="me-2" /> Rutinas
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/rutinas/plantilla-ejercicios" className="nav-link">
+                    <FontAwesomeIcon icon={faFileAlt} className="me-2" /> Planilla de Ejercicios
+                  </NavLink>
+                </li>
+              </>
+            )}
 
-            {/* Usuarios */}
+            {/* === Agenda === */}
+            <hr className="sidebar-divider" />
+            <li className="nav-section" onClick={() => toggle("agenda")}>
+              <span className="sidebar-title">
+                AGENDA{" "}
+                <FontAwesomeIcon
+                  icon={open.agenda ? faChevronUp : faChevronDown}
+                  className="ms-1"
+                />
+              </span>
+            </li>
+            {open.agenda && (
+              <>
+                <li className="nav-item">
+                  <NavLink to="/agenda/calendario" className="nav-link">
+                    <FontAwesomeIcon icon={faCalendarDays} className="me-2" /> Calendario
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/turnos" className="nav-link">
+                    <FontAwesomeIcon icon={faListCheck} className="me-2" /> Turnos Plantilla
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/suscripciones/turnos" className="nav-link">
+                    <FontAwesomeIcon icon={faCalendarCheck} className="me-2" /> Turnos por Socio
+                  </NavLink>
+                </li>
+              </>
+            )}
+
+            {/* === Instalaciones === */}
             {rol === "Administrador" && (
               <>
-                <li className="nav-section">
-                  <span className="text-uppercase small text-muted">
-                    Usuarios
+                <hr className="sidebar-divider" />
+                <li className="nav-section" onClick={() => toggle("instalaciones")}>
+                  <span className="sidebar-title">
+                    INSTALACIONES{" "}
+                    <FontAwesomeIcon
+                      icon={open.instalaciones ? faChevronUp : faChevronDown}
+                      className="ms-1"
+                    />
                   </span>
                 </li>
+                {open.instalaciones && (
+                  <>
+                    <li className="nav-item">
+                      <NavLink to="/salas" className="nav-link">
+                        <FontAwesomeIcon icon={faDumbbell} className="me-2" /> Salas
+                      </NavLink>
+                    </li>
+                    <li className="nav-item">
+                      <NavLink to="/personal" className="nav-link">
+                        <FontAwesomeIcon icon={faUserTie} className="me-2" /> Personal
+                      </NavLink>
+                    </li>
+                  </>
+                )}
+              </>
+            )}
 
+            {/* === Pagos === */}
+            <hr className="sidebar-divider" />
+            <li className="nav-section" onClick={() => toggle("pagos")}>
+              <span className="sidebar-title">
+                PAGOS{" "}
+                <FontAwesomeIcon
+                  icon={open.pagos ? faChevronUp : faChevronDown}
+                  className="ms-1"
+                />
+              </span>
+            </li>
+            {open.pagos && (
+              <>
                 <li className="nav-item">
-                  <NavLink
-                    to="/roles"
-                    className={({ isActive }) =>
-                      `nav-link ${isActive ? "active-link" : ""}`
-                    }
-                  >
-                    <FontAwesomeIcon icon={faPuzzlePiece} className="me-2" />
-                    Roles
+                  <NavLink to="/ordenes" className="nav-link">
+                    <FontAwesomeIcon icon={faFileInvoice} className="me-2" /> Órdenes
                   </NavLink>
                 </li>
+                {rol === "Administrador" && (
+                  <>
+                    <li className="nav-item">
+                      <NavLink to="/estados" className="nav-link">
+                        <FontAwesomeIcon icon={faGears} className="me-2" /> Estados
+                      </NavLink>
+                    </li>
+                    <li className="nav-item">
+                      <NavLink to="/pagos/ingresos" className="nav-link">
+                        <FontAwesomeIcon icon={faMoneyBill} className="me-2" /> Ingresos
+                      </NavLink>
+                    </li>
+                  </>
+                )}
+              </>
+            )}
 
-                <li className="nav-item">
-                  <NavLink
-                    to="/usuarios"
-                    className={({ isActive }) =>
-                      `nav-link ${isActive ? "active-link" : ""}`
-                    }
-                  >
-                    <FontAwesomeIcon icon={faUser} className="me-2" />
-                    Usuarios
-                  </NavLink>
+            {/* === Usuarios === */}
+            {rol === "Administrador" && (
+              <>
+                <hr className="sidebar-divider" />
+                <li className="nav-section" onClick={() => toggle("usuarios")}>
+                  <span className="sidebar-title">
+                    USUARIOS{" "}
+                    <FontAwesomeIcon
+                      icon={open.usuarios ? faChevronUp : faChevronDown}
+                      className="ms-1"
+                    />
+                  </span>
                 </li>
+                {open.usuarios && (
+                  <>
+                    <li className="nav-item">
+                      <NavLink to="/roles" className="nav-link">
+                        <FontAwesomeIcon icon={faPuzzlePiece} className="me-2" /> Roles
+                      </NavLink>
+                    </li>
+                    <li className="nav-item">
+                      <NavLink to="/usuarios" className="nav-link">
+                        <FontAwesomeIcon icon={faUser} className="me-2" /> Usuarios
+                      </NavLink>
+                    </li>
+                  </>
+                )}
               </>
             )}
           </>

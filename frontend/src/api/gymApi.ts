@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// 🌍 Configura la URL base (de .env o localhost)
+// Configura la URL base (de .env o localhost)
 const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5144";
 
 const gymApi = axios.create({
@@ -8,11 +8,11 @@ const gymApi = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  // ⚠️ IMPORTANTE: el backend no usa cookies, por eso se deja en false
+  //  IMPORTANTE: el backend no usa cookies, por eso se deja en false
   withCredentials: false,
 });
 
-// 🧠 Interceptor de request: agrega el token JWT automáticamente
+// Interceptor de request: agrega el token JWT automáticamente
 gymApi.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -37,7 +37,7 @@ gymApi.interceptors.response.use(
   (error) => {
     const url = error.config?.url || "";
 
-    // ⚡ Ignorar rutas públicas
+    // Ignorar rutas públicas
     const rutasPublicas = [
       "/usuarios/login",
       "/usuarios/register",

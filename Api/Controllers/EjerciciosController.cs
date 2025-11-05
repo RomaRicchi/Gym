@@ -1,7 +1,10 @@
+using Api.Data; 
 using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq; 
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,19 +16,49 @@ namespace Api.Controllers
     public class EjerciciosController : ControllerBase
     {
         private readonly IEjercicioRepository _repo;
+        private readonly GymDbContext _context;
 
-        public EjerciciosController(IEjercicioRepository repo)
+        public EjerciciosController(IEjercicioRepository repo, GymDbContext context)
         {
             _repo = repo;
+            _context = context;
         }
 
-        // GET: api/ejercicios
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? q = null)
         {
-            var list = await _repo.GetAllAsync(ct);
-            return Ok(list);
+            var query = _context.Ejercicios.AsQueryable();
+
+            // Filtro por nombre o grupo
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.ToLower();
+                query = query.Where(e =>
+                    e.Nombre.ToLower().Contains(term) ||
+                    e.Grupo.ToLower().Contains(term));
+            }
+
+            // Total antes del paginado
+            var totalItems = await query.CountAsync();
+
+            // Paginación
+            var ejercicios = await query
+                .OrderBy(e => e.Nombre)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Respuesta esperada por el frontend
+            return Ok(new
+            {
+                items = ejercicios,
+                totalItems
+            });
         }
+
 
         // GET: api/ejercicios/5
         [HttpGet("{id:int}")]

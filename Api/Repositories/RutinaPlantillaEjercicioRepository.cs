@@ -2,10 +2,7 @@ using Api.Data;
 using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Api.Contracts.Dtos;
 
 namespace Api.Repositories
 {
@@ -19,11 +16,23 @@ namespace Api.Repositories
         }
 
         // 🔹 Obtener todos los registros
-        public async Task<IEnumerable<RutinaPlantillaEjercicio>> GetAllAsync(CancellationToken ct = default)
+        public async Task<IEnumerable<RutinaPlantillaEjercicioDto>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _db.RutinaPlantillaEjercicios
+            return await _db.RutinasPlantillaEjercicios
+                .Include(rpe => rpe.RutinaPlantilla)
                 .Include(rpe => rpe.Ejercicio)
-                .Include(rpe => rpe.RutinaPlantilla) // ✅ propiedad correcta
+                .Select(rpe => new RutinaPlantillaEjercicioDto
+                {
+                    Id = rpe.Id,
+                    RutinaId = rpe.RutinaId,
+                    RutinaNombre = rpe.RutinaPlantilla.Nombre,
+                    EjercicioId = rpe.EjercicioId,
+                    EjercicioNombre = rpe.Ejercicio.Nombre,
+                    Orden = rpe.Orden,
+                    Series = rpe.Series,
+                    Repeticiones = rpe.Repeticiones,
+                    DescansoSeg = rpe.DescansoSeg
+                })
                 .AsNoTracking()
                 .ToListAsync(ct);
         }
@@ -31,35 +40,44 @@ namespace Api.Repositories
         // 🔹 Obtener un registro por ID
         public async Task<RutinaPlantillaEjercicio?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await _db.RutinaPlantillaEjercicios
+            return await _db.RutinasPlantillaEjercicios
                 .Include(rpe => rpe.Ejercicio)
-                .Include(rpe => rpe.RutinaPlantilla) // ✅ propiedad correcta
+                .Include(rpe => rpe.RutinaPlantilla)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(rpe => rpe.Id == id, ct);
         }
 
-        // 🔹 Obtener todos los ejercicios de una rutina
-        public async Task<IEnumerable<RutinaPlantillaEjercicio>> GetByRutinaIdAsync(int rutinaId, CancellationToken ct = default)
+        // 🔹 Obtener todos los ejercicios de una rutina específica
+        public async Task<IReadOnlyList<RutinaPlantillaEjercicio>> GetByRutinaIdAsync(int rutinaId, CancellationToken ct = default)
         {
-            return await _db.RutinaPlantillaEjercicios
+            return await _db.RutinasPlantillaEjercicios
                 .Include(rpe => rpe.Ejercicio)
+                .Include(rpe => rpe.RutinaPlantilla)
                 .Where(rpe => rpe.RutinaId == rutinaId)
+                .OrderBy(rpe => rpe.Orden)
                 .AsNoTracking()
                 .ToListAsync(ct);
         }
 
-        // 🔹 Agregar un nuevo registro
         public async Task<RutinaPlantillaEjercicio> AddAsync(RutinaPlantillaEjercicio entity, CancellationToken ct = default)
         {
-            _db.RutinaPlantillaEjercicios.Add(entity);
-            await _db.SaveChangesAsync(ct);
-            return entity;
+            try
+            {
+                _db.RutinasPlantillaEjercicios.Add(entity);
+                await _db.SaveChangesAsync(ct);
+                return entity;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al guardar RutinaPlantillaEjercicio: {ex.Message}");
+                throw;
+            }
         }
 
         // 🔹 Actualizar un registro existente
         public async Task<RutinaPlantillaEjercicio?> UpdateAsync(int id, RutinaPlantillaEjercicio entity, CancellationToken ct = default)
         {
-            var existing = await _db.RutinaPlantillaEjercicios.FindAsync(new object[] { id }, ct);
+            var existing = await _db.RutinasPlantillaEjercicios.FindAsync(new object[] { id }, ct);
             if (existing == null) return null;
 
             existing.RutinaId = entity.RutinaId;
@@ -76,10 +94,10 @@ namespace Api.Repositories
         // 🔹 Eliminar un registro
         public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         {
-            var existing = await _db.RutinaPlantillaEjercicios.FindAsync(new object[] { id }, ct);
+            var existing = await _db.RutinasPlantillaEjercicios.FindAsync(new object[] { id }, ct);
             if (existing == null) return false;
 
-            _db.RutinaPlantillaEjercicios.Remove(existing);
+            _db.RutinasPlantillaEjercicios.Remove(existing);
             await _db.SaveChangesAsync(ct);
             return true;
         }

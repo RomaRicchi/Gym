@@ -1,0 +1,98 @@
+/* === 🎨 Estilo exclusivo para el modal de Asignar Turnos === */
+
+.swal2-card-turnos {
+  background-color: #ffb347 !important;
+  border-radius: 1rem !important;
+  max-width: 720px !important;
+  padding: 1.5rem 2rem !important;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Contenedor principal */
+.swal-form-turnos {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+/* Títulos y textos */
+.swal2-card-turnos h6 {
+  color: #ff6600;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* Bloques individuales de día */
+.turno-grupo {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-left: 5px solid #ff6600;
+}
+
+/* Labels */
+.turno-grupo label {
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Selects uniformes */
+.turno-grupo select {
+  width: 100%;
+  height: 42px;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  background-color: #fff;
+  color: #222;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+/* Botón guardar */
+.turno-grupo button {
+  width: 100%;
+  background: #ff7b00;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.turno-grupo button:hover {
+  background: #e66a00;
+}
+
+/* Botones inferiores */
+.swal2-confirm {
+  background-color: #ff6600 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  padding: 0.6rem 1.5rem !important;
+  font-weight: 600 !important;
+}
+.swal2-cancel {
+  background-color: #fff !important;
+  color: #333 !important;
+  border: 1px solid #ccc !important;
+  border-radius: 0.5rem !important;
+  padding: 0.6rem 1.5rem !important;
+  font-weight: 600 !important;
+}
+
+/* Evita inputs fantasmas de SweetAlert */
+.swal2-card-turnos > .swal2-input,
+.swal2-card-turnos > .swal2-select {
+  display: none !important;
+}

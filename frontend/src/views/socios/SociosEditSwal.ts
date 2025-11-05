@@ -1,5 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/swal-socio.css"; // ✅ usa el CSS exclusivo para socios
 
 interface SocioForm {
   dni: string;
@@ -11,103 +12,49 @@ interface SocioForm {
 
 export async function mostrarFormEditarSocio(id: number): Promise<boolean> {
   try {
-    // 🔹 Cargar los datos actuales del socio
-    const res = await gymApi.get(`/socios/${id}`);
-    const socio: SocioForm = res.data;
+    const { data: socio } = await gymApi.get(`/socios/${id}`);
 
     const { value: formValues } = await Swal.fire<SocioForm>({
-      title: "✏️ Editar Socio",
+      title:
+        '<h2 class="fw-bold mb-3" style="font-size:1.6rem"><i class="fa-solid fa-pen me-2"></i>Editar Socio</h2>',
       html: `
-        <form id="form-editar-socio" style="text-align:left;overflow-x:hidden;margin-top:0.5rem;">
-          <div style="margin-bottom:0.8rem;">
-            <label for="dni" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">DNI</label>
-            <input id="dni" type="text" value="${socio.dni || ""}" placeholder="Ingrese DNI"
-              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+        <form class="swal-form-socio">
+          <div>
+            <label class="swal-label">DNI</label>
+            <input id="dni" type="text" value="${socio.dni || ""}" placeholder="Ingrese DNI">
           </div>
 
-          <div style="margin-bottom:0.8rem;">
-            <label for="nombre" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Nombre</label>
-            <input id="nombre" type="text" value="${socio.nombre || ""}" placeholder="Ingrese nombre"
-              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+          <div>
+            <label class="swal-label">Nombre</label>
+            <input id="nombre" type="text" value="${socio.nombre || ""}" placeholder="Ingrese nombre">
           </div>
 
-          <div style="margin-bottom:0.8rem;">
-            <label for="email" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Email</label>
-            <input id="email" type="email" value="${socio.email || ""}" placeholder="Ingrese email"
-              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+          <div>
+            <label class="swal-label">Email</label>
+            <input id="email" type="email" value="${socio.email || ""}" placeholder="Ingrese email">
           </div>
 
-          <div style="margin-bottom:0.8rem;">
-            <label for="telefono" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Teléfono</label>
-            <input id="telefono" type="text" value="${socio.telefono || ""}" placeholder="Ingrese teléfono"
-              style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                     padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+          <div>
+            <label class="swal-label">Teléfono</label>
+            <input id="telefono" type="text" value="${socio.telefono || ""}" placeholder="Ingrese teléfono">
           </div>
 
-          <div style=" display:flex; align-items:center; gap:0.6rem; margin-top:0.8rem; white-space:nowrap;
-              width:fit-content; ">
-            <input
-              type="checkbox"
-              id="activo"
-              ${socio.activo ? "checked" : ""}
-              style="transform: scale(1.3); accent-color:#ff6600; cursor:pointer; margin:0;"
-            >
-            <label
-              for="activo"
-              style=" font-weight:600; color:#222; margin:0; line-height:1;"
-            > Activo
-            </label>
+          <div class="checkbox-group">
+            <input type="checkbox" id="activo" class="swal-checkbox" ${socio.activo ? "checked" : ""}>
+            <label for="activo" class="swal-label">Activo</label>
           </div>
         </form>
       `,
-      focusConfirm: false,
       showCancelButton: true,
-      confirmButtonText: "💾 Guardar Cambios",
+      confirmButtonText: "Guardar Cambios",
       cancelButtonText: "Cancelar",
-
-didOpen: () => {
-  const popup = Swal.getPopup();
-  if (popup) {
-    popup.style.overflowX = "hidden";
-    popup.style.maxWidth = "520px";
-    popup.style.textAlign = "left";
-  }
-
-  // 🔧 Forzar el contenedor interno a ocupar todo el ancho
-  const htmlContainer = popup?.querySelector(".swal2-html-container") as HTMLElement;
-  if (htmlContainer) {
-    htmlContainer.style.width = "100%";
-    htmlContainer.style.maxWidth = "none";
-    htmlContainer.style.display = "block";
-    htmlContainer.style.textAlign = "left";
-  }
-
-  // 🔧 Ajustar el propio formulario
-  const form = document.getElementById("form-editar-socio") as HTMLElement;
-  if (form) {
-    form.style.width = "100%";
-    form.style.maxWidth = "480px";
-    form.style.display = "block";
-  }
-
-  // 🔧 Forzar ancho completo en inputs
-  document.querySelectorAll<HTMLInputElement>("#form-editar-socio input").forEach((input) => {
-    input.classList.remove("swal2-input");
-    input.style.width = "100%";
-    input.style.margin = "0.3rem 0";
-    input.style.display = "block";
-    input.style.boxSizing = "border-box";
-    input.style.maxWidth = "none";
-    input.style.fontSize = "1rem";
-    input.style.padding = "0.7rem 1rem";
-  });
-},
-
-
-
+      focusConfirm: false,
+      customClass: {
+        popup: "swal2-card-socio",      // 🧡 usa el estilo exclusivo
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
+      },
+      buttonsStyling: false,
       preConfirm: () => {
         const dni = (document.getElementById("dni") as HTMLInputElement)?.value.trim();
         const nombre = (document.getElementById("nombre") as HTMLInputElement)?.value.trim();
@@ -117,7 +64,7 @@ didOpen: () => {
 
         if (!dni || !nombre || !email) {
           Swal.showValidationMessage("DNI, Nombre y Email son obligatorios");
-          return;
+          return false;
         }
 
         return { dni, nombre, email, telefono, activo };
@@ -126,7 +73,6 @@ didOpen: () => {
 
     if (!formValues) return false;
 
-    // 🔸 Enviar actualización al backend
     await gymApi.put(`/socios/${id}`, formValues);
 
     await Swal.fire({
@@ -135,6 +81,7 @@ didOpen: () => {
       text: "El socio fue actualizado correctamente.",
       timer: 1600,
       showConfirmButton: false,
+      customClass: { popup: "swal2-card-socio" },
     });
 
     return true;
@@ -144,6 +91,7 @@ didOpen: () => {
       icon: "error",
       title: "Error",
       text: "No se pudo actualizar el socio.",
+      customClass: { popup: "swal2-card-socio" },
     });
     return false;
   }

@@ -1,7 +1,10 @@
+using Api.Data; 
 using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq; 
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,19 +16,42 @@ namespace Api.Controllers
     public class RutinasPlantillaController : ControllerBase
     {
         private readonly IRutinaPlantillaRepository _repo;
+        private readonly GymDbContext _context;
 
-        public RutinasPlantillaController(IRutinaPlantillaRepository repo)
+        public RutinasPlantillaController(IRutinaPlantillaRepository repo, GymDbContext context)
         {
             _repo = repo;
+            _context = context;
         }
 
         // GET: api/rutinasplantilla
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? q = null,
+            CancellationToken ct = default)
         {
-            var list = await _repo.GetAllAsync(ct);
-            return Ok(list);
+            var query = _context.RutinasPlantilla.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.ToLower();
+                query = query.Where(r => r.Nombre.ToLower().Contains(term) ||
+                                        (r.Objetivo != null && r.Objetivo.ToLower().Contains(term)));
+            }
+
+            var totalItems = await query.CountAsync(ct);
+
+            var items = await query
+                .OrderBy(r => r.Nombre)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            return Ok(new { items, totalItems });
         }
+
 
         // GET: api/rutinasplantilla/5
         [HttpGet("{id:int}")]

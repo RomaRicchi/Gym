@@ -1,5 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/swal-socio.css";
 
 interface SocioForm {
   dni: string;
@@ -11,96 +12,42 @@ interface SocioForm {
 
 export async function mostrarFormNuevoSocio(): Promise<boolean> {
   const { value: formValues } = await Swal.fire<SocioForm>({
-    title: "🧍 Nuevo Socio",
+    title:
+      '<h2 class="fw-bold mb-3" style="font-size:1.6rem"><i class="fa-solid fa-user-plus me-2"></i>Nuevo Socio</h2>',
     html: `
-      <form id="form-nuevo-socio" style="text-align:left;overflow-x:hidden;margin-top:0.5rem;">
-        <div style="margin-bottom:0.8rem;">
-          <label for="dni" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">DNI</label>
-          <input id="dni" type="text" placeholder="Ingrese DNI"
-            style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                   padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+      <form class="swal-form-socio">
+        <div>
+          <label class="swal-label">DNI</label>
+          <input id="dni" type="text" placeholder="Ingrese DNI">
         </div>
-
-        <div style="margin-bottom:0.8rem;">
-          <label for="nombre" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Nombre</label>
-          <input id="nombre" type="text" placeholder="Ingrese nombre"
-            style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                   padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+        <div>
+          <label class="swal-label">Nombre</label>
+          <input id="nombre" type="text" placeholder="Ingrese nombre">
         </div>
-
-        <div style="margin-bottom:0.8rem;">
-          <label for="email" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Email</label>
-          <input id="email" type="email" placeholder="Ingrese email"
-            style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                   padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+        <div>
+          <label class="swal-label">Email</label>
+          <input id="email" type="email" placeholder="Ingrese email">
         </div>
-
-        <div style="margin-bottom:0.8rem;">
-          <label for="telefono" style="display:block;font-weight:600;color:#222;margin-bottom:0.3rem;">Teléfono</label>
-          <input id="telefono" type="text" placeholder="Ingrese teléfono"
-            style="width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;
-                   padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
+        <div>
+          <label class="swal-label">Teléfono</label>
+          <input id="telefono" type="text" placeholder="Ingrese teléfono">
         </div>
-
-        <div
-          style="
-            display:flex;
-            align-items:center;
-            gap:0.6rem;
-            margin-top:0.8rem;
-            white-space:nowrap;
-            width:fit-content;
-          "
-        >
-          <input
-            type="checkbox"
-            id="activo"
-            checked
-            style="transform: scale(1.3); accent-color:#ff6600; cursor:pointer; margin:0;"
-          >
-          <label
-            for="activo"
-            style="font-weight:600;color:#222;margin:0;line-height:1;"
-          >
-            Activo
-          </label>
+        <div class="checkbox-group">
+          <input type="checkbox" id="activo" checked class="swal-checkbox">
+          <label for="activo" class="swal-label">Activo</label>
         </div>
       </form>
     `,
-    focusConfirm: false,
     showCancelButton: true,
-    confirmButtonText: "💾 Guardar",
+    confirmButtonText: "Guardar",
     cancelButtonText: "Cancelar",
-
-    didOpen: () => {
-      const popup = Swal.getPopup();
-      if (popup) {
-        popup.style.overflowX = "hidden";
-        popup.style.maxWidth = "520px";
-        popup.style.textAlign = "left";
-      }
-
-      // 🔧 Alinear y expandir contenedor interno
-      const htmlContainer = popup?.querySelector(".swal2-html-container") as HTMLElement;
-      if (htmlContainer) {
-        htmlContainer.style.width = "100%";
-        htmlContainer.style.maxWidth = "none";
-        htmlContainer.style.display = "block";
-        htmlContainer.style.textAlign = "left";
-      }
-
-      // 🔧 Ajustar inputs a ancho completo
-      document.querySelectorAll<HTMLInputElement>("#form-nuevo-socio input").forEach((input) => {
-        input.classList.remove("swal2-input");
-        input.style.width = "100%";
-        input.style.margin = "0.3rem 0";
-        input.style.display = "block";
-        input.style.boxSizing = "border-box";
-        input.style.maxWidth = "none";
-        input.style.fontSize = "1rem";
-        input.style.padding = "0.7rem 1rem";
-      });
+    focusConfirm: false,
+    customClass: {
+      popup: "swal2-card-socio",
+      confirmButton: "btn btn-orange",
+      cancelButton: "btn btn-secondary",
     },
+    buttonsStyling: false,
 
     preConfirm: () => {
       const dni = (document.getElementById("dni") as HTMLInputElement)?.value.trim();
@@ -111,7 +58,7 @@ export async function mostrarFormNuevoSocio(): Promise<boolean> {
 
       if (!dni || !nombre || !email) {
         Swal.showValidationMessage("DNI, Nombre y Email son obligatorios");
-        return;
+        return false;
       }
 
       return { dni, nombre, email, telefono, activo };
@@ -122,6 +69,7 @@ export async function mostrarFormNuevoSocio(): Promise<boolean> {
 
   try {
     await gymApi.post("/socios", formValues);
+
     await Swal.fire({
       icon: "success",
       title: "✅ Socio creado",
@@ -129,6 +77,7 @@ export async function mostrarFormNuevoSocio(): Promise<boolean> {
       timer: 1600,
       showConfirmButton: false,
     });
+
     return true;
   } catch (err) {
     console.error(err);

@@ -1,9 +1,12 @@
 import Swal from "sweetalert2";
-import gymApi from "@/api/gymApi";
+import gymApi from "@/api/gymApi";  // estilos de formularios (naranja)
+import "@/styles/orden.css";   // limpia inputs/selects fantasmas en alertas simples
+
+const ESTADO_VERIFICADO_ID = 3; // id del estado "Verificado"
 
 export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
   try {
-    // 1️⃣ Traer planes y estados
+    // 1) Traer planes y estados
     const [{ data: planesResponse }, { data: estados }] = await Promise.all([
       gymApi.get("/planes"),
       gymApi.get("/estadoOrdenPago"),
@@ -11,7 +14,7 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
 
     const planes = planesResponse.items || planesResponse;
 
-    // 2️⃣ Opciones para selects
+    // 2) Opciones para selects
     const opcionesPlanes = planes
       .map(
         (p: any) =>
@@ -25,63 +28,64 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
       .map(
         (e: any) =>
           `<option value="${e.id}" ${
-            e.nombre.toLowerCase() === "pendiente" ? "selected" : ""
+            String(e.nombre).toLowerCase() === "pendiente" ? "selected" : ""
           }>${e.nombre}</option>`
       )
       .join("");
 
-    // 3️⃣ Formulario visual con SweetAlert2
-    const { value: formValues } = await Swal.fire({
-      title: "🧾 Nueva orden de pago",
+    // 3) Formulario (usamos clases propias .swal-field / .swal-select / .swal-textarea)
+    const { value: formValues } = await Swal.fire<{
+      planId: number;
+      inicio: string;
+      estadoId: number;
+      notas: string;
+      file?: File;
+    }>({
+      title:
+        '<h2 class="fw-bold mb-3" style="font-size:1.6rem"><i class="fa-solid fa-file-invoice me-2"></i>Nueva orden de pago</h2>',
       html: `
-        <div style="text-align:left;display:flex;flex-direction:column;gap:10px;max-width:100%;">
-          <p style="margin:0;"><strong>Socio:</strong> ${socio.nombre}</p>
+        <div class="swal-form">
+          <p><strong>Socio:</strong> ${socio.nombre}</p>
           <hr style="margin:4px 0 8px 0;">
 
-          <label>Seleccionar plan</label>
-          <select id="plan"
-            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;">
-            ${opcionesPlanes}
-          </select>
+          <label class="swal-label">Seleccionar plan</label>
+          <select id="plan" class="swal-select">${opcionesPlanes}</select>
 
-          <label>Fecha de inicio</label>
-          <input type="date" id="inicio"
-            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;" />
+          <label class="swal-label">Fecha de inicio</label>
+          <input id="inicio" type="date" class="swal-field"/>
 
-          <label>Estado</label>
-          <select id="estado"
-            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;">
-            ${opcionesEstados}
-          </select>
+          <label class="swal-label">Estado</label>
+          <select id="estado" class="swal-select">${opcionesEstados}</select>
 
-          <label>Comprobante (PDF o imagen)</label>
-          <input type="file" id="comprobante" accept=".pdf,image/*"
-            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;" />
+          <label class="swal-label">Comprobante (PDF o imagen)</label>
+          <input id="comprobante" type="file" accept=".pdf,image/*" class="swal-field"/>
 
-          <label>Notas</label>
-          <textarea id="notas" placeholder="Observaciones opcionales..."
-            style="background:#fff;color:#000;border:1px solid #ccc;border-radius:6px;padding:6px;width:100%;height:80px;resize:none;"></textarea>
+          <label class="swal-label">Notas</label>
+          <textarea id="notas" class="swal-textarea" placeholder="Observaciones opcionales..."></textarea>
         </div>
       `,
       focusConfirm: false,
-      confirmButtonText: "Crear orden",
-      confirmButtonColor: "#ff6600",
       showCancelButton: true,
+      confirmButtonText: "Crear orden",
       cancelButtonText: "Cancelar",
-      width: 480,
+      customClass: {
+        popup: "swal2-card-style has-custom-form",
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
+      },
+      buttonsStyling: false,
       preConfirm: () => {
-        const planId = (document.getElementById("plan") as HTMLSelectElement)?.value;
+        const planId = Number((document.getElementById("plan") as HTMLSelectElement)?.value);
         const inicio = (document.getElementById("inicio") as HTMLInputElement)?.value;
-        const estadoId = (document.getElementById("estado") as HTMLSelectElement)?.value;
-        const notas = (document.getElementById("notas") as HTMLTextAreaElement)?.value;
+        const estadoId = Number((document.getElementById("estado") as HTMLSelectElement)?.value);
+        const notas = (document.getElementById("notas") as HTMLTextAreaElement)?.value || "";
         const file = (document.getElementById("comprobante") as HTMLInputElement)?.files?.[0];
 
         if (!planId || !inicio || !estadoId) {
-          Swal.showValidationMessage("⚠️ Debe completar los campos obligatorios.");
+          Swal.showValidationMessage("⚠️ Debe completar Plan, Fecha de inicio y Estado.");
           return false;
         }
-
-        return { planId: Number(planId), inicio, estadoId: Number(estadoId), notas, file };
+        return { planId, inicio, estadoId, notas, file };
       },
     });
 
@@ -89,39 +93,32 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
 
     const { planId, inicio, estadoId, notas, file } = formValues;
 
-    // 4️⃣ Construir FormData para enviar al backend
+    // 4) FormData (fecha ISO para .NET)
     const formData = new FormData();
-    formData.append("SocioId", socio.id.toString());
-    formData.append("PlanId", planId.toString());
-    formData.append("EstadoId", estadoId.toString());
-    formData.append("Notas", notas || "");
+    formData.append("SocioId", String(socio.id));
+    formData.append("PlanId", String(planId));
+    formData.append("EstadoId", String(estadoId));
+    formData.append("Notas", notas);
+    formData.append("FechaInicio", new Date(inicio).toISOString());
+    if (file) formData.append("file", file);
 
-    // ✅ Fecha en formato ISO para ASP.NET (importante)
-    const fechaInicioISO = new Date(inicio).toISOString();
-    formData.append("FechaInicio", fechaInicioISO);
-
-    if (file) {
-      formData.append("file", file);
-    }
-
-    // 5️⃣ Enviar al endpoint correcto
+    // 5) Crear orden
     const { data: orden } = await gymApi.post("/ordenes", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    // 6️⃣ Mostrar confirmación
-    const plan = planes.find((p: any) => p.id === planId);
-    const estado = estados.find((e: any) => e.id === estadoId);
+    // 6) Confirmación con preview
+    const planSel = planes.find((p: any) => p.id === planId);
+    const estadoSel = estados.find((e: any) => e.id === estadoId);
     const comprobanteUrl = orden?.comprobante?.fileUrl || null;
-    const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5144";
+    const baseUrl = (import.meta.env.VITE_API_URL || "").replace("/api", "") || "http://localhost:5144";
     const fullUrl = comprobanteUrl ? `${baseUrl}/${comprobanteUrl}` : null;
 
-    // 🔹 Generar HTML dinámico
     let contenidoHtml = `
       <p><strong>Socio:</strong> ${socio.nombre}</p>
-      <p><strong>Plan:</strong> ${plan?.nombre}</p>
-      <p><strong>Monto:</strong> 💰 $${plan?.precio}</p>
-      <p><strong>Estado:</strong> ${estado?.nombre}</p>
+      <p><strong>Plan:</strong> ${planSel?.nombre}</p>
+      <p><strong>Monto:</strong> 💰 $${planSel?.precio?.toLocaleString?.() ?? planSel?.precio}</p>
+      <p><strong>Estado:</strong> ${estadoSel?.nombre}</p>
     `;
 
     if (fullUrl) {
@@ -129,7 +126,7 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
         contenidoHtml += `
           <hr>
           <p><strong>Comprobante (PDF):</strong></p>
-          <iframe src="${fullUrl}" width="100%" height="400px"></iframe>
+          <iframe src="${fullUrl}" width="100%" height="400" style="border-radius:8px;"></iframe>
         `;
       } else {
         contenidoHtml += `
@@ -142,54 +139,44 @@ export async function crearOrdenDePago(socio: { id: number; nombre: string }) {
       contenidoHtml += `<p><em>Pago sin comprobante (efectivo)</em></p>`;
     }
 
-    // 🔹 Mostrar Swal final
     await Swal.fire({
       icon: "success",
       title: "Orden creada correctamente",
       html: contenidoHtml,
       width: fullUrl ? "80%" : "40%",
-      confirmButtonColor: "#ff6600",
       confirmButtonText: "Cerrar",
+      customClass: { popup: "swal2-card-style swal-alert-simple" },
     });
 
-    // ✅ Actualizar plan del socio y mostrar notificación
-    try {
-      const { data: subs } = await gymApi.get(`/suscripciones?socioId=${socio.id}`);
-      const ultima = subs?.length ? subs[0] : null;
-
-      if (ultima?.plan?.nombre) {
-        const fila = document.querySelector(`tr td:nth-child(2):contains("${socio.nombre}")`)?.parentElement;
-        const celdaPlan = fila?.querySelector("td:nth-child(5)");
-        if (celdaPlan) celdaPlan.textContent = ultima.plan.nombre;
+    // 7) Crear suscripción automática si el estado es VERIFICADO (id=3)
+    if (estadoId === ESTADO_VERIFICADO_ID) {
+      try {
+        const { data: resultado } = await gymApi.post(`/suscripciones/crear-por-orden/${orden.id}`);
+        if (resultado?.exito) {
+          await Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            title: "Suscripción activa creada",
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true,
+            background: "#198754",
+            color: "#fff",
+            customClass: { popup: "swal-alert-simple" },
+          });
+        }
+      } catch (e) {
+        console.warn("⚠️ No se pudo crear la suscripción automáticamente:", e);
       }
-
-      // 🔔 Mini toast de confirmación
-      Swal.fire({
-        toast: true,
-        position: "top-end",
-        icon: "success",
-        title: "Suscripción activa creada",
-        showConfirmButton: false,
-        timer: 2500,
-        timerProgressBar: true,
-        background: "#198754",
-        color: "#fff",
-        didOpen: (toast) => {
-          toast.style.opacity = "0";
-          setTimeout(() => (toast.style.opacity = "1"), 100);
-          setTimeout(() => (toast.style.opacity = "0"), 2300);
-        },
-      });
-    } catch (e) {
-      console.warn("⚠️ No se pudo actualizar la vista del plan del socio:", e);
     }
   } catch (err) {
     console.error("Error al crear orden:", err);
-    Swal.fire({
+    await Swal.fire({
       icon: "error",
       title: "Error",
       text: "No se pudo crear la orden de pago.",
-      confirmButtonColor: "#d33",
+      customClass: { popup: "swal2-card-style swal-alert-simple" },
     });
   }
 }

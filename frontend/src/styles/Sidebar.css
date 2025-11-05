@@ -25,3 +25,55 @@
 .sidebar .text-muted {
   color: #888 !important;
 }
+.sidebar {
+  background-color: #111;
+  color: #fff;
+  padding: 1rem;
+  height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ff6600 #111;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: #ff6600;
+  border-radius: 3px;
+}
+
+.sidebar-divider {
+  border-color: #333;
+  margin: 0.6rem 0;
+}
+
+.sidebar-title {
+  color: #ff6600;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.nav-link {
+  color: #ddd;
+  font-size: 0.93rem;
+  display: flex;
+  align-items: center;
+  padding-left: 0.5rem;
+  transition: 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #ff6600;
+}
+
+.active-link {
+  color: #ff6600;
+  font-weight: 600;
+}

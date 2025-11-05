@@ -32,7 +32,7 @@ public partial class GymDbContext : DbContext
     // === Tablas del módulo de rutinas ===
     public virtual DbSet<Ejercicio> Ejercicios { get; set; } = null!;
     public virtual DbSet<RutinaPlantilla> RutinasPlantilla { get; set; } = null!;
-    public virtual DbSet<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; } = null!;
+    public virtual DbSet<RutinaPlantillaEjercicio> RutinasPlantillaEjercicios { get; set; } = null!;
     public virtual DbSet<RutinaAsignada> RutinasAsignadas { get; set; } = null!;
     public virtual DbSet<Evaluacion> Evaluaciones { get; set; }
 

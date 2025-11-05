@@ -1,16 +1,16 @@
-
-.swal2-container .swal2-popup.swal2-card-main {
-  background-color: #ffb347 !important; /* mismo tono que el resto */
+/* === 🧡 Fondo naranja suave solo para modales de Suscripción === */
+.swal2-container .swal2-popup.swal2-card-suscripcion {
+  background-color: #ffb347 !important;
   color: #222 !important;
   border-radius: 1rem !important;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
   padding: 2rem 2.5rem !important;
-  max-width: 480px !important;
+  max-width: 520px !important;
   overflow: visible !important;
 }
 
 /* === Formulario === */
-.swal-form-main {
+.swal-form-suscripcion {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -18,8 +18,9 @@
   text-align: left;
 }
 
-/* === Inputs uniformes === */
-.swal-form-main input {
+/* === Inputs y selects === */
+.swal-form-suscripcion input,
+.swal-form-suscripcion select {
   width: 100% !important;
   border: 1.5px solid #ccc !important;
   border-radius: 8px !important;
@@ -28,32 +29,19 @@
   color: #222 !important;
   font-size: 1rem !important;
   box-sizing: border-box !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.swal-form-main input:focus {
-  outline: none !important;
-  border-color: #ff6600 !important;
-  box-shadow: 0 0 6px rgba(255, 102, 0, 0.4) !important;
 }
 
 /* === Checkbox === */
-.swal-form-main .checkbox-group {
+.swal-form-suscripcion .checkbox-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.6rem;
 }
 
-.swal-form-main .swal-checkbox {
+.swal-form-suscripcion .swal-checkbox {
   transform: scale(1.3);
   accent-color: #ff6600;
   cursor: pointer;
-}
-
-.swal-form-main .swal-label {
-  font-weight: 600;
-  color: #222;
 }
 
 /* === Botones === */
@@ -65,7 +53,6 @@
   padding: 0.6rem 1.4rem !important;
   font-weight: 600 !important;
   min-width: 140px !important;
-  transition: background 0.2s ease;
 }
 .btn-orange:hover {
   background-color: #e65700 !important;
@@ -81,20 +68,20 @@
   min-width: 140px !important;
 }
 
-/* === Centrado perfecto de los botones === */
-.swal2-card-main .swal2-actions {
+/* === Centrado PERFECTO de los botones === */
+.swal2-card-suscripcion .swal2-actions {
   display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
+  justify-content: center !important;   /* centra horizontalmente */
+  align-items: center !important;        /* centra verticalmente */
   gap: 12px !important;
   margin: 16px auto 0 !important;
   width: 100% !important;
   text-align: center !important;
 }
 
-/* === Botones uniformes === */
-.swal2-card-main .swal2-actions .swal2-styled,
-.swal2-card-main .swal2-actions .btn {
+/* Botones uniformes y parejos */
+.swal2-card-suscripcion .swal2-actions .swal2-styled,
+.swal2-card-suscripcion .swal2-actions .btn {
   min-width: 160px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -105,24 +92,27 @@
   font-weight: 600 !important;
 }
 
-/* 🔧 Evita scroll o overflow */
-.swal2-card-main {
+/* 🔧 Evita el desplazamiento (scroll) dentro del modal */
+.swal2-card-suscripcion {
   overflow-y: visible !important;
   overflow-x: hidden !important;
   max-height: none !important;
 }
-.swal2-card-main .swal2-html-container {
+
+.swal2-card-suscripcion .swal2-html-container {
   overflow: visible !important;
   max-height: none !important;
   padding-right: 0 !important;
   margin-right: 0 !important;
 }
-.swal2-card-main form {
+
+/* Evita que el formulario genere scroll */
+.swal2-card-suscripcion form {
   overflow: visible !important;
 }
 
-/* 🧹 Elimina el botón "No" (deny) si aparece */
-.swal2-card-main .swal2-deny,
+/* === 🧹 Elimina completamente el botón "No" (deny) === */
+.swal2-card-suscripcion .swal2-deny,
 .swal2-deny,
 .swal2-actions button.swal2-deny {
   display: none !important;
@@ -135,13 +125,13 @@
 
 /* === Responsive (pantallas pequeñas) === */
 @media (max-width: 600px) {
-  .swal2-card-main {
+  .swal2-card-suscripcion {
     padding: 1.5rem 1.2rem !important;
     max-width: 90vw !important;
   }
 
-  .swal2-card-main .swal2-actions .swal2-styled,
-  .swal2-card-main .swal2-actions .btn {
+  .swal2-card-suscripcion .swal2-actions .swal2-styled,
+  .swal2-card-suscripcion .swal2-actions .btn {
     min-width: 120px !important;
     height: 38px !important;
     font-size: 0.9rem !important;

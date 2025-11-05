@@ -1,0 +1,87 @@
+/* === 🎨 Estilo exclusivo para los modales de SOCIOS === */
+
+.swal2-card-socio {
+  background-color: #ffb347 !important;
+  border-radius: 1rem !important;
+  padding: 2rem 2.5rem !important;
+  max-width: 520px !important;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Formulario y etiquetas */
+.swal-form-socio {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+}
+
+.swal-form-socio .swal-label {
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+}
+
+/* Inputs y selects */
+.swal-form-socio input[type="text"],
+.swal-form-socio input[type="email"],
+.swal-form-socio input[type="tel"],
+.swal-form-socio input[type="number"] {
+  width: 100% !important;
+  height: 42px !important;
+  border: 1.5px solid #ccc !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 0.95rem !important;
+  background-color: #fff !important;
+  color: #222 !important;
+  box-sizing: border-box !important;
+}
+
+/* Checkbox */
+.swal-form-socio .checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 4px;
+}
+
+.swal-form-socio .swal-checkbox {
+  transform: scale(1.3);
+  accent-color: #ff6600;
+  cursor: pointer;
+}
+
+.swal-form-socio .checkbox-group .swal-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Botones */
+.btn-orange {
+  background-color: #ff6600 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  padding: 0.6rem 1.4rem !important;
+  font-weight: 600 !important;
+}
+.btn-orange:hover {
+  background-color: #e65700 !important;
+}
+
+.btn-secondary {
+  background-color: #fff !important;
+  color: #333 !important;
+  border: 1px solid #ccc !important;
+  border-radius: 0.5rem !important;
+  padding: 0.6rem 1.4rem !important;
+  font-weight: 600 !important;
+}
+
+/* Evita inputs extra del core de SweetAlert2 */
+.swal2-card-socio > .swal2-input,
+.swal2-card-socio > .swal2-select {
+  display: none !important;
+}

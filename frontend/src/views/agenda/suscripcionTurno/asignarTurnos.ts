@@ -1,5 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/swal-turnos.css"; 
 
 /**
  * Muestra un modal para asignar turnos a una suscripción.
@@ -79,13 +80,13 @@ export async function asignarTurnos(suscripcion: any, onClose?: () => void) {
       </div>
     `).join("");
 
-    // 🪄 6️⃣ Mostrar el modal
+    //  Mostrar el modal
     await Swal.fire({
       title: "➕ Asignar Turnos",
       width: 650,
       showCancelButton: true,
       cancelButtonText: "Cerrar",
-      customClass: { popup: "swal2-card-style" },
+      customClass: { popup: "swal2-card-turnos" },
       html: `
         <div style="text-align:left; font-size:15px;">
           <p><strong>Socio:</strong> ${socioNombre}</p>
@@ -134,7 +135,7 @@ export async function asignarTurnos(suscripcion: any, onClose?: () => void) {
             }
           });
 
-          // 💾 Guardar turno individual
+          // Guardar turno individual
           btnSave.addEventListener("click", async () => {
             const diaId = diaSelect.value;
             const turnoId = turnoSelect.value;

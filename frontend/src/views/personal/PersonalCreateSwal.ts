@@ -1,5 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/swal-ejercicio.css"; // 🧡 mismo estilo global
 
 export async function PersonalCreateSwal(onSuccess?: () => void) {
   // 🔹 Cargar roles disponibles
@@ -14,65 +15,71 @@ export async function PersonalCreateSwal(onSuccess?: () => void) {
   const { value: formValues } = await Swal.fire({
     title: "➕ Nuevo Personal",
     html: `
-      <div class="swal2-card-style">
-        <h6 class="text-start mb-2 fw-bold text-primary">Datos personales</h6>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Nombre</label>
-            <input id="nombre" type="text" class="form-control" placeholder="Nombre completo" required />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Teléfono</label>
-            <input id="telefono" type="text" class="form-control" placeholder="Ej: 2664123456" />
-          </div>
+      <form class="swal-form-ejercicio">
+        <h6 class="fw-bold" style="color:#000;">Datos personales</h6>
+
+        <input 
+          id="nombre" 
+          type="text" 
+          placeholder="Nombre completo" 
+          required
+        >
+        <input 
+          id="telefono" 
+          type="text" 
+          placeholder="Ej: 2664123456"
+        >
+        <input 
+          id="especialidad" 
+          type="text" 
+          placeholder="Especialidad (Yoga, Spinning...)"
+        >
+        <input 
+          id="direccion" 
+          type="text" 
+          placeholder="Dirección (Ej: Av. Mitre 1234)"
+        >
+
+        <div class="checkbox-group">
+          <input 
+            id="activo" 
+            type="checkbox" 
+            class="swal-checkbox" 
+            checked
+          >
+          <label for="activo" class="swal-label">Activo</label>
         </div>
 
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Especialidad</label>
-            <input id="especialidad" type="text" class="form-control" placeholder="Ej: Yoga, Spinning..." />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Dirección</label>
-            <input id="direccion" type="text" class="form-control" placeholder="Ej: Av. Mitre 1234" />
-          </div>
-        </div>
+        <hr style="margin: 1rem 0; border-color:#fff3;">
 
-        <div class="form-check text-start mb-3">
-          <input id="activo" type="checkbox" class="form-check-input" checked />
-          <label class="form-check-label" for="activo">Activo</label>
-        </div>
+        <h6 class="fw-bold" style="color:#000;">Datos de usuario (opcional)</h6>
 
-        <hr class="my-3" />
-        <h6 class="text-start mb-2 fw-bold text-success">Datos de usuario (opcional)</h6>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Alias</label>
-            <input id="alias" type="text" class="form-control" placeholder="Nombre de usuario" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Email</label>
-            <input id="email" type="email" class="form-control" placeholder="correo@ejemplo.com" />
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Rol</label>
-            <select id="rol_id" class="form-select">
-              <option value="">Seleccionar rol...</option>
-              ${roles
-                .map((r) => `<option value="${r.id}">${r.nombre}</option>`)
-                .join("")}
-            </select>
-          </div>
-        </div>
-      </div>
+        <input 
+          id="alias" 
+          type="text" 
+          placeholder="Nombre de usuario"
+        >
+        <input 
+          id="email" 
+          type="email" 
+          placeholder="correo@ejemplo.com"
+        >
+        <select id="rol_id">
+          <option value="">Seleccionar rol...</option>
+          ${roles.map((r) => `<option value="${r.id}">${r.nombre}</option>`).join("")}
+        </select>
+      </form>
     `,
     showCancelButton: true,
-    confirmButtonText: "Guardar",
+    confirmButtonText: "💾 Guardar",
     cancelButtonText: "Cancelar",
     focusConfirm: false,
+    customClass: {
+      popup: "swal2-card-ejercicio",      // 🧡 fondo naranja suave
+      confirmButton: "btn btn-orange",    // 🟠 botón principal
+      cancelButton: "btn btn-secondary",  // ⚪ botón secundario
+    },
+    buttonsStyling: false,
 
     preConfirm: () => {
       const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
@@ -96,10 +103,10 @@ export async function PersonalCreateSwal(onSuccess?: () => void) {
   if (!formValues) return;
 
   try {
-    // 1️⃣ Crear el registro de personal (el backend crea usuario si hay email y rol)
+    // 🧩 Crear registro en backend (el backend crea usuario si hay email y rol)
     const { nombre, telefono, especialidad, direccion, activo, email, rol_id } = formValues;
 
-    const res = await gymApi.post("/personal", {
+    await gymApi.post("/personal", {
       nombre,
       telefono,
       especialidad,
@@ -109,20 +116,18 @@ export async function PersonalCreateSwal(onSuccess?: () => void) {
       rolId: rol_id ? parseInt(rol_id) : null,
     });
 
-    console.log("✅ Personal creado:", res.data);
-
     await Swal.fire({
       icon: "success",
-      title: "Registro creado",
+      title: "✅ Registro creado",
       text: "El personal fue registrado correctamente.",
-      timer: 1600,
+      timer: 1500,
       showConfirmButton: false,
     });
 
     onSuccess?.();
   } catch (err) {
     console.error(err);
-    Swal.fire({
+    await Swal.fire({
       icon: "error",
       title: "Error",
       text: "No se pudo guardar el registro. Verifique los datos.",
