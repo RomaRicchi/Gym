@@ -83,7 +83,7 @@ Que tenga turno reservado.
 Se actualiza el registro de asistencia.
 
 ## 🧱 Arquitectura del Proyecto
-
+```bash
 Gym/
 ├── Api/ → Backend (ASP.NET Core 9.0, Web API, EF Core, MariaDB)
 │ ├── Context/ → Script de base de datos (MySQL/MariaDB)
@@ -101,7 +101,7 @@ Gym/
 │ └── vite.config.ts
 │
 └── start-gym.bat
-
+```
 ---
 ## ⚙️ Tecnologías utilizadas
 
@@ -202,7 +202,6 @@ Iniciar el backend con: dotnet run
 Acceder a Swagger:
 👉 http://localhost:5144/swagger
 
-Exportar la colección desde Postman: docs/GymAPI.postman_collection.json
 
 | Rol           | Email                                 | Contraseña |
 | ------------- | ------------------------------------- | ---------- |
