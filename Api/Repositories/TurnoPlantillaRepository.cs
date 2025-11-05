@@ -57,14 +57,12 @@ namespace Api.Repositories
                     t.DuracionMin,
                     Sala = new
                     {
-                        t.Sala!.Id,
                         t.Sala.Nombre,
                         CupoTotal = t.Sala.Cupo,
                         CupoDisponible = t.Sala.Cupo -
                             _db.SuscripcionTurnos.Count(st => st.TurnoPlantillaId == t.Id)
                     },
                     Profesor = t.Personal != null ? t.Personal.Nombre : "(sin profesor)",
-                    Dia = t.DiaSemana!.Nombre
                 })
                 .ToListAsync(ct);
 
