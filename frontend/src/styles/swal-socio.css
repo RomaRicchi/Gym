@@ -80,8 +80,4 @@
   font-weight: 600 !important;
 }
 
-/* Evita inputs extra del core de SweetAlert2 */
-.swal2-card-socio > .swal2-input,
-.swal2-card-socio  {
-  display: none !important;
-}
+

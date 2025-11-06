@@ -103,25 +103,4 @@
 }
 
 
-/* === Mensaje de validación naranja (para showValidationMessage) === */
-.swal-validation-orange {
-  display: inline-block;
-  background: #ff6600;
-  color: #fff;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-weight: 600;
-}
-/* === Oculta inputs o selects fantasma === */
-.swal-alert-simple > .swal2-input,
-.swal-alert-simple >,
-.swal2-popup.swal2-card-style > .swal2-input,
-.swal2-popup.swal2-card-style  {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
 
-}

@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/orden.css"; 
 
 interface Estado {
   id: number;

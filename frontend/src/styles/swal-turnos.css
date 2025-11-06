@@ -91,8 +91,3 @@
   font-weight: 600 !important;
 }
 
-/* Evita inputs fantasmas de SweetAlert */
-.swal2-card-turnos > .swal2-input,
-.swal2-card-turnos {
-  display: none !important;
-}

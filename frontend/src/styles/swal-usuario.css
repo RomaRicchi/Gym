@@ -91,11 +91,6 @@
   text-align: center !important;
 }
 
-/* === Evita inputs extra del core de SweetAlert2 === */
-.swal2-card-usuario > .swal2-input,
-.swal2-card-usuario > {
-  display: none !important;
-}
 
 /* === Checkbox alineado correctamente === */
 .swal-form-usuario .checkbox-group {
