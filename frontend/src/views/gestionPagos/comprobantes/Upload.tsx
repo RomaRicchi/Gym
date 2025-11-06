@@ -23,7 +23,7 @@ export default function ComprobanteUpload() {
     }
 
     const formData = new FormData();
-    formData.append("file", file); // ✅ mismo nombre que el backend
+    formData.append("file", file); 
     formData.append("ordenPagoId", id || "");
 
     try {

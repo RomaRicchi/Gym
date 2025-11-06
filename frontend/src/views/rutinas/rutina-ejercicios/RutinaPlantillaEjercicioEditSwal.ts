@@ -21,7 +21,6 @@ export async function RutinaPlantillaEjercicioEditSwal(id: string, onSuccess?: (
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Ejercicio de Rutina",
       width: 650,
-      customClass: { popup: "swal2-card-style" },
       html: `
         <div class="container-fluid text-start">
           
@@ -84,6 +83,13 @@ export async function RutinaPlantillaEjercicioEditSwal(id: string, onSuccess?: (
       showCancelButton: true,
       confirmButtonText: "💾 Guardar cambios",
       cancelButtonText: "Cancelar",
+      customClass: {
+        popup: "swal2-card-style",
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
+      },
+      buttonsStyling: false,
+      focusConfirm: false,
       preConfirm: () => {
         const rutinaId = (document.getElementById("rutina") as HTMLSelectElement).value;
         const ejercicioId = (document.getElementById("ejercicio") as HTMLSelectElement).value;
@@ -111,10 +117,32 @@ export async function RutinaPlantillaEjercicioEditSwal(id: string, onSuccess?: (
       descansoSeg: Number(formValues.descansoSeg),
     });
 
-    await Swal.fire("✅ Guardado", "Ejercicio actualizado correctamente", "success");
+    await Swal.fire({
+      icon: "success",
+      title: "✅ Guardado",
+      text: "Ejercicio actualizado correctamente",
+      customClass: {
+        popup: "swal2-card-style",
+        confirmButton: "btn btn-orange",
+      },
+      buttonsStyling: false,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
     onSuccess?.();
   } catch (err) {
     console.error("Error al editar ejercicio de rutina:", err);
-    Swal.fire("❌ Error", "No se pudo actualizar el registro", "error");
+    await Swal.fire({
+      icon: "error",
+      title: "❌ Error",
+      text: "No se pudo actualizar el registro",
+      customClass: {
+        popup: "swal2-card-style",
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
+      },
+      buttonsStyling: false,
+    });
   }
 }

@@ -1,48 +1,64 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/swal-usuario.css"; 
 
 export async function RolEditSwal(id: string, onSuccess?: () => void) {
   try {
-    const res = await gymApi.get(`/roles/${id}`);
-    const data = res.data;
+    const { data } = await gymApi.get(`/roles/${id}`);
 
-    const { value: nuevoNombre } = await Swal.fire({
+    const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Rol",
+      width: 500,
+      customClass: {
+        popup: "swal2-card-usuario",       // fondo naranja
+        confirmButton: "btn btn-orange",   // botón guardar
+        cancelButton: "btn btn-secondary", // botón cancelar
+      },
+      buttonsStyling: false,
       html: `
-        <div class="swal2-card-style text-start">
-          <label class="form-label fw-bold">Nombre del rol</label>
-          <input id="nombre" type="text" class="form-control" value="${data.nombre}" />
-        </div>
+        <form class="swal-form-usuario">
+          <div>
+            <label class="swal-label">Nombre del rol</label>
+            <input id="nombre" type="text" value="${data.nombre || ""}" placeholder="Ej: Profesor, Socio..." />
+          </div>
+        </form>
       `,
-      focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: "Guardar cambios",
       cancelButtonText: "Cancelar",
+      focusConfirm: false,
 
       preConfirm: () => {
-        const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
+        const nombre = (document.getElementById("nombre") as HTMLInputElement)?.value.trim();
         if (!nombre) {
-          Swal.showValidationMessage("Debe ingresar un nombre");
-          return false;
+          Swal.showValidationMessage("Debe ingresar un nombre para el rol");
+          return;
         }
-        return nombre;
+        return { nombre };
       },
     });
 
-    if (!nuevoNombre) return;
+    if (!formValues) return;
 
-    await gymApi.put(`/roles/${id}`, { nombre: nuevoNombre });
+    await gymApi.put(`/roles/${id}`, { nombre: formValues.nombre });
+
     await Swal.fire({
       icon: "success",
-      title: "Actualizado",
+      title: "✅ Actualizado",
       text: "Rol modificado correctamente",
       timer: 1500,
       showConfirmButton: false,
+      customClass: { popup: "swal2-card-usuario" },
     });
 
     onSuccess?.();
   } catch (err) {
-    console.error(err);
-    Swal.fire("Error", "No se pudo cargar o actualizar el rol", "error");
+    console.error("Error al editar rol:", err);
+    Swal.fire({
+      icon: "error",
+      title: "❌ Error",
+      text: "No se pudo cargar o actualizar el rol",
+      customClass: { popup: "swal2-card-usuario" },
+    });
   }
 }

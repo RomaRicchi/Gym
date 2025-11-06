@@ -1,141 +1,85 @@
-/* === 🧡 Fondo naranja suave universal para todos los modales === */
-.swal2-container .swal2-popup.swal2-card-style {
-  background-color: #ffb347 !important;
+/* 🎨 Estilo personalizado global para SweetAlert2 */
+/* 🎨 Estilo personalizado global para SweetAlert2 */
+.swal2-popup {
+  background-color: #ffb347 !important; /* naranja suave */
   color: #222 !important;
   border-radius: 1rem !important;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
-  padding: 2rem 2.5rem !important;
-  max-width: 520px !important;
-  overflow: visible !important;
+  padding: 1.5rem !important;
+  text-align: center !important;
+  max-width: 90vw !important;         /* 🔸 responsivo */
+  overflow-y: auto !important;        /* ✅ scroll interno */
+  overflow-x: hidden !important;
 }
 
-/* === Formularios === */
-.swal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-}
 
-.swal-input-group {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  text-align: left;
-}
-
-.swal-label {
-  font-weight: 600;
-  color: #222;
-  margin-bottom: 4px;
-}
-
-/* === Inputs y selects === */
-.swal2-input,
-.swal2-select,
-.swal-form input,
-.swal-form select,
-.swal-form textarea {
-  width: 100% !important;
-  border: 1.5px solid #ccc !important;
-  border-radius: 8px !important;
-  padding: 0.7rem 1rem !important;
-  background-color: #fff !important;
+/* 🧍 Título centrado */
+.swal2-title {
   color: #222 !important;
-  font-size: 1rem !important;
-  box-sizing: border-box !important;
+  font-weight: 700;
+  text-align: center !important;
+  margin-bottom: 1rem !important;
 }
 
-/* === Checkbox === */
-.checkbox-group {
+/* 🧾 Contenedor del formulario */
+.swal2-html-container {
+  color: #333 !important;
+  text-align: left !important;
+  overflow-x: hidden !important; /* 🚫 Previene scroll horizontal */
+}
+
+/* 🏷️ Etiquetas y campos */
+.swal2-html-container label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+/* 🧱 Campos de entrada uniformes */
+.swal2-html-container input[type="text"],
+.swal2-html-container input[type="email"],
+.swal2-html-container input[type="tel"],
+.swal2-html-container input[type="number"] {
+  display: block;
+  width: 100% !important;           /* ✅ mismo ancho */
+  min-width: 100% !important;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  background-color: #fff !important; /* ✅ fondo blanco */
+  color: #222;
+  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+  box-sizing: border-box;
+}
+
+/* 🔘 Checkbox */
+.swal2-html-container .form-check {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   margin-top: 0.5rem;
 }
 
-.swal-checkbox {
-  transform: scale(1.3);
-  accent-color: #ff6600;
-  cursor: pointer;
-}
-
-/* === Botones === */
-.btn-orange,
+/* 🟠 Botones */
 .swal2-confirm {
-  background-color: #ff6600 !important;
-  color: #fff !important;
+  background-color: #ff8800 !important;
+  color: white !important;
   border: none !important;
   border-radius: 0.5rem !important;
-  padding: 0.6rem 1.4rem !important;
-  font-weight: 600 !important;
-  min-width: 140px !important;
-  transition: background 0.2s ease-in-out;
+  padding: 0.6rem 1.5rem !important;
 }
 
-.btn-orange:hover,
-.swal2-confirm:hover {
-  background-color: #e65700 !important;
-}
-
-.btn-secondary,
 .swal2-cancel {
   background-color: #fff !important;
   color: #333 !important;
   border: 1px solid #ccc !important;
   border-radius: 0.5rem !important;
-  padding: 0.6rem 1.4rem !important;
-  font-weight: 600 !important;
-  min-width: 140px !important;
+  padding: 0.6rem 1.5rem !important;
 }
 
-.swal2-cancel:hover {
-  background-color: #f5f5f5 !important;
-}
-
-/* === Centrado PERFECTO de botones === */
-.swal2-card-style .swal2-actions {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  gap: 12px !important;
-  margin: 16px auto 0 !important;
-  width: 100% !important;
-  text-align: center !important;
-}
-
-/* === Elimina botón “No” en confirmaciones === */
-.swal2-deny {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-/* === Evita scroll dentro del modal === */
-.swal2-card-style {
-  overflow-y: visible !important;
-  overflow-x: hidden !important;
-  max-height: none !important;
-}
-
-.swal2-card-style .swal2-html-container {
-  overflow: visible !important;
-  max-height: none !important;
-  padding-right: 0 !important;
-  margin-right: 0 !important;
-}
-
-/* === Responsivo === */
-@media (max-width: 600px) {
-  .swal2-card-style {
-    padding: 1.5rem 1.2rem !important;
-    max-width: 90vw !important;
-  }
-
-  .swal2-card-style .swal2-actions .swal2-styled,
-  .swal2-card-style .swal2-actions .btn {
-    min-width: 120px !important;
-    height: 38px !important;
-    font-size: 0.9rem !important;
-  }
+/* 🧩 Icono */
+.swal2-icon {
+  border-color: #ff8800 !important;
+  color: #ff8800 !important;
 }

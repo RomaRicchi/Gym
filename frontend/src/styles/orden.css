@@ -1,77 +1,50 @@
-/* === 🎨 Estilo para alertas simples de SweetAlert2 (sin formularios) === */
-
-/* Fondo naranja y bordes redondeados */
-.swal2-popup.swal2-card-style {
+/* === Estilo general para todos los modales de SweetAlert2 === */
+.swal2-card-style {
   background-color: #ffb347 !important;
   border-radius: 1rem !important;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
-  color: #222 !important;
   padding: 2rem 2.5rem !important;
-  text-align: center !important;
-  overflow-y: visible !important; /* elimina scroll innecesario */
+  max-width: 520px !important;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.25) !important;
+  color: #222 !important;
+  overflow-y: visible !important;
 }
 
-/* Título */
+/* === Título y texto === */
 .swal2-title {
   color: #222 !important;
-  font-weight: 700;
+  font-weight: 700 !important;
+  font-size: 1.4rem !important;
   text-align: center !important;
   margin-bottom: 1rem !important;
 }
 
-/* Texto */
 .swal2-html-container {
-  font-size: 1rem !important;
   color: #333 !important;
-  margin-top: 0.5rem !important;
-  text-align: center !important;
+  font-size: 1rem !important;
+  text-align: left !important;
   overflow: visible !important;
 }
 
-/* Ícono (success, error, info, warning) */
+/* === Íconos de alerta === */
 .swal2-icon {
   border-color: #ff8800 !important;
   color: #ff8800 !important;
 }
 
-/* ✅ Elimina el input fantasma */
-.swal2-popup > .swal2-input,
-.swal2-popup > input.swal2-input {
-  display: none !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  visibility: hidden !important;
-}
-/* === 🧹 Oculta inputs o selects fantasma SOLO en alertas simples === */
-.swal2-popup.swal-alert-simple > .swal2-input,
-.swal2-popup.swal-alert-simple > .swal2-select,
-.swal2-popup.swal-alert-simple > input.swal2-input,
-.swal2-popup.swal-alert-simple > select.swal2-select {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-}
-/* === 🔧 Ajustes visuales finales para formularios de SweetAlert === */
-
-/* Espaciado vertical más equilibrado */
+/* === FORMULARIOS (inputs, selects, textareas) === */
 .swal-form {
   display: flex;
   flex-direction: column;
-  gap: 12px; /* antes 10px */
+  gap: 12px;
   text-align: left;
 }
 
-/* Unifica altura de todos los campos */
-.swal-field,
-.swal-select,
-.swal-textarea,
-.swal-form input[type="date"],
-.swal-form input[type="file"] {
+.swal-form input[type="text"],
+.swal-form input[type="number"],
+.swal-form input[type="email"],
+.swal-form input[type="password"],
+.swal-form select,
+.swal-form textarea {
   width: 100% !important;
   border: 1.5px solid #ccc !important;
   border-radius: 8px !important;
@@ -79,33 +52,22 @@
   font-size: 0.95rem !important;
   background: #fff !important;
   color: #222 !important;
+  height: 42px !important;
   box-sizing: border-box !important;
-  height: 42px !important; /* 🔹 iguala todas las alturas */
-  line-height: 1.3 !important;
 }
 
-/* Textarea mantiene su propio alto */
-.swal-textarea {
+.swal-form textarea {
   height: 80px !important;
   resize: none !important;
 }
 
-/* Mejora la separación de etiquetas */
 .swal-label {
-  font-weight: 600;
+  font-weight: 600 !important;
   margin-top: 4px;
-  color: #222;
+  color: #222 !important;
 }
 
-/* Popup general naranja */
-.swal2-card-style {
-  background: #ffb347 !important;
-  border-radius: 1rem !important;
-  padding: 2rem 2.5rem !important;
-  max-width: 520px !important;
-}
-
-/* Botones coherentes */
+/* === Botones === */
 .btn-orange {
   background-color: #ff6600 !important;
   color: #fff !important;
@@ -117,10 +79,75 @@
 .btn-orange:hover {
   background-color: #e65700 !important;
 }
+
 .btn-secondary {
   background-color: #fff !important;
   color: #333 !important;
   border: 1px solid #ccc !important;
   border-radius: 0.5rem !important;
   padding: 0.6rem 1.4rem !important;
+  font-weight: 600 !important;
+}
+
+/* === ALERTAS SIMPLES (sin formularios) === */
+.swal-alert-simple {
+  background-color: #ffb347 !important;
+  border-radius: 1rem !important;
+  text-align: center !important;
+  padding: 2rem 2.5rem !important;
+}
+
+.swal-alert-simple .swal2-html-container {
+  text-align: center !important;
+  font-size: 1rem !important;
+}
+
+.swal-alert-simple > .swal2-input,
+.swal-alert-simple > .swal2-select {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+}
+
+/* === Select centrado de tipo “input:select” === */
+.swal2-select {
+  width: 100% !important;
+  border-radius: 8px !important;
+  border: 1.5px solid #ccc !important;
+  height: 42px !important;
+  padding: 0 10px !important;
+  background: #fff !important;
+  color: #222 !important;
+  font-size: 0.95rem !important;
+  margin-top: 0.5rem !important;
+}
+/* === Corrige alineación del select en alertas simples === */
+.swal2-popup .swal2-select {
+  display: block !important;
+  margin: 0.5rem auto 1rem auto !important;
+  width: 90% !important;
+  max-width: 420px !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+/* === Mensaje de validación naranja (para showValidationMessage) === */
+.swal-validation-orange {
+  display: inline-block;
+  background: #ff6600;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 600;
+}
+/* === Oculta inputs o selects fantasma === */
+.swal-alert-simple > .swal2-input,
+.swal-alert-simple > .swal2-select,
+.swal2-popup.swal2-card-style > .swal2-input,
+.swal2-popup.swal2-card-style > .swal2-select {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 }

@@ -1,7 +1,8 @@
-// @ts-nocheck
+
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/orden.css"; 
 
 interface Estado {
   id: number;
@@ -13,7 +14,7 @@ export default function EstadosList() {
   const [estados, setEstados] = useState<Estado[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Cargar estados desde el backend
+  //  Cargar estados desde el backend
   const fetchEstados = async () => {
     try {
       const res = await gymApi.get("/estadoOrdenPago");
@@ -29,7 +30,7 @@ export default function EstadosList() {
     fetchEstados();
   }, []);
 
-  // 🔹 Crear nuevo estado
+  // Crear nuevo estado
   const crearEstado = async () => {
     const { value: formValues } = await Swal.fire({
       title: "➕ Nuevo Estado de Pago",
@@ -113,7 +114,7 @@ export default function EstadosList() {
     }
   };
 
-  // 🔹 Eliminar estado
+  // Eliminar estado
   const handleDelete = async (id: number) => {
     const confirm = await Swal.fire({
       title: "¿Eliminar estado?",
@@ -153,7 +154,7 @@ export default function EstadosList() {
         ESTADOS DEL PAGO
       </h1>
 
-      {/* 🔹 Botón de crear */}
+      {/* Botón de crear */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <button
           className="btn btn-success fw-bold"
@@ -163,7 +164,7 @@ export default function EstadosList() {
         </button>
       </div>
 
-      {/* 🔹 Tabla */}
+      {/*Tabla */}
       <table className="table table-striped table-hover align-middle text-center">
         <thead className="table-dark">
           <tr>
