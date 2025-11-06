@@ -1,12 +1,12 @@
 using Api.Data;
 using Api.Data.Models;
-using Api.Contracts; 
+using Api.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using BCrypt.Net;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
@@ -24,7 +24,7 @@ namespace Api.Controllers
             _env = env;
         }
 
-        // ✅ Obtener perfil completo por ID
+        // ✅ PERFIL GENERAL (ADMIN / PERSONAL)
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetPerfil(int id, CancellationToken ct)
         {
@@ -50,15 +50,74 @@ namespace Api.Controllers
                         usuario.Personal.Telefono,
                         usuario.Personal.Direccion,
                         usuario.Personal.Especialidad,
-                        usuario.Personal.Estado
+                        Estado = usuario.Personal.Estado
+
                     }
                     : null,
+
                 Avatar = usuario.Avatar != null
-                    ? new { usuario.Avatar.Id, usuario.Avatar.Url,Nombre = usuario.Avatar.Nombre ?? string.Empty }
+                    ? new { usuario.Avatar.Id, usuario.Avatar.Url, Nombre = usuario.Avatar.Nombre ?? string.Empty }
                     : new { Id = 0, Url = "/images/user.png", Nombre = "avatar por defecto" }
             });
         }
 
+        // ✅ PERFIL DEL SOCIO LOGUEADO
+        [Authorize(Roles = "Socio")]
+        [HttpGet("socio")]
+        public async Task<IActionResult> GetPerfilSocio(CancellationToken ct)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return BadRequest("Token sin ID de usuario.");
+
+                int userId = int.Parse(userIdClaim);
+
+                var usuario = await _db.Usuarios
+                    .Include(u => u.Avatar)
+                    .FirstOrDefaultAsync(u => u.Id == userId, ct);
+
+                if (usuario == null)
+                    return NotFound("Usuario no encontrado.");
+
+                if (usuario.SocioId == null)
+                    return NotFound("Este usuario no está vinculado a ningún socio.");
+
+                var socio = await _db.Socios
+                    .Include(s => s.Suscripciones.Where(su => su.Estado))
+                    .ThenInclude(su => su.Plan)
+                    .FirstOrDefaultAsync(s => s.Id == usuario.SocioId, ct);
+
+                if (socio == null)
+                    return NotFound("Socio no encontrado.");
+
+                return Ok(new
+                {
+                    socio.Id,
+                    socio.Nombre,
+                    socio.Dni,
+                    socio.Telefono,
+                    socio.FechaNacimiento,
+                    socio.Activo,
+                    Usuario = new
+                    {
+                        usuario.Id,
+                        usuario.Alias,
+                        usuario.Email,
+                        AvatarUrl = usuario.Avatar != null ? usuario.Avatar.Url : "/images/user.png"
+                    },
+                    PlanActual = socio.Suscripciones.FirstOrDefault()?.Plan.Nombre
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Error en GetPerfilSocio: {ex.Message}");
+                return StatusCode(500, new { message = "Error interno en el servidor", error = ex.Message });
+            }
+        }
+
+        // ✅ SUBIR / REEMPLAZAR AVATAR
         [Authorize(Roles = "Socio, Administrador")]
         [HttpPost("{id:int}/avatar")]
         public async Task<IActionResult> SubirAvatar(int id, IFormFile archivo, CancellationToken ct)
@@ -70,13 +129,11 @@ namespace Api.Controllers
             if (usuario == null)
                 return NotFound("Usuario no encontrado");
 
-            // Validar tipo de archivo
             var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif" };
             var ext = Path.GetExtension(archivo.FileName).ToLowerInvariant();
             if (!allowed.Contains(ext))
                 return BadRequest("Formato de imagen no permitido.");
 
-            //  Eliminar avatar anterior si existe
             if (usuario.Avatar != null)
             {
                 try
@@ -90,11 +147,10 @@ namespace Api.Controllers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($" Error al eliminar avatar anterior: {ex.Message}");
+                    Console.WriteLine($"Error al eliminar avatar anterior: {ex.Message}");
                 }
             }
 
-            // Guardar nuevo avatar
             var uploadsDir = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "avatars");
             Directory.CreateDirectory(uploadsDir);
 
@@ -113,15 +169,11 @@ namespace Api.Controllers
             usuario.Avatar = nuevoAvatar;
             await _db.SaveChangesAsync(ct);
 
-            // Devolver respuesta compacta y clara para el frontend
-            return Ok(new
-            {
-                url = nuevoAvatar.Url
-            });
+            return Ok(new { url = nuevoAvatar.Url });
         }
 
-
-        [HttpPatch("{id}/password")]
+        // ✅ CAMBIAR CONTRASEÑA
+        [HttpPatch("{id:int}/password")]
         public async Task<IActionResult> CambiarPassword(int id, [FromBody] PasswordUpdateDto dto, CancellationToken ct)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.Actual) || string.IsNullOrWhiteSpace(dto.Nueva))
@@ -134,33 +186,23 @@ namespace Api.Controllers
             bool isVerified = false;
             string storedHash = usuario.PasswordHash ?? string.Empty;
 
-            if (storedHash.StartsWith("$2") && storedHash.Length > 20) 
+            if (storedHash.StartsWith("$2") && storedHash.Length > 20)
             {
                 try
                 {
                     if (BCrypt.Net.BCrypt.Verify(dto.Actual, storedHash))
-                    {
                         isVerified = true;
-                    }
                 }
-                catch (BCrypt.Net.SaltParseException)
-                {
-                    
-                }
+                catch (BCrypt.Net.SaltParseException) { }
             }
 
             if (!isVerified)
             {
                 if (VerificarPassword(dto.Actual, storedHash))
-                {
                     isVerified = true;
-                }
-                else if (dto.Actual == storedHash) 
-                {
+                else if (dto.Actual == storedHash)
                     isVerified = true;
-                }
             }
-
 
             if (!isVerified)
                 return BadRequest(new { message = "La contraseña actual es incorrecta." });
@@ -179,11 +221,99 @@ namespace Api.Controllers
             return hashInput == hash;
         }
 
-        private static string HashearPassword(string password)
+        // ACTUALIZAR DATOS BÁSICOS DEL PERFIL DEL SOCIO
+        [Authorize(Roles = "Socio")]
+        [HttpPatch("{id:int}/socio")]
+        public async Task<IActionResult> ActualizarPerfilSocio(int id, [FromBody] PerfilSocioUpdateDto dto, CancellationToken ct)
         {
-            using var sha = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            return Convert.ToBase64String(sha.ComputeHash(bytes));
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Cuerpo de solicitud vacío o inválido.");
+
+                var usuario = await _db.Usuarios
+                    .Include(u => u.Socio)
+                    .FirstOrDefaultAsync(u => u.Id == id, ct);
+
+                if (usuario == null)
+                    return NotFound("Usuario no encontrado.");
+
+                if (usuario.Socio == null)
+                    return NotFound("El usuario no está vinculado a un socio.");
+
+                // Actualiza datos del socio
+                if (!string.IsNullOrWhiteSpace(dto.Nombre))
+                    usuario.Socio.Nombre = dto.Nombre;
+
+                if (!string.IsNullOrWhiteSpace(dto.Telefono))
+                    usuario.Socio.Telefono = dto.Telefono;
+
+                // Actualiza datos del usuario
+                if (!string.IsNullOrWhiteSpace(dto.Alias))
+                    usuario.Alias = dto.Alias;
+
+                if (!string.IsNullOrWhiteSpace(dto.Email))
+                    usuario.Email = dto.Email;
+
+                await _db.SaveChangesAsync(ct);
+                return Ok(new { message = "Perfil del socio actualizado correctamente." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Error en ActualizarPerfilSocio: {ex.Message}");
+                return StatusCode(500, new { message = "Error interno al actualizar el perfil del socio.", error = ex.Message });
+            }
+        }
+
+
+        // ✅ ACTUALIZAR PERFIL DE PERSONAL / ADMIN / PROFESOR
+        [Authorize(Roles = "Administrador, Profesor, Recepción")]
+        [HttpPatch("{id:int}/personal")]
+        public async Task<IActionResult> ActualizarPerfilPersonal(int id, [FromBody] PerfilUpdateDto dto, CancellationToken ct)
+        {
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Cuerpo de solicitud vacío o inválido.");
+
+                var usuario = await _db.Usuarios
+                    .Include(u => u.Personal)
+                    .FirstOrDefaultAsync(u => u.Id == id, ct);
+
+                if (usuario == null)
+                    return NotFound("Usuario no encontrado.");
+
+                // Datos de Personal
+                if (usuario.Personal != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(dto.Nombre))
+                        usuario.Personal.Nombre = dto.Nombre;
+
+                    if (!string.IsNullOrWhiteSpace(dto.Telefono))
+                        usuario.Personal.Telefono = dto.Telefono;
+
+                    if (!string.IsNullOrWhiteSpace(dto.Direccion))
+                        usuario.Personal.Direccion = dto.Direccion;
+
+                    if (!string.IsNullOrWhiteSpace(dto.Especialidad))
+                        usuario.Personal.Especialidad = dto.Especialidad;
+                }
+
+                // Datos del Usuario
+                if (!string.IsNullOrWhiteSpace(dto.Alias))
+                    usuario.Alias = dto.Alias;
+
+                if (!string.IsNullOrWhiteSpace(dto.Email))
+                    usuario.Email = dto.Email;
+
+                await _db.SaveChangesAsync(ct);
+                return Ok(new { message = "Perfil actualizado correctamente." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Error en ActualizarPerfilPersonal: {ex.Message}");
+                return StatusCode(500, new { message = "Error interno al actualizar el perfil.", error = ex.Message });
+            }
         }
 
     }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import { PersonalEditSwal } from "@/views/personal/PersonalEditSwal";
+import { PerfilEditSwal } from "@/views/usuarios/perfil/PerfilEditSwal";
 import { PasswordEditSwal } from "@/views/usuarios/perfil/CambiarContraseña";
 
 interface Avatar {
@@ -15,7 +15,7 @@ interface Personal {
   telefono?: string;
   direccion?: string;
   especialidad?: string;
-  estado?: number;
+  
 }
 
 interface Perfil {
@@ -136,7 +136,7 @@ export default function PerfilView() {
         {/* Datos personales */}
         <div className="text-start text-dark rounded p-3 mt-3 position-relative bg-light bg-opacity-25">
           <button
-            onClick={() => PersonalEditSwal(userId, "perfil", fetchPerfil)}
+            onClick={() => PerfilEditSwal(perfil.id, fetchPerfil)}
             className="btn btn-sm btn-outline-dark position-absolute top-0 end-0 m-2"
           >
             ✏️
@@ -154,10 +154,7 @@ export default function PerfilView() {
           <p>
             <strong>Especialidad:</strong> {personal.especialidad || "—"}
           </p>
-          <p>
-            <strong>Estado:</strong>{" "}
-            {personal.estado === 1 ? "Activo" : "Inactivo"}
-          </p>
+         
         </div>
 
         {/* Botones */}

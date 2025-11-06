@@ -3,17 +3,11 @@ import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import { PasswordEditSwal } from "@/views/usuarios/perfil/CambiarContraseña";
 
-interface Avatar {
-  id: number;
-  url: string;
-  nombre: string;
-}
-
 interface Usuario {
   id: number;
   alias: string;
   email: string;
-  idAvatar?: number;
+  avatarUrl?: string;
 }
 
 interface Socio {
@@ -22,10 +16,9 @@ interface Socio {
   dni: string;
   telefono?: string;
   fechaNacimiento?: string;
-  planActual?: string;
   activo: boolean;
-  avatar?: Avatar | null;
-  usuario?: Usuario | null;
+  planActual?: string;
+  usuario?: Usuario;
 }
 
 export default function PerfilSocio() {
@@ -36,12 +29,13 @@ export default function PerfilSocio() {
   const storedUser = localStorage.getItem("usuario");
   const userId = storedUser ? JSON.parse(storedUser).id : null;
 
-  // 🔹 Cargar perfil
+  // 🔹 Obtener perfil del socio
   const fetchPerfil = async () => {
     try {
-      const res = await gymApi.get("/socios/perfil");
+      const res = await gymApi.get("/perfil/socio");
       setPerfil(res.data);
-    } catch {
+    } catch (err) {
+      console.error(err);
       Swal.fire("Error", "No se pudo cargar el perfil del socio", "error");
     } finally {
       setLoading(false);
@@ -52,7 +46,7 @@ export default function PerfilSocio() {
     fetchPerfil();
   }, []);
 
-  // 📸 Subir avatar (usando AvataresController)
+  // 📸 Cambiar avatar
   const handleAvatarUpload = async () => {
     const { value: file } = await Swal.fire({
       title: "📸 Cambiar Avatar",
@@ -73,35 +67,22 @@ export default function PerfilSocio() {
     formData.append("archivo", file);
 
     try {
-      // 1️⃣ Subir imagen
-      const uploadRes = await gymApi.post("/avatares/upload", formData, {
+      const uploadRes = await gymApi.post(`/perfil/${userId}/avatar`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const avatarId = uploadRes.data.id;
-      const avatarUrl = uploadRes.data.url;
-
-      // 2️⃣ Actualizar el usuario con el nuevo avatar
-      if (perfil?.usuario?.id && avatarId) {
-        await gymApi.put(`/usuarios/${perfil.usuario.id}`, {
-          idAvatar: avatarId,
-        });
-      }
-
-      // 3️⃣ Mostrar mensaje y actualizar perfil
       Swal.fire("✅ Avatar actualizado", "Tu nuevo avatar se aplicará al instante", "success");
 
       // Actualizar localStorage
       const stored = localStorage.getItem("usuario");
       if (stored) {
         const user = JSON.parse(stored);
-        user.avatar = { url: avatarUrl };
+        user.avatar = uploadRes.data.url;
         localStorage.setItem("usuario", JSON.stringify(user));
       }
 
-      // Refrescar perfil y navbar
       await fetchPerfil();
-      setTimeout(() => window.dispatchEvent(new Event("authChange")), 200);
+      setTimeout(() => window.dispatchEvent(new Event("authChange")), 300);
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "No se pudo subir el avatar", "error");
@@ -110,18 +91,16 @@ export default function PerfilSocio() {
 
   // ✏️ Editar datos del socio + usuario
   const handleEditDatos = async () => {
-    if (!perfil) return;
+    if (!perfil || !perfil.usuario) return;
 
     const socio = perfil;
-    const usuario: Usuario = perfil.usuario
-      ? perfil.usuario
-      : { id: 0, alias: "", email: "" };
+    const usuario = perfil.usuario;
 
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar datos del socio",
       html: `
         <input id="swal-nombre" class="swal2-input" placeholder="Nombre" value="${socio.nombre || ""}">
-        <input id="swal-dni" class="swal2-input" placeholder="Documento (DNI)" value="${socio.dni || ""}">
+        <input id="swal-dni" class="swal2-input" placeholder="DNI" value="${socio.dni || ""}">
         <input id="swal-telefono" class="swal2-input" placeholder="Teléfono" value="${socio.telefono || ""}">
         <input id="swal-fecha" type="date" class="swal2-input" value="${socio.fechaNacimiento ? socio.fechaNacimiento.split("T")[0] : ""}">
         <hr class="mt-3 mb-2" />
@@ -161,13 +140,11 @@ export default function PerfilSocio() {
         fechaNacimiento: formValues.fechaNacimiento,
       });
 
-      // Actualizar usuario
-      if (usuario.id > 0) {
-        await gymApi.put(`/usuarios/${usuario.id}`, {
-          alias: formValues.alias,
-          email: formValues.email,
-        });
-      }
+      // Actualizar usuario (perfil)
+      await gymApi.patch(`/perfil/${usuario.id}`, {
+        alias: formValues.alias,
+        email: formValues.email,
+      });
 
       Swal.fire("✅ Datos actualizados", "Los cambios se guardaron correctamente.", "success");
       await fetchPerfil();
@@ -179,6 +156,11 @@ export default function PerfilSocio() {
 
   if (loading) return <p className="text-center mt-5">Cargando perfil...</p>;
   if (!perfil) return <p className="text-center mt-5">No se encontró el perfil.</p>;
+
+  const avatarUrl =
+    perfil.usuario?.avatarUrl && perfil.usuario.avatarUrl.trim() !== ""
+      ? `${BASE_URL}${perfil.usuario.avatarUrl}?v=${Date.now()}`
+      : `${BASE_URL}/images/user.png`;
 
   return (
     <div className="container mt-4 text-center">
@@ -193,11 +175,7 @@ export default function PerfilSocio() {
       >
         {/* Avatar */}
         <img
-          src={
-            perfil.usuario?.idAvatar && perfil.usuario?.idAvatar > 0
-              ? `${BASE_URL}${perfil.avatar?.url || ""}?v=${Date.now()}`
-              : `${BASE_URL}/images/user.png`
-          }
+          src={avatarUrl}
           alt="Avatar"
           className="rounded-circle mx-auto mb-3 border border-white"
           style={{ width: 120, height: 120, objectFit: "cover" }}

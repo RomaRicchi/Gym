@@ -24,6 +24,9 @@ public partial class Socio
     
     [NotMapped]
     public string? PlanActual { get; set; }
+    
+    [ForeignKey("Id")]
+    public Usuario? Usuario { get; set; }
 
     public virtual ICollection<Checkin> Checkins { get; set; } = new List<Checkin>();
 

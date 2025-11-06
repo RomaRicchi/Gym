@@ -39,6 +39,7 @@ import EvaluacionesList from "@/views/rutinas/evaluacion/EvaluacionesList";
 
 /* === Vistas del SOCIO === */
 import DashboardSocio from "@/views/DashboardSocio";
+import PerfilSocio from "@/views/usuarios/perfil/PerfilSocio";
 import PlanesSocio from "@/views/socios/PlanesSocio";
 import SuscripcionesSocio from "@/views/socios/SuscripcionesSocio";
 import TurnosSocio from "@/views/socios/TurnosSocio";
@@ -57,15 +58,17 @@ function ScrollToTop() {
 }
 
 function RedirectByRole() {
-  const storedUser = localStorage.getItem("usuario"); 
+  const storedUser = localStorage.getItem("usuario");
   const user = storedUser ? JSON.parse(storedUser) : null;
   const rol = user?.rol;
 
+  // Si no hay usuario logueado, mandarlo al login
   if (!rol) return <Navigate to="/login" replace />;
 
-  return <Navigate to={rol === "Socio" ? "/dashboardSocio" : "/dashboard"} replace />;
+  // Redirigir según el rol base
+  if (rol === "Socio") return <Navigate to="/socio/dashboardSocio" replace />;
+  else return <Navigate to="/dashboard" replace />;
 }
-
 
 
 export default function App() {
@@ -113,6 +116,7 @@ export default function App() {
           <Route path="/socio/rutinasSocio" element={<RutinasSocio />} />
           <Route path="/socio/turnos" element={<TurnosSocioCalendar />} />
           <Route path="/evolucionfisica" element={<EvolucionFisicaSocio />} />
+          <Route path="/perfil-socio" element={<PerfilSocio />} />
         </Route>
         {/* 🌐 Rutas públicas */}
         <Route path="/login" element={<Login />} />

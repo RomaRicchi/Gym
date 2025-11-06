@@ -10,5 +10,7 @@ namespace Api.Contracts
         public string? Direccion { get; set; }
         public string? Especialidad { get; set; }
         public bool Estado { get; set; } = true;
+        public string? Alias { get; set; }
+        public string? Email { get; set; }
     }
 }

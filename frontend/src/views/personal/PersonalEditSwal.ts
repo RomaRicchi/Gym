@@ -1,7 +1,7 @@
 // @ts-nocheck
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/swal-ejercicio.css"; // 🧡 mismo estilo global de todos los modales
+import "@/styles/swal-ejercicio.css"; 
 
 /**
  * @param id ID del usuario
@@ -9,7 +9,7 @@ import "@/styles/swal-ejercicio.css"; // 🧡 mismo estilo global de todos los m
  *                 "admin"  → edición completa desde administración
  * @param onSuccess callback opcional tras guardar
  */
-export async function PersonalEditSwal(id: number, context: "perfil" | "admin" = "admin", onSuccess?: () => void) {
+export async function PersonalEditSwal(id: number| string, context: "perfil" | "admin" = "admin", onSuccess?: () => void) {
   try {
     const { data: personal } = await gymApi.get(`/personal/${id}`);
 
