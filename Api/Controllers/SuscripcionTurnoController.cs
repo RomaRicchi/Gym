@@ -197,7 +197,6 @@ namespace Api.Controllers
             if (dto == null)
                 return BadRequest(new { message = "El cuerpo de la solicitud está vacío." });
 
-            // Validar existencia de la suscripción + traer plan para conocer el cupo
             var suscripcion = await _db.Suscripciones
                 .Include(s => s.Plan)
                 .FirstOrDefaultAsync(s => s.Id == dto.SuscripcionId, ct);
@@ -209,14 +208,14 @@ namespace Api.Controllers
             if (cupoMaximo <= 0)
                 return BadRequest(new { message = "❌ El plan no tiene cupo configurado." });
 
-            // Tope: no permitir crear si ya alcanzó el máximo
+            // 🔹 Validar límite de turnos del plan
             var asignadosActuales = await _db.SuscripcionTurnos
                 .CountAsync(st => st.SuscripcionId == suscripcion.Id, ct);
 
             if (asignadosActuales >= cupoMaximo)
                 return BadRequest(new { message = "⚠️ Ya alcanzaste el máximo de turnos para esta suscripción." });
 
-            // 🔎 Buscar el turno con sus relaciones
+            // 🔹 Buscar turno
             var turno = await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
@@ -229,19 +228,22 @@ namespace Api.Controllers
             if (!turno.Activo)
                 return BadRequest(new { message = "⚠️ El turno está inactivo y no puede asignarse." });
 
-            //  Duplicado dentro de la misma suscripción
+            // 🔹 Duplicado
             bool yaAsignado = await _db.SuscripcionTurnos
                 .AnyAsync(st => st.SuscripcionId == suscripcion.Id && st.TurnoPlantillaId == dto.TurnoPlantillaId, ct);
+
             if (yaAsignado)
                 return Conflict(new { message = "⚠️ Este turno ya fue asignado a esta suscripción." });
 
-            // Cupo por sala
+            // 🔹 Cupo por sala
             var inscriptos = await _db.SuscripcionTurnos
                 .CountAsync(st => st.TurnoPlantillaId == turno.Id, ct);
             var cupoSala = turno.Sala?.Cupo ?? 0;
+
             if (inscriptos >= cupoSala)
                 return BadRequest(new { message = "⚠️ No hay más lugares disponibles en esta sala para este turno." });
 
+            // 🔹 Crear nuevo registro
             var nuevo = new SuscripcionTurno
             {
                 SuscripcionId = suscripcion.Id,
@@ -251,31 +253,26 @@ namespace Api.Controllers
             _db.SuscripcionTurnos.Add(nuevo);
             await _db.SaveChangesAsync(ct);
 
-            // Respuesta enriquecida
-            var creado = await _db.SuscripcionTurnos
-                .Include(st => st.TurnoPlantilla).ThenInclude(tp => tp.Sala)
-                .Include(st => st.TurnoPlantilla).ThenInclude(tp => tp.Personal)
-                .Include(st => st.TurnoPlantilla).ThenInclude(tp => tp.DiaSemana)
-                .FirstAsync(st => st.Id == nuevo.Id, ct);
+            // 🔹 Calcular cupo actualizado
+            var cupoActualizado = cupoSala - (inscriptos + 1);
 
-            return CreatedAtAction(nameof(GetById), new { id = nuevo.Id }, new
+            return Ok(new
             {
-                creado.Id,
-                creado.SuscripcionId,
-                Turno = new
+                ok = true,
+                message = "✅ Turno asignado correctamente.",
+                cupoActualizado,
+                turno = new
                 {
-                    creado.TurnoPlantilla.Id,
-                    Sala = creado.TurnoPlantilla.Sala?.Nombre,
-                    Profesor = creado.TurnoPlantilla.Personal?.Nombre,
-                    Dia = creado.TurnoPlantilla.DiaSemana?.Nombre,
-                    creado.TurnoPlantilla.HoraInicio,
-                    creado.TurnoPlantilla.DuracionMin,
-                    CupoTotal = creado.TurnoPlantilla.Sala?.Cupo,
-                    CupoDisponible = (cupoSala - inscriptos - 1)
+                    turno.Id,
+                    Sala = turno.Sala?.Nombre,
+                    Profesor = turno.Personal?.Nombre,
+                    Dia = turno.DiaSemana?.Nombre,
+                    turno.HoraInicio,
+                    turno.DuracionMin,
+                    CupoTotal = cupoSala
                 }
             });
         }
-
 
         // PUT: api/SuscripcionTurno/{id}
         [HttpPut("{id:int}")]
@@ -310,13 +307,23 @@ namespace Api.Controllers
             if (entity is null)
                 return NotFound(new { message = $"No se encontró el turno con ID {id}" });
 
+            var turnoId = entity.TurnoPlantillaId;
+            var salaNombre = entity.TurnoPlantilla?.Sala?.Nombre ?? "(sin sala)";
+            var cupoSala = entity.TurnoPlantilla?.Sala?.Cupo ?? 0;
+
             _db.SuscripcionTurnos.Remove(entity);
             await _db.SaveChangesAsync(ct);
+
+            // 🔹 Calcular nuevo cupo disponible
+            var inscriptos = await _db.SuscripcionTurnos
+                .CountAsync(st => st.TurnoPlantillaId == turnoId, ct);
+            var cupoActualizado = cupoSala - inscriptos;
 
             return Ok(new
             {
                 ok = true,
-                message = $"🗑️ Turno eliminado correctamente. Se liberó un lugar en '{entity.TurnoPlantilla.Sala?.Nombre}'."
+                message = $"🗑️ Turno eliminado correctamente. Se liberó un lugar en '{salaNombre}'.",
+                cupoActualizado
             });
         }
 

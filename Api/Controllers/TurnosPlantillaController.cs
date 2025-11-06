@@ -34,9 +34,69 @@ namespace Api.Controllers
         [HttpGet("activos")]
         public async Task<IActionResult> GetActivos(CancellationToken ct = default)
         {
-            var list = await _repo.GetActivosAsync(ct);
-            return Ok(list);
+            // Precalcular inscripciones por sala y hora
+            var inscripciones = await _db.SuscripcionTurnos
+                .Include(st => st.TurnoPlantilla)
+                .GroupBy(st => new
+                {
+                    st.TurnoPlantilla!.SalaId,
+                    st.TurnoPlantilla.HoraInicio
+                })
+                .Select(g => new
+                {
+                    g.Key.SalaId,
+                    g.Key.HoraInicio,
+                    Cantidad = g.Count()
+                })
+                .ToListAsync(ct);
+
+            var mapaInscriptos = inscripciones.ToDictionary(
+                x => new { x.SalaId, x.HoraInicio },
+                x => x.Cantidad
+            );
+
+            // 2Traer los turnos activos con relaciones
+            var turnosDb = await _db.TurnosPlantilla
+                .Include(t => t.Sala)
+                .Include(t => t.Personal)
+                .Include(t => t.DiaSemana)
+                .Where(t => t.Activo)
+                .OrderBy(t => t.DiaSemanaId)
+                .ThenBy(t => t.HoraInicio)
+                .ToListAsync(ct);
+
+            //  Calcular cupos en memoria (rápido)
+            var turnos = turnosDb.Select(t => new
+            {
+                t.Id,
+                t.HoraInicio,
+                t.DuracionMin,
+                DiaSemana = new
+                {
+                    Id = t.DiaSemana?.Id ?? 0,
+                    Nombre = t.DiaSemana?.Nombre ?? "(sin día)"
+                },
+                Sala = new
+                {
+                    Id = t.Sala?.Id ?? 0,
+                    Nombre = t.Sala?.Nombre ?? "(sin sala)",
+                    CupoTotal = t.Sala?.Cupo ?? 0,
+                    CupoDisponible = (t.Sala?.Cupo ?? 0) -
+                        (mapaInscriptos.TryGetValue(new { t.SalaId, t.HoraInicio }, out var cantidad)
+                            ? cantidad
+                            : 0)
+                },
+                Personal = new
+                {
+                    Id = t.Personal?.Id ?? 0,
+                    Nombre = t.Personal?.Nombre ?? "(sin profesor)"
+                },
+                t.Activo
+            }).ToList();
+
+            return Ok(new { ok = true, items = turnos });
         }
+
 
         // Obtener por ID
         [HttpGet("{id}")]
@@ -49,34 +109,70 @@ namespace Api.Controllers
             return Ok(turno);
         }
 
+        
         [HttpGet("dia/{id:int}")]
         public async Task<IActionResult> GetByDia(int id, CancellationToken ct = default)
         {
-            var turnos = await _db.TurnosPlantilla
+            // 1️⃣ Precalcular inscripciones agrupadas por sala y hora
+            var inscripciones = await _db.SuscripcionTurnos
+                .Include(st => st.TurnoPlantilla)
+                .GroupBy(st => new
+                {
+                    st.TurnoPlantilla!.SalaId,
+                    st.TurnoPlantilla.HoraInicio
+                })
+                .Select(g => new
+                {
+                    g.Key.SalaId,
+                    g.Key.HoraInicio,
+                    Cantidad = g.Count()
+                })
+                .ToListAsync(ct);
+
+            // 2️⃣ Crear diccionario
+            var mapaInscriptos = inscripciones.ToDictionary(
+                x => new { x.SalaId, x.HoraInicio },
+                x => x.Cantidad
+            );
+
+            // 3️⃣ Obtener los turnos del día (en memoria)
+            var turnosDb = await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
                 .Include(t => t.DiaSemana)
                 .Where(t => t.Activo && t.DiaSemanaId == id)
                 .OrderBy(t => t.HoraInicio)
-                .Select(t => new
-                {
-                    t.Id,
-                    t.HoraInicio,
-                    t.DuracionMin,
-                    Dia = new { t.DiaSemana!.Id, t.DiaSemana.Nombre },
-                    Sala = new
-                    {
-                        t.Sala!.Id,
-                        t.Sala.Nombre,
-                        CupoTotal = t.Sala.Cupo,
-                        CupoDisponible = t.Sala.Cupo - _db.SuscripcionTurnos.Count(st => st.TurnoPlantillaId == t.Id)
-                    },
-                    Profesor = t.Personal != null ? t.Personal.Nombre : "(sin profesor)"
-                })
                 .ToListAsync(ct);
 
+            // 4️⃣ Calcular cupos en memoria
+            var turnos = turnosDb.Select(t => new
+            {
+                t.Id,
+                t.HoraInicio,
+                t.DuracionMin,
+                Dia = new
+                {
+                    Id = t.DiaSemana?.Id ?? 0,
+                    Nombre = t.DiaSemana?.Nombre ?? "(sin día)"
+                },
+                Sala = new
+                {
+                    Id = t.Sala?.Id ?? 0,
+                    Nombre = t.Sala?.Nombre ?? "(sin sala)",
+                    CupoTotal = t.Sala?.Cupo ?? 0,
+                    CupoDisponible = (t.Sala?.Cupo ?? 0) -
+                        (mapaInscriptos.TryGetValue(new { t.SalaId, t.HoraInicio }, out var cantidad)
+                            ? cantidad
+                            : 0)
+                },
+                Profesor = t.Personal?.Nombre ?? "(sin profesor)"
+            }).ToList();
+
+            // 5️⃣ Devolver resultado
             return Ok(new { ok = true, items = turnos });
         }
+
+
 
         // Crear nuevo turno plantilla
         [HttpPost("crear")]

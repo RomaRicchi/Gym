@@ -62,10 +62,12 @@ export async function mostrarFormEditarSuscripcion(id: number): Promise<boolean>
                      padding:0.7rem 1rem;font-size:1rem;box-sizing:border-box;">
           </div>
 
-          <div style="display:flex;align-items:center;gap:0.6rem;margin-top:0.8rem;width:fit-content;">
+          <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:1rem;">
             <input type="checkbox" id="estado" ${s.estado ? "checked" : ""}
-              style="transform:scale(1.3);accent-color:#ff6600;cursor:pointer;margin:0;">
-            <label for="estado" style="font-weight:600;color:#222;margin:0;line-height:1;">Activa</label>
+              style="width:18px;height:18px;accent-color:#ff6600;cursor:pointer;">
+            <label for="estado" style="font-weight:600;color:#222;margin:0;white-space:nowrap;">
+              Activa
+            </label>
           </div>
         </form>
       `,

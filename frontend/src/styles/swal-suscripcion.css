@@ -137,3 +137,73 @@
     font-size: 0.9rem !important;
   }
 }
+/* === 🗓️ Botón calendario uniforme (activo o bloqueado) === */
+.btn-calendario {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  font-size: 1.1rem !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  flex-shrink: 0 !important; /* evita que se estire en flex */
+}
+
+/* === Colores según estado === */
+.btn-calendario.btn-primary {
+  background-color: #0062ff !important;
+  border: none !important;
+}
+.btn-calendario.btn-primary:hover {
+  background-color: #004ed4 !important;
+}
+
+.btn-calendario.btn-secondary {
+  background-color: #cccccc !important;
+  color: #555 !important;
+  border: none !important;
+}
+
+/* === Deshabilitado (sin expansión, sin cambio de ancho) === */
+.btn-calendario:disabled,
+.btn-calendario[disabled] {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  border: none !important;
+  font-size: 1.1rem !important;
+  line-height: 1 !important;
+}
+/* === Checkbox 'Activa' alineado en una sola línea === */
+.swal-form-suscripcion .checkbox-group {
+  display: flex;
+  flex-direction: row !important; /* horizontal */
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 8px;
+}
+
+.swal-form-suscripcion .checkbox-group .swal-checkbox {
+  width: 16px !important;
+  height: 16px !important;
+  accent-color: #ff6600;
+  cursor: pointer;
+}
+
+.swal-form-suscripcion .checkbox-group label,
+.swal-form-suscripcion .checkbox-group .swal-label {
+  margin: 0 !important;
+  font-weight: 600 !important;
+  color: #222 !important;
+  white-space: nowrap !important; /* evita salto de línea */
+}
+

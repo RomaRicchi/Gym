@@ -5,7 +5,7 @@ import { mostrarFormEditarSuscripcion } from "@/views/suscripciones/SuscripcionE
 import { asignarTurnos } from "@/views/agenda/suscripcionTurno/asignarTurnos";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-
+import "@/styles/swal-suscripcion.css";
 interface Suscripcion {
   id: number;
   socio: string;
@@ -265,7 +265,7 @@ export default function SuscripcionesList() {
 
                       {/* 🗓️ Asignar Turnos */}
                       <button
-                        className={`btn btn-sm ${completado ? "btn-secondary" : "btn-primary"}`}
+                        className={`btn btn-sm btn-calendario ${completado ? "btn-secondary" : "btn-primary"}`}
                         title={
                           completado
                             ? "Todos los turnos ya fueron asignados"
@@ -273,13 +273,14 @@ export default function SuscripcionesList() {
                         }
                         onClick={async () => {
                           if (!completado) {
-                            await asignarTurnos(s, fetchSuscripciones); 
+                            await asignarTurnos(s, fetchSuscripciones);
                           }
                         }}
                         disabled={completado}
                       >
                         🗓️
                       </button>
+
                     </div>
                   </td>
                 </tr>

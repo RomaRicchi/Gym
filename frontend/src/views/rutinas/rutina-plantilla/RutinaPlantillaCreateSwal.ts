@@ -1,6 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/swal-ejercicio.css"; // 🔸 mismo estilo reutilizado
+import "@/styles/swal-rutina.css";
 
 export async function RutinaPlantillaCreateSwal(onSuccess?: () => void) {
   const { value: formValues } = await Swal.fire({

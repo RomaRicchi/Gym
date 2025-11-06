@@ -1,4 +1,4 @@
-/* === 🎨 Estilo exclusivo para los modales de SOCIOS === */
+/* === Estilo exclusivo para los modales de SOCIOS === */
 
 .swal2-card-socio {
   background-color: #ffb347 !important;
@@ -39,7 +39,7 @@
   box-sizing: border-box !important;
 }
 
-/* Checkbox */
+/* === Checkbox === */
 .swal-form-socio .checkbox-group {
   display: flex;
   align-items: center;
@@ -48,8 +48,10 @@
 }
 
 .swal-form-socio .swal-checkbox {
-  transform: scale(1.3);
-  accent-color: #ff6600;
+  width: 20px !important;          /* ancho fijo */
+  height: 20px !important;         /* alto fijo */
+  transform: none !important;      /* sin escalado */
+  accent-color: #ff6600;           /* color naranja */
   cursor: pointer;
 }
 
@@ -79,5 +81,3 @@
   padding: 0.6rem 1.4rem !important;
   font-weight: 600 !important;
 }
-
-
