@@ -35,6 +35,7 @@ namespace Api.Repositories
                 var inscriptos = await _db.SuscripcionTurnos
                     .CountAsync(x => x.TurnoPlantillaId == item.TurnoPlantillaId, ct);
 
+                item.TurnoPlantilla.Sala!.CupoDisponible =
                     item.TurnoPlantilla.Sala.Cupo - inscriptos;
             }
 
@@ -72,10 +73,13 @@ namespace Api.Repositories
                         st.TurnoPlantilla.DuracionMin,
                         Sala = new
                         {
+                            st.TurnoPlantilla.Sala!.Nombre,
                             CupoTotal = st.TurnoPlantilla.Sala.Cupo,
                             CupoDisponible = st.TurnoPlantilla.Sala.Cupo -
                                 _db.SuscripcionTurnos.Count(x => x.TurnoPlantillaId == st.TurnoPlantillaId)
                         },
+                        Personal = new { st.TurnoPlantilla.Personal!.Nombre },
+                        DiaSemana = new { st.TurnoPlantilla.DiaSemana!.Nombre }
                     },
                     CheckinHecho = _db.Checkins.Any(c =>
                         c.SocioId == st.Suscripcion.Socio.Id &&
@@ -136,6 +140,7 @@ namespace Api.Repositories
                 var inscriptos = await _db.SuscripcionTurnos
                     .CountAsync(x => x.TurnoPlantillaId == item.TurnoPlantillaId, ct);
 
+                item.TurnoPlantilla.Sala!.CupoDisponible =
                     item.TurnoPlantilla.Sala.Cupo - inscriptos;
             }
 
@@ -163,6 +168,7 @@ namespace Api.Repositories
                 var inscriptos = await _db.SuscripcionTurnos
                     .CountAsync(x => x.TurnoPlantillaId == item.TurnoPlantillaId, ct);
 
+                item.TurnoPlantilla.Sala!.CupoDisponible =
                     item.TurnoPlantilla.Sala.Cupo - inscriptos;
             }
 

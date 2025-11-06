@@ -93,6 +93,6 @@
 
 /* Evita inputs fantasmas de SweetAlert */
 .swal2-card-turnos > .swal2-input,
-.swal2-card-turnos > .swal2-select {
+.swal2-card-turnos {
   display: none !important;
 }

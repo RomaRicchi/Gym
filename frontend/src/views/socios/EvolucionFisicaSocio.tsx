@@ -10,12 +10,14 @@ import {
   Title,
   Tooltip as ChartTooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import { mostrarFormularioEvolucion } from "@/views/socios/RegistrarEvolucionFisica";
 import "@/styles/EvolucionFisica.css";
 
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, ChartTooltip, Legend, Filler);
 
 interface EvolucionFisica {
   id: number;

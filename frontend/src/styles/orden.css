@@ -102,35 +102,7 @@
   font-size: 1rem !important;
 }
 
-.swal-alert-simple > .swal2-input,
-.swal-alert-simple > .swal2-select {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-}
 
-/* === Select centrado de tipo “input:select” === */
-.swal2-select {
-  width: 100% !important;
-  border-radius: 8px !important;
-  border: 1.5px solid #ccc !important;
-  height: 42px !important;
-  padding: 0 10px !important;
-  background: #fff !important;
-  color: #222 !important;
-  font-size: 0.95rem !important;
-  margin-top: 0.5rem !important;
-}
-/* === Corrige alineación del select en alertas simples === */
-.swal2-popup .swal2-select {
-  display: block !important;
-  margin: 0.5rem auto 1rem auto !important;
-  width: 90% !important;
-  max-width: 420px !important;
-  text-align: left !important;
-  box-sizing: border-box !important;
-
-}
 /* === Mensaje de validación naranja (para showValidationMessage) === */
 .swal-validation-orange {
   display: inline-block;
@@ -142,9 +114,9 @@
 }
 /* === Oculta inputs o selects fantasma === */
 .swal-alert-simple > .swal2-input,
-.swal-alert-simple > .swal2-select,
+.swal-alert-simple >,
 .swal2-popup.swal2-card-style > .swal2-input,
-.swal2-popup.swal2-card-style > .swal2-select {
+.swal2-popup.swal2-card-style  {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
