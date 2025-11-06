@@ -129,6 +129,7 @@
   max-width: 420px !important;
   text-align: left !important;
   box-sizing: border-box !important;
+
 }
 /* === Mensaje de validación naranja (para showValidationMessage) === */
 .swal-validation-orange {
@@ -150,4 +151,5 @@
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
+
 }

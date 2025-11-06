@@ -3,6 +3,8 @@ import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import "@/styles/orden.css"; // 🟠 Tema naranja global
 
+
+
 export async function editarEstado(id: number) {
   try {
     const { data: estado } = await gymApi.get(`/estadoOrdenPago/${id}`);
@@ -16,6 +18,7 @@ export async function editarEstado(id: number) {
       customClass: {
         popup: "swal2-card-style",
         confirmButton: "btn btn-orange",
+
         cancelButton: "btn btn-secondary",
       },
       buttonsStyling: false,
@@ -30,6 +33,7 @@ export async function editarEstado(id: number) {
               placeholder="Nombre del estado"
               value="${estado.nombre || ""}"
             >
+
           </div>
 
           <div class="swal-input-group">
@@ -39,6 +43,7 @@ export async function editarEstado(id: number) {
               class="swal-textarea"
               placeholder="Descripción..."
             >${estado.descripcion || ""}</textarea>
+
           </div>
         </form>
       `,
@@ -52,7 +57,14 @@ export async function editarEstado(id: number) {
         const descripcion = (document.getElementById("descInput") as HTMLTextAreaElement)?.value.trim();
 
         if (!nombre) {
-          Swal.showValidationMessage(`<span class="swal-validation-orange">⚠️ El nombre es obligatorio</span>`);
+          Swal.showValidationMessage("⚠️ El nombre es obligatorio");
+          const msg = document.querySelector(".swal2-validation-message");
+          if (msg) {
+            msg.setAttribute(
+              "style",
+              "background:#ff6600;color:#fff;border-radius:6px;padding:6px 12px;font-weight:600;"
+            );
+          }
           return false;
         }
 
