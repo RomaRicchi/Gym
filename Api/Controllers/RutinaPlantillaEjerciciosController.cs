@@ -71,7 +71,7 @@ namespace Api.Controllers
         }
 
 
-        // ✅ GET: api/rutinasplantillaejercicios/5
+        // GET: api/rutinasplantillaejercicios/5
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
@@ -86,7 +86,7 @@ namespace Api.Controllers
             return Ok(item);
         }
 
-        // ✅ POST: api/rutinasplantillaejercicios
+        // POST: api/rutinasplantillaejercicios
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] RutinaPlantillaEjercicio model, CancellationToken ct)
         {
@@ -102,20 +102,39 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = model.Id }, model);
         }
 
-        // ✅ PUT: api/rutinasplantillaejercicios/5
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] RutinaPlantillaEjercicio model, CancellationToken ct)
         {
-            var existing = await _context.RutinasPlantillaEjercicios.FindAsync(new object[] { id }, ct);
-            if (existing == null)
-                return NotFound();
+            if (model == null)
+                return BadRequest(new { message = "Datos vacíos o inválidos." });
 
-            _context.Entry(existing).CurrentValues.SetValues(model);
+            var existing = await _context.RutinasPlantillaEjercicios
+                .AsTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+
+            if (existing == null)
+                return NotFound(new { message = "Ejercicio de rutina no encontrado." });
+
+            // Validar existencia de FK
+            bool rutinaOk = await _context.RutinasPlantilla.AnyAsync(r => r.Id == model.RutinaId, ct);
+            bool ejercicioOk = await _context.Ejercicios.AnyAsync(e => e.Id == model.EjercicioId, ct);
+            if (!rutinaOk || !ejercicioOk)
+                return BadRequest(new { message = "Rutina o ejercicio inexistente." });
+
+            // Actualizar campos editables
+            existing.RutinaId = model.RutinaId;
+            existing.EjercicioId = model.EjercicioId;
+            existing.Orden = model.Orden;
+            existing.Series = model.Series;
+            existing.Repeticiones = model.Repeticiones;
+            existing.DescansoSeg = model.DescansoSeg;
+
             await _context.SaveChangesAsync(ct);
-            return Ok(existing);
+            return Ok(new { ok = true, message = "Registro actualizado correctamente." });
         }
 
-        // ✅ DELETE: api/rutinasplantillaejercicios/5
+
+        // DELETE: api/rutinasplantillaejercicios/5
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {

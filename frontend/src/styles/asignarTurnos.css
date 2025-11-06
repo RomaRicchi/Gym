@@ -66,3 +66,14 @@
 .swal2-popup .turno-btn.guardado {
   background: #28a745 !important;
 }
+/* === Ajuste de ancho del modal de Reagendar/Asignar Turnos === */
+.swal2-popup.swal2-card-style {
+  max-width: 620px !important;   /* más ancho */
+  width: 95% !important;         /* responsivo */
+  padding: 2rem 2.5rem !important;
+}
+
+.swal2-popup .turno-grupo {
+  min-width: auto !important;    /* permite que se adapte al nuevo ancho */
+  width: 100% !important;
+}

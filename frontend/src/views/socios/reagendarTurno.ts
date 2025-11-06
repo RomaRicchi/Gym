@@ -1,6 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/asignarTurnos.css"; // ✅ usa los mismos estilos naranjas
+import "@/styles/asignarTurnos.css"; 
 
 /**
  * Modal unificado de reagendado (idéntico en diseño al de asignarTurnos)

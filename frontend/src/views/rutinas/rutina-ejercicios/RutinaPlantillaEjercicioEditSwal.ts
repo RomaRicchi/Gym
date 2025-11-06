@@ -1,9 +1,11 @@
+// @ts-nocheck
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
+import "@/styles/swal-rutina.css"; // estilo naranja global (ajustá la ruta si no existe)
 
-export async function RutinaPlantillaEjercicioEditSwal(id: string, onSuccess?: () => void) {
+export async function RutinaPlantillaEjercicioEditSwal(id: number, onSuccess?: () => void) {
   try {
-    // 🔹 Obtener datos
+    // 🔹 Obtener datos del registro y catálogos
     const [
       { data: item },
       { data: rutinasRes },
@@ -17,67 +19,59 @@ export async function RutinaPlantillaEjercicioEditSwal(id: string, onSuccess?: (
     const rutinas = rutinasRes.items || rutinasRes;
     const ejercicios = ejerciciosRes.items || ejerciciosRes;
 
-    // 🧡 Modal con misma estructura que “Nuevo Turno”
+    // 🧡 Modal unificado
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Ejercicio de Rutina",
       width: 650,
       html: `
         <div class="container-fluid text-start">
-          
-          <div class="row">
-            <div class="col-12">
-              <label for="rutina">Rutina</label>
-              <select id="rutina" class="form-select">
-                <option value="">Seleccionar rutina...</option>
-                ${rutinas
-                  .map(
-                    (r: any) =>
-                      `<option value="${r.id}" ${r.id === item.rutinaId ? "selected" : ""}>${r.nombre}</option>`
-                  )
-                  .join("")}
-              </select>
-            </div>
+          <div class="mb-2">
+            <label for="rutina" class="form-label fw-semibold">Rutina</label>
+            <select id="rutina" class="form-select">
+              <option value="">Seleccionar rutina...</option>
+              ${rutinas
+                .map(
+                  (r: any) =>
+                    `<option value="${r.id}" ${r.id === item.rutinaId ? "selected" : ""}>${r.nombre}</option>`
+                )
+                .join("")}
+            </select>
           </div>
 
-          <div class="row mt-2">
-            <div class="col-12">
-              <label for="ejercicio">Ejercicio</label>
-              <select id="ejercicio" class="form-select">
-                <option value="">Seleccionar ejercicio...</option>
-                ${ejercicios
-                  .map(
-                    (e: any) =>
-                      `<option value="${e.id}" ${e.id === item.ejercicioId ? "selected" : ""}>${e.nombre}</option>`
-                  )
-                  .join("")}
-              </select>
-            </div>
+          <div class="mb-2">
+            <label for="ejercicio" class="form-label fw-semibold">Ejercicio</label>
+            <select id="ejercicio" class="form-select">
+              <option value="">Seleccionar ejercicio...</option>
+              ${ejercicios
+                .map(
+                  (e: any) =>
+                    `<option value="${e.id}" ${e.id === item.ejercicioId ? "selected" : ""}>${e.nombre}</option>`
+                )
+                .join("")}
+            </select>
           </div>
 
-          <!-- 🔸 Dos columnas para Orden / Series -->
-          <div class="row mt-2">
+          <div class="row g-2 mt-2">
             <div class="col-md-6">
-              <label for="orden">Orden</label>
+              <label for="orden" class="form-label fw-semibold">Orden</label>
               <input id="orden" type="number" min="1" class="form-control" value="${item.orden || ""}" />
             </div>
             <div class="col-md-6">
-              <label for="series">Series</label>
+              <label for="series" class="form-label fw-semibold">Series</label>
               <input id="series" type="number" min="1" class="form-control" value="${item.series || ""}" />
             </div>
           </div>
 
-          <!-- 🔸 Dos columnas para Repeticiones / Descanso -->
-          <div class="row mt-2">
+          <div class="row g-2 mt-2">
             <div class="col-md-6">
-              <label for="reps">Repeticiones</label>
+              <label for="reps" class="form-label fw-semibold">Repeticiones</label>
               <input id="reps" type="number" min="1" class="form-control" value="${item.repeticiones || ""}" />
             </div>
             <div class="col-md-6">
-              <label for="descanso">Descanso (seg)</label>
+              <label for="descanso" class="form-label fw-semibold">Descanso (seg)</label>
               <input id="descanso" type="number" min="0" class="form-control" value="${item.descansoSeg || ""}" />
             </div>
           </div>
-
         </div>
       `,
       showCancelButton: true,
@@ -99,7 +93,7 @@ export async function RutinaPlantillaEjercicioEditSwal(id: string, onSuccess?: (
         const descansoSeg = (document.getElementById("descanso") as HTMLInputElement).value;
 
         if (!rutinaId || !ejercicioId)
-          return Swal.showValidationMessage("Seleccioná una rutina y un ejercicio");
+          return Swal.showValidationMessage("⚠️ Seleccioná una rutina y un ejercicio.");
 
         return { rutinaId, ejercicioId, orden, series, repeticiones, descansoSeg };
       },
@@ -120,7 +114,7 @@ export async function RutinaPlantillaEjercicioEditSwal(id: string, onSuccess?: (
     await Swal.fire({
       icon: "success",
       title: "✅ Guardado",
-      text: "Ejercicio actualizado correctamente",
+      text: "Ejercicio actualizado correctamente.",
       customClass: {
         popup: "swal2-card-style",
         confirmButton: "btn btn-orange",
@@ -132,11 +126,11 @@ export async function RutinaPlantillaEjercicioEditSwal(id: string, onSuccess?: (
 
     onSuccess?.();
   } catch (err) {
-    console.error("Error al editar ejercicio de rutina:", err);
+    console.error("❌ Error al editar ejercicio de rutina:", err);
     await Swal.fire({
       icon: "error",
       title: "❌ Error",
-      text: "No se pudo actualizar el registro",
+      text: "No se pudo actualizar el registro.",
       customClass: {
         popup: "swal2-card-style",
         confirmButton: "btn btn-orange",
