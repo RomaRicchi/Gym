@@ -1,4 +1,4 @@
-/* === Estilo general para todos los modales de SweetAlert2 === */
+/* === 🎨 ESTILO GLOBAL DE MODALES SWEETALERT2 === */
 .swal2-card-style {
   background-color: #ffb347 !important;
   border-radius: 1rem !important;
@@ -9,7 +9,7 @@
   overflow-y: visible !important;
 }
 
-/* === Título y texto === */
+/* === TÍTULOS Y TEXTOS === */
 .swal2-title {
   color: #222 !important;
   font-weight: 700 !important;
@@ -25,13 +25,13 @@
   overflow: visible !important;
 }
 
-/* === Íconos de alerta === */
+/* === ÍCONOS === */
 .swal2-icon {
   border-color: #ff8800 !important;
   color: #ff8800 !important;
 }
 
-/* === FORMULARIOS (inputs, selects, textareas) === */
+/* === FORMULARIOS SWEETALERT2 === */
 .swal-form {
   display: flex;
   flex-direction: column;
@@ -39,10 +39,7 @@
   text-align: left;
 }
 
-.swal-form input[type="text"],
-.swal-form input[type="number"],
-.swal-form input[type="email"],
-.swal-form input[type="password"],
+.swal-form input,
 .swal-form select,
 .swal-form textarea {
   width: 100% !important;
@@ -63,12 +60,12 @@
 
 .swal-label {
   font-weight: 600 !important;
-  margin-top: 4px;
   color: #222 !important;
 }
 
-/* === Botones === */
-.btn-orange {
+/* === BOTONES SWEETALERT2 === */
+.btn-orange,
+.swal2-confirm {
   background-color: #ff6600 !important;
   color: #fff !important;
   font-weight: 600 !important;
@@ -76,17 +73,23 @@
   border-radius: 0.5rem !important;
   padding: 0.6rem 1.4rem !important;
 }
-.btn-orange:hover {
+.btn-orange:hover,
+.swal2-confirm:hover {
   background-color: #e65700 !important;
 }
 
-.btn-secondary {
+.btn-secondary,
+.swal2-cancel {
   background-color: #fff !important;
   color: #333 !important;
   border: 1px solid #ccc !important;
   border-radius: 0.5rem !important;
   padding: 0.6rem 1.4rem !important;
   font-weight: 600 !important;
+}
+.btn-secondary:hover,
+.swal2-cancel:hover {
+  background-color: #f2f2f2 !important;
 }
 
 /* === ALERTAS SIMPLES (sin formularios) === */
@@ -96,11 +99,127 @@
   text-align: center !important;
   padding: 2rem 2.5rem !important;
 }
-
 .swal-alert-simple .swal2-html-container {
   text-align: center !important;
   font-size: 1rem !important;
 }
 
+/* === TRANSICIÓN SUAVE === */
+.btn,
+.btn-accion {
+  transition: all 0.2s ease-in-out !important;
+}
 
+/* === BOTONES UNIFORMES EN TABLAS === */
+table .btn-accion {
+  width: 38px !important;
+  height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.1rem !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  vertical-align: middle !important;
+}
 
+/* ✅ Fuerza estilo uniforme para deshabilitados */
+table .btn-accion:disabled,
+table .btn-accion.disabled {
+  background-color: #e6e6e6 !important;
+  color: #555 !important;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  width: 38px !important;
+  height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Evita display:block de Bootstrap */
+table .btn-accion.btn-secondary.disabled,
+table .btn-accion.btn-secondary:disabled {
+  display: inline-flex !important;
+  width: 38px !important;
+  height: 38px !important;
+  text-align: center !important;
+}
+
+/* === DATATABLES === */
+.dataTables_wrapper .dataTables_paginate {
+  margin-top: 1rem !important;
+}
+
+.table thead th {
+  background-color: #222 !important;
+  color: #fff !important;
+  text-transform: uppercase;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: #f8f8f8 !important;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .swal2-card-style {
+    padding: 1.5rem !important;
+    max-width: 90% !important;
+  }
+}
+/* Contenedor de acciones: no dejar que nada estire a los botones */
+.acciones-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+/* Tamaño fijo y no elástico */
+table .btn-accion {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  flex: 0 0 38px !important;     /* <- clave */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  line-height: 1 !important;
+}
+
+/* Estado gris deshabilitado, con el mismo tamaño */
+table .btn-accion--disabled,
+table .btn-accion:disabled,
+table .btn-accion.disabled {
+  background-color: #e6e6e6 !important;
+  color: #666 !important;
+  border: 1px solid #e6e6e6 !important;
+  opacity: 1 !important;               /* que no “se lave” */
+  cursor: not-allowed !important;
+
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  flex: 0 0 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Si por alguna razón se cuela un btn-secondary disabled, lo neutralizamos */
+table .btn-accion.btn-secondary.disabled,
+table .btn-accion.btn-secondary:disabled {
+  display: inline-flex !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+}

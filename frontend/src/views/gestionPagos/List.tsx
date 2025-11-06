@@ -8,6 +8,7 @@ import DataTable from "datatables.net-dt";
 import "datatables.net-dt/css/dataTables.dataTables.css";
 import "datatables.net-responsive-dt";
 import "datatables.net-responsive-dt/css/responsive.dataTables.css";
+import "@/styles/orden.css"; 
 
 export default function OrdenesList() {
   const [ordenes, setOrdenes] = useState<any[]>([]);
@@ -123,15 +124,18 @@ export default function OrdenesList() {
             }">${o.estado?.nombre || "Sin estado"}</span>
           `,
           acciones: `
-            <div class="d-flex justify-content-center gap-2">
-              <button class="btn ${
-                o.comprobante && o.comprobante.id ? "btn-primary" : "btn-secondary disabled"
-              } btn-accion ver"
-                data-id="${o.id}"
-                ${!o.comprobante ? "disabled" : ""}
-                title="Comprobantes">
-                📎
-              </button>
+             <div class="d-flex justify-content-center gap-2 acciones-cell">
+                ${
+                  o.comprobante && o.comprobante.id
+                    ? `
+                    <button class="btn btn-primary btn-accion ver"
+                            data-id="${o.id}" title="Comprobantes">📎</button>
+                    `
+                    : `
+                    <button class="btn btn-accion btn-accion--disabled"
+                            data-id="${o.id}" title="Sin comprobante" disabled>📎</button>
+                    `
+                }
               <button class="btn btn-warning btn-accion editar" data-id="${o.id}" title="Cambiar estado">
                 ✏️
               </button>
@@ -140,7 +144,6 @@ export default function OrdenesList() {
               </button>
             </div>
           `,
-
         };
       });
 
