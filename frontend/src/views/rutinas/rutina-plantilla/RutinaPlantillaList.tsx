@@ -36,15 +36,12 @@ export default function RutinaPlantillaList() {
 
   useEffect(() => {
     if (!loading && rutinas.length > 0 && tableRef.current) {
-      if (dtInstance.current) {
-        dtInstance.current.destroy();
-      }
+      if (dtInstance.current) dtInstance.current.destroy();
+
       dtInstance.current = new DataTable(tableRef.current, {
         responsive: true,
         destroy: true,
-        language: {
-          url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-        },
+        language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" },
       });
     }
   }, [loading, rutinas]);
@@ -68,12 +65,7 @@ export default function RutinaPlantillaList() {
     if (result.isConfirmed) {
       try {
         await gymApi.delete(`/rutinasplantilla/${id}`);
-        Swal.fire({
-          icon: "success",
-          title: "Eliminada",
-          timer: 1000,
-          showConfirmButton: false,
-        });
+        Swal.fire({ icon: "success", title: "Eliminada", timer: 1000, showConfirmButton: false });
         cargarDatos();
       } catch {
         Swal.fire("Error", "No se pudo eliminar la rutina", "error");
@@ -84,21 +76,14 @@ export default function RutinaPlantillaList() {
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3 className="fw-bold text-orange mb-0">📋 Gestión de Rutinas</h3>
-        <Button
-          className="btn btn-orange fw-semibold"
-          onClick={() => RutinaPlantillaCreateSwal(cargarDatos)}
-        >
+        <h3 className="fw-bold text-orange mb-0">🧩 Gestión de Rutinas</h3>
+        <Button className="btn btn-orange fw-semibold" onClick={() => RutinaPlantillaCreateSwal(cargarDatos)}>
           ➕ Nueva
         </Button>
       </div>
 
       <div className="table-responsive">
-        <table
-          className="table table-striped align-middle text-center"
-          ref={tableRef}
-          style={{ width: "100%" }}
-        >
+        <table className="table table-striped align-middle text-center" ref={tableRef} style={{ width: "100%" }}>
           <thead className="table-dark">
             <tr>
               <th style={{ width: "90px" }}>Imagen</th>
@@ -129,7 +114,7 @@ export default function RutinaPlantillaList() {
                   )}
                 </td>
                 <td>{r.nombre}</td>
-                <td className="text-muted small">{r.objetivo || "—"}</td>
+                <td>{r.objetivo || "—"}</td>
                 <td>{r.grupoMuscularNombre || "—"}</td>
                 <td>
                   <div className="d-flex justify-content-center gap-2">

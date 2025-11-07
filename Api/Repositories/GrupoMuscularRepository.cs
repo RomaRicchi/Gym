@@ -2,87 +2,67 @@ using Api.Data;
 using Api.Data.Models;
 using Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Api.Repositories
 {
     public class GrupoMuscularRepository : IGrupoMuscularRepository
     {
-        private readonly GymDbContext _db;
+        private readonly GymDbContext _context;
 
-        public GrupoMuscularRepository(GymDbContext db)
+        public GrupoMuscularRepository(GymDbContext context)
         {
-            _db = db;
+            _context = context;
         }
 
-        // 🔹 Obtener todos los grupos musculares (paginado + búsqueda)
-        public async Task<(IEnumerable<GrupoMuscular> items, int totalItems)> GetPagedAsync(
-            int page, int pageSize, string? q, CancellationToken ct)
+        // 🔹 Obtener todos los grupos musculares
+        public async Task<IEnumerable<GrupoMuscular>> GetAllAsync(CancellationToken ct = default)
         {
-            var query = _db.GruposMusculares.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(q))
-            {
-                var term = q.ToLower();
-                query = query.Where(g =>
-                    g.Nombre.ToLower().Contains(term) ||
-                    (g.Descripcion != null && g.Descripcion.ToLower().Contains(term)));
-            }
-
-            var totalItems = await query.CountAsync(ct);
-
-            var items = await query
-                .OrderBy(g => g.Nombre)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            return await _context.GruposMusculares
                 .AsNoTracking()
+                .OrderBy(g => g.Nombre)
                 .ToListAsync(ct);
-
-            return (items, totalItems);
         }
 
         // 🔹 Obtener un grupo muscular por ID
-        public async Task<GrupoMuscular?> GetByIdAsync(int id, CancellationToken ct)
+        public async Task<GrupoMuscular?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await _db.GruposMusculares
-                .Include(g => g.Ejercicios)
-                .Include(g => g.RutinasPlantilla)
+            return await _context.GruposMusculares
+                .AsNoTracking()
                 .FirstOrDefaultAsync(g => g.Id == id, ct);
         }
 
-        // 🔹 Crear nuevo grupo muscular
-        public async Task<GrupoMuscular> AddAsync(GrupoMuscular model, CancellationToken ct)
+        // 🔹 Crear un nuevo grupo muscular
+        public async Task AddAsync(GrupoMuscular entity, CancellationToken ct = default)
         {
-            _db.GruposMusculares.Add(model);
-            await _db.SaveChangesAsync(ct);
-            return model;
+            _context.GruposMusculares.Add(entity);
+            await _context.SaveChangesAsync(ct);
         }
 
-        // 🔹 Actualizar grupo muscular existente
-        public async Task<GrupoMuscular?> UpdateAsync(int id, GrupoMuscular model, CancellationToken ct)
+        // 🔹 Actualizar un grupo muscular existente
+        public async Task<GrupoMuscular?> UpdateAsync(int id, GrupoMuscular updatedEntity, CancellationToken ct = default)
         {
-            var existing = await _db.GruposMusculares.FindAsync(new object?[] { id }, ct);
-            if (existing == null) return null;
+            var existing = await _context.GruposMusculares.FindAsync(new object[] { id }, ct);
+            if (existing == null)
+                return null;
 
-            existing.Nombre = model.Nombre;
-            existing.Descripcion = model.Descripcion;
-            existing.ImagenUrl = model.ImagenUrl;
+            existing.Nombre = updatedEntity.Nombre;
 
-            await _db.SaveChangesAsync(ct);
+            _context.GruposMusculares.Update(existing);
+            await _context.SaveChangesAsync(ct);
+
             return existing;
         }
 
-        // 🔹 Eliminar grupo muscular
-        public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+        // 🔹 Eliminar un grupo muscular
+        public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         {
-            var existing = await _db.GruposMusculares.FindAsync(new object?[] { id }, ct);
-            if (existing == null) return false;
+            var entity = await _context.GruposMusculares.FindAsync(new object[] { id }, ct);
+            if (entity == null)
+                return false;
 
-            _db.GruposMusculares.Remove(existing);
-            await _db.SaveChangesAsync(ct);
+            _context.GruposMusculares.Remove(entity);
+            await _context.SaveChangesAsync(ct);
+
             return true;
         }
     }

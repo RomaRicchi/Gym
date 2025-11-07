@@ -24,7 +24,7 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 GET: api/rutinasplantilla?page=1&pageSize=10&q=pecho
+        // 🔹 GET paginado
         // ===============================
         [HttpGet]
         public async Task<IActionResult> GetAll(
@@ -48,183 +48,112 @@ namespace Api.Controllers
 
             var totalItems = await query.CountAsync(ct);
 
-            var rutinas = await query
+            var items = await query
                 .OrderBy(r => r.Nombre)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .AsNoTracking()
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Nombre,
+                    r.Objetivo,
+                    r.ImagenUrl,
+                    GrupoMuscularNombre = r.GrupoMuscular != null ? r.GrupoMuscular.Nombre : null
+                })
                 .ToListAsync(ct);
-
-            var items = rutinas.Select(r => new
-            {
-                r.Id,
-                r.Nombre,
-                r.Objetivo,
-                r.GrupoMuscularId,
-                GrupoMuscularNombre = r.GrupoMuscular?.Nombre,
-                r.ImagenUrl
-            });
 
             return Ok(new { totalItems, items });
         }
 
         // ===============================
-        // 🔹 GET: api/rutinasplantilla/5
+        // 🔹 GET por ID
         // ===============================
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
-            var item = await _context.RutinasPlantilla
+            var rutina = await _context.RutinasPlantilla
                 .Include(r => r.GrupoMuscular)
                 .Include(r => r.RutinaPlantillaEjercicios)
                     .ThenInclude(re => re.Ejercicio)
                 .FirstOrDefaultAsync(r => r.Id == id, ct);
 
-            if (item == null)
-                return NotFound(new { message = "Rutina no encontrada." });
+            if (rutina == null)
+                return NotFound();
 
-            var dto = new
-            {
-                item.Id,
-                item.Nombre,
-                item.Objetivo,
-                item.GrupoMuscularId,
-                GrupoMuscularNombre = item.GrupoMuscular?.Nombre,
-                item.ImagenUrl,
-                ejercicios = item.RutinaPlantillaEjercicios.Select(e => new
-                {
-                    e.EjercicioId,
-                    e.Ejercicio.Nombre,
-                    e.Series,
-                    e.Repeticiones,
-                    e.DescansoSeg,
-                    e.Orden,
-                    e.Ejercicio.MediaUrl
-                })
-            };
-
-            return Ok(dto);
+            return Ok(rutina);
         }
 
         // ===============================
-        // 🔹 POST: api/rutinasplantilla
+        // 🔹 POST (crear nueva rutina)
         // ===============================
         [HttpPost]
-        [RequestSizeLimit(10_000_000)] // hasta 10 MB
-        public async Task<IActionResult> Create([FromForm] RutinaPlantilla model, IFormFile? image, CancellationToken ct)
+        public async Task<IActionResult> Create([FromBody] RutinaPlantilla model, CancellationToken ct)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // 📸 Subir imagen si existe
-            if (image != null)
-            {
-                var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Rutinas");
-                Directory.CreateDirectory(uploadsDir);
+            _context.RutinasPlantilla.Add(model);
+            await _context.SaveChangesAsync(ct);
 
-                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
-                var filePath = Path.Combine(uploadsDir, fileName);
-
-                await using var stream = new FileStream(filePath, FileMode.Create);
-                await image.CopyToAsync(stream, ct);
-
-                model.ImagenUrl = Path.Combine("Uploads", "Rutinas", fileName).Replace("\\", "/");
-            }
-
-            await _repo.AddAsync(model, ct);
-
-            var dto = new
-            {
-                model.Id,
-                model.Nombre,
-                model.Objetivo,
-                model.GrupoMuscularId,
-                model.ImagenUrl
-            };
-
-            return CreatedAtAction(nameof(GetById), new { id = model.Id }, dto);
+            return CreatedAtAction(nameof(GetById), new { id = model.Id }, model);
         }
 
         // ===============================
-        // 🔹 PUT: api/rutinasplantilla/5
+        // 🔹 PUT (actualizar existente)
         // ===============================
         [HttpPut("{id:int}")]
-        [RequestSizeLimit(10_000_000)]
-        public async Task<IActionResult> Update(int id, [FromForm] RutinaPlantilla model, IFormFile? image, CancellationToken ct)
+        public async Task<IActionResult> Update(int id, [FromBody] RutinaPlantilla model, CancellationToken ct)
         {
-            if (id != model.Id)
-                return BadRequest(new { message = "El ID no coincide con la URL." });
-
-            var existing = await _context.RutinasPlantilla.FindAsync(id);
+            var existing = await _context.RutinasPlantilla.FindAsync(new object[] { id }, ct);
             if (existing == null)
-                return NotFound(new { message = "Rutina no encontrada." });
+                return NotFound();
 
             existing.Nombre = model.Nombre;
             existing.Objetivo = model.Objetivo;
             existing.GrupoMuscularId = model.GrupoMuscularId;
-
-            if (image != null)
-            {
-                var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Rutinas");
-                Directory.CreateDirectory(uploadsDir);
-
-                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
-                var filePath = Path.Combine(uploadsDir, fileName);
-
-                await using var stream = new FileStream(filePath, FileMode.Create);
-                await image.CopyToAsync(stream, ct);
-
-                existing.ImagenUrl = Path.Combine("Uploads", "Rutinas", fileName).Replace("\\", "/");
-            }
+            existing.ImagenUrl = model.ImagenUrl;
 
             await _context.SaveChangesAsync(ct);
-
-            var dto = new
-            {
-                existing.Id,
-                existing.Nombre,
-                existing.Objetivo,
-                existing.GrupoMuscularId,
-                existing.ImagenUrl
-            };
-
-            return Ok(dto);
+            return Ok(existing);
         }
 
         // ===============================
-        // 🔹 DELETE: api/rutinasplantilla/5
+        // 🔹 DELETE
         // ===============================
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
-            var deleted = await _repo.DeleteAsync(id, ct);
-            if (!deleted)
-                return NotFound(new { message = "Rutina no encontrada." });
+            var existing = await _context.RutinasPlantilla.FindAsync(new object[] { id }, ct);
+            if (existing == null)
+                return NotFound();
 
+            _context.RutinasPlantilla.Remove(existing);
+            await _context.SaveChangesAsync(ct);
             return NoContent();
         }
 
         // ===============================
-        // 🔹 POST: api/rutinasplantilla/upload
+        // 🔹 POST /api/rutinasplantilla/upload (subida de imagen)
         // ===============================
         [HttpPost("upload")]
-        [RequestSizeLimit(10_000_000)]
-        public async Task<IActionResult> UploadImage([FromForm] IFormFile file)
+        [RequestSizeLimit(10_000_000)] // 10 MB
+        public async Task<IActionResult> UploadImage(IFormFile file)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("Debe seleccionar un archivo válido.");
+                return BadRequest("Archivo no válido.");
 
-            var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Rutinas");
-            Directory.CreateDirectory(uploadsDir);
+            var uploadsFolder = Path.Combine(_env.WebRootPath, "Uploads", "Rutinas");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
 
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var filePath = Path.Combine(uploadsDir, fileName);
+            var filePath = Path.Combine(uploadsFolder, fileName);
 
-            await using var stream = new FileStream(filePath, FileMode.Create);
-            await file.CopyToAsync(stream);
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+                await file.CopyToAsync(stream);
 
             var relativePath = Path.Combine("Uploads", "Rutinas", fileName).Replace("\\", "/");
-            return Ok(new { imageUrl = relativePath });
+            return Ok(new { url = relativePath });
         }
     }
 }

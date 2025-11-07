@@ -5,89 +5,103 @@ import "@/styles/swal-card.css";
 
 export async function EjercicioCreateSwal(onSuccess?: () => void) {
   try {
-    // 🔹 Cargar grupos musculares
-    const { data } = await gymApi.get("/grupomuscular");
-    const grupos = data.items || data;
+    // 🔹 Cargar grupos musculares para el selector
+    const { data: gruposMusculares } = await gymApi.get("/grupomuscular");
 
-    const opcionesGrupo = grupos
-      .map((g: any) => `<option value="${g.id}">${g.nombre}</option>`)
-      .join("");
-
+    // 🧱 Construcción del formulario HTML
     const { value: formValues } = await Swal.fire({
-      title: "🏋️‍♂️ Nuevo Ejercicio",
+      title: "➕ Nuevo Ejercicio",
       width: 650,
       customClass: {
         popup: "swal2-card-style",
-        confirmButton: "btn-orange",
-        cancelButton: "btn-secondary",
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
       },
       buttonsStyling: false,
-      html: `
-        <form class="swal-form">
-          <div class="swal-input-group">
-            <label class="swal-label">Nombre</label>
-            <input id="nombreInput" type="text" class="swal2-input" placeholder="Ej: Press de banca">
-          </div>
-
-          <div class="swal-input-group">
-            <label class="swal-label">Grupo muscular</label>
-            <select id="grupoSelect" class="swal2-input form-select">
-              <option value="">Seleccionar...</option>
-              ${opcionesGrupo}
-            </select>
-          </div>
-
-          <div class="swal-input-group">
-            <label class="swal-label">Tips o recomendaciones</label>
-            <textarea id="tipsInput" rows="3" class="swal2-textarea" placeholder="Mantener la espalda recta..."></textarea>
-          </div>
-
-          <div class="swal-input-group">
-            <label class="swal-label">Imagen (opcional)</label>
-            <input id="imagenInput" type="file" accept=".jpg,.jpeg,.png" class="form-control">
-          </div>
-        </form>
-      `,
-      focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: "💾 Guardar",
       cancelButtonText: "Cancelar",
-      preConfirm: () => {
-        const nombre = (document.getElementById("nombreInput") as HTMLInputElement).value.trim();
-        const grupoId = (document.getElementById("grupoSelect") as HTMLSelectElement).value;
-        const tips = (document.getElementById("tipsInput") as HTMLTextAreaElement).value;
-        const file = (document.getElementById("imagenInput") as HTMLInputElement).files?.[0];
+      html: `
+        <form class="swal-form">
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Nombre</label>
+            <input id="nombre" type="text" class="form-control" 
+              placeholder="Nombre del ejercicio">
+          </div>
 
-        if (!nombre || !grupoId) {
-          Swal.showValidationMessage("Completá los campos obligatorios");
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Tips</label>
+            <textarea id="tips" class="form-control" 
+              placeholder="Consejos o notas opcionales"></textarea>
+          </div>
+
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Grupo Muscular</label>
+            <select id="grupoMuscularId" class="form-select">
+              <option value="">Seleccione un grupo</option>
+              ${gruposMusculares
+                .map(
+                  (g: any) =>
+                    `<option value="${g.id}">${g.nombre}</option>`
+                )
+                .join("")}
+            </select>
+          </div>
+
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">URL de Imagen (opcional)</label>
+            <input id="mediaUrl" type="text" class="form-control" 
+              placeholder="ej: uploads/ejercicios/press-banca.jpg">
+          </div>
+        </form>
+      `,
+      preConfirm: () => {
+        const nombre = (document.getElementById("nombre") as HTMLInputElement)
+          .value;
+        const tips = (document.getElementById("tips") as HTMLTextAreaElement)
+          .value;
+        const grupoMuscularId = parseInt(
+          (document.getElementById("grupoMuscularId") as HTMLSelectElement).value
+        );
+        const mediaUrl = (
+          document.getElementById("mediaUrl") as HTMLInputElement
+        ).value;
+
+        if (!nombre.trim()) {
+          Swal.showValidationMessage("El nombre es obligatorio");
           return false;
         }
-        return { nombre, grupoId, tips, file };
+
+        if (isNaN(grupoMuscularId)) {
+          Swal.showValidationMessage("Debe seleccionar un grupo muscular");
+          return false;
+        }
+
+        return { nombre, tips, grupoMuscularId, mediaUrl };
       },
     });
 
+    // 🚫 Cancelado
     if (!formValues) return;
 
-    // 🔹 Crear FormData para enviar imagen
-    const formData = new FormData();
-    formData.append("nombre", formValues.nombre);
-    formData.append("grupoMuscularId", formValues.grupoId);
-    formData.append("tips", formValues.tips || "");
-    if (formValues.file) formData.append("image", formValues.file);
-
-    await gymApi.post("/ejercicios", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+    // 📨 Enviar creación
+    await gymApi.post("/ejercicios", {
+      nombre: formValues.nombre,
+      tips: formValues.tips,
+      grupoMuscularId: formValues.grupoMuscularId,
+      mediaUrl: formValues.mediaUrl || null,
     });
 
     Swal.fire({
       icon: "success",
-      title: "✅ Ejercicio agregado correctamente",
-      timer: 1500,
+      title: "Ejercicio creado",
+      timer: 1200,
       showConfirmButton: false,
     });
 
-    onSuccess?.();
-  } catch (err: any) {
-    Swal.fire("Error", err.response?.data || "No se pudo crear el ejercicio", "error");
+    if (onSuccess) onSuccess();
+  } catch (error: any) {
+    console.error(error);
+    Swal.fire("Error", "No se pudo crear el ejercicio", "error");
   }
 }

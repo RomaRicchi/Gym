@@ -5,87 +5,78 @@ import "@/styles/swal-card.css";
 
 export async function RutinaPlantillaCreateSwal(onSuccess?: () => void) {
   try {
-    const { data } = await gymApi.get("/grupomuscular");
-    const grupos = data.items || data;
-
-    const opcionesGrupo = grupos
-      .map((g: any) => `<option value="${g.id}">${g.nombre}</option>`)
-      .join("");
+    const { data: gruposMusculares } = await gymApi.get("/grupomuscular");
 
     const { value: formValues } = await Swal.fire({
-      title: "🏋️‍♀️ Nueva Rutina",
+      title: "➕ Nueva Rutina",
       width: 650,
       customClass: {
         popup: "swal2-card-style",
-        confirmButton: "btn-orange",
-        cancelButton: "btn-secondary",
+        confirmButton: "btn btn-orange",
+        cancelButton: "btn btn-secondary",
       },
       buttonsStyling: false,
-      html: `
-        <form class="swal-form">
-          <div class="swal-input-group">
-            <label class="swal-label">Nombre</label>
-            <input id="nombreInput" type="text" class="swal2-input" placeholder="Ej: Full Body Avanzada">
-          </div>
-
-          <div class="swal-input-group">
-            <label class="swal-label">Objetivo</label>
-            <input id="objetivoInput" type="text" class="swal2-input" placeholder="Ej: Ganar masa muscular">
-          </div>
-
-          <div class="swal-input-group">
-            <label class="swal-label">Grupo muscular</label>
-            <select id="grupoSelect" class="swal2-input form-select">
-              <option value="">Seleccionar...</option>
-              ${opcionesGrupo}
-            </select>
-          </div>
-
-          <div class="swal-input-group">
-            <label class="swal-label">Imagen (opcional)</label>
-            <input id="imagenInput" type="file" class="form-control" accept=".jpg,.jpeg,.png">
-          </div>
-        </form>
-      `,
       showCancelButton: true,
       confirmButtonText: "💾 Guardar",
       cancelButtonText: "Cancelar",
-      focusConfirm: false,
-      preConfirm: () => {
-        const nombre = document.getElementById("nombreInput").value.trim();
-        const objetivo = document.getElementById("objetivoInput").value.trim();
-        const grupoId = document.getElementById("grupoSelect").value;
-        const file = (document.getElementById("imagenInput") as HTMLInputElement).files?.[0];
+      html: `
+        <div class="swal-form">
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Nombre</label>
+            <input id="nombre" type="text" class="form-control" placeholder="Nombre de la rutina">
+          </div>
 
-        if (!nombre || !grupoId) {
-          Swal.showValidationMessage("Completá los campos obligatorios");
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Objetivo</label>
+            <textarea id="objetivo" class="form-control" placeholder="Objetivo o descripción (opcional)"></textarea>
+          </div>
+
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Grupo Muscular</label>
+            <select id="grupoMuscularId" class="form-select">
+              <option value="">Seleccione un grupo</option>
+              ${gruposMusculares.map((g: any) => `<option value="${g.id}">${g.nombre}</option>`).join("")}
+            </select>
+          </div>
+
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">URL de Imagen (opcional)</label>
+            <input id="imagenUrl" type="text" class="form-control" placeholder="uploads/rutinas/pecho.png">
+          </div>
+        </div>
+      `,
+      preConfirm: () => {
+        const nombre = (document.getElementById("nombre") as HTMLInputElement).value;
+        const objetivo = (document.getElementById("objetivo") as HTMLTextAreaElement).value;
+        const grupoMuscularId = parseInt((document.getElementById("grupoMuscularId") as HTMLSelectElement).value);
+        const imagenUrl = (document.getElementById("imagenUrl") as HTMLInputElement).value;
+
+        if (!nombre.trim()) {
+          Swal.showValidationMessage("El nombre es obligatorio");
           return false;
         }
-        return { nombre, objetivo, grupoId, file };
+        if (isNaN(grupoMuscularId)) {
+          Swal.showValidationMessage("Debe seleccionar un grupo muscular");
+          return false;
+        }
+        return { nombre, objetivo, grupoMuscularId, imagenUrl };
       },
     });
 
     if (!formValues) return;
 
-    const formData = new FormData();
-    formData.append("nombre", formValues.nombre);
-    formData.append("objetivo", formValues.objetivo || "");
-    formData.append("grupoMuscularId", formValues.grupoId);
-    if (formValues.file) formData.append("image", formValues.file);
-
-    await gymApi.post("/rutinasplantilla", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    await gymApi.post("/rutinasplantilla", formValues);
 
     Swal.fire({
       icon: "success",
-      title: "✅ Rutina creada correctamente",
-      timer: 1500,
+      title: "Rutina creada correctamente",
+      timer: 1200,
       showConfirmButton: false,
     });
 
-    onSuccess?.();
-  } catch (err: any) {
-    Swal.fire("Error", err.response?.data || "No se pudo crear la rutina", "error");
+    if (onSuccess) onSuccess();
+  } catch (error) {
+    console.error(error);
+    Swal.fire("Error", "No se pudo crear la rutina", "error");
   }
 }

@@ -11,14 +11,7 @@ export async function GrupoMuscularCreateSwal(onSuccess?: () => void) {
           <label class="form-label fw-semibold">Nombre</label>
           <input id="nombre" class="form-control" placeholder="Ej: Pecho, Piernas, Espalda" />
         </div>
-        <div class="mb-2 text-start">
-          <label class="form-label fw-semibold">Descripción</label>
-          <textarea id="descripcion" class="form-control" rows="2"></textarea>
-        </div>
-        <div class="mb-2 text-start">
-          <label class="form-label fw-semibold">Imagen URL</label>
-          <input id="imagenUrl" class="form-control" placeholder="/img/pecho.png" />
-        </div>
+       
       `,
       confirmButtonText: "Guardar",
       showCancelButton: true,
@@ -27,15 +20,13 @@ export async function GrupoMuscularCreateSwal(onSuccess?: () => void) {
       focusConfirm: false,
       preConfirm: () => {
         const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
-        const descripcion = (document.getElementById("descripcion") as HTMLTextAreaElement).value.trim();
-        const imagenUrl = (document.getElementById("imagenUrl") as HTMLInputElement).value.trim();
 
         if (!nombre) {
           Swal.showValidationMessage("⚠️ El nombre es obligatorio.");
           return false;
         }
 
-        return { nombre, descripcion, imagenUrl };
+        return { nombre };
       },
     });
 

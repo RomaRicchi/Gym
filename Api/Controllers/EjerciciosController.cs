@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Data.Models;
+using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,27 +8,31 @@ using Microsoft.EntityFrameworkCore;
 namespace Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/ejercicios")]
     [Authorize(Roles = "Administrador, Profesor")]
     public class EjerciciosController : ControllerBase
     {
-        private readonly GymDbContext _db;
+        private readonly IEjercicioRepository _repo;
+        private readonly GymDbContext _context;
         private readonly IWebHostEnvironment _env;
 
-        public EjerciciosController(GymDbContext db, IWebHostEnvironment env)
+        public EjerciciosController(IEjercicioRepository repo, GymDbContext context, IWebHostEnvironment env)
         {
-            _db = db;
+            _repo = repo;
+            _context = context;
             _env = env;
         }
 
-        // === GET: api/ejercicios ===
+        // ===============================
+        // 🔹 GET paginado
+        // ===============================
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? q = null)
         {
-            var query = _db.Ejercicios
+            var query = _context.Ejercicios
                 .Include(e => e.GrupoMuscular)
                 .AsQueryable();
 
@@ -36,6 +41,7 @@ namespace Api.Controllers
                 var term = q.ToLower();
                 query = query.Where(e =>
                     e.Nombre.ToLower().Contains(term) ||
+                    e.Tips.ToLower().Contains(term) ||
                     (e.GrupoMuscular != null && e.GrupoMuscular.Nombre.ToLower().Contains(term)));
             }
 
@@ -45,111 +51,106 @@ namespace Api.Controllers
                 .OrderBy(e => e.Nombre)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .AsNoTracking()
+                .Select(e => new
+                {
+                    e.Id,
+                    e.Nombre,
+                    e.Tips,
+                    e.MediaUrl,
+                    GrupoMuscularNombre = e.GrupoMuscular != null ? e.GrupoMuscular.Nombre : null
+                })
                 .ToListAsync();
 
             return Ok(new { items, totalItems });
         }
 
-        // === GET: api/ejercicios/5 ===
+        // ===============================
+        // 🔹 GET por ID
+        // ===============================
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
-            var item = await _db.Ejercicios
-                .Include(e => e.GrupoMuscular)
-                .FirstOrDefaultAsync(e => e.Id == id);
+            var e = await _context.Ejercicios
+                .Include(g => g.GrupoMuscular)
+                .FirstOrDefaultAsync(e => e.Id == id, ct);
 
-            return item == null ? NotFound() : Ok(item);
+            if (e == null)
+                return NotFound();
+
+            return Ok(e);
         }
 
-        // === POST: api/ejercicios ===
+        // ===============================
+        // 🔹 POST (crear nuevo)
+        // ===============================
         [HttpPost]
-        [RequestSizeLimit(10_000_000)] // 10 MB máx
-        public async Task<IActionResult> Create([FromForm] Ejercicio model, IFormFile? image)
+        public async Task<IActionResult> Create([FromBody] Ejercicio model, CancellationToken ct)
         {
-            if (image != null)
-            {
-                var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Ejercicios");
-                Directory.CreateDirectory(uploadsDir);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
-                var filePath = Path.Combine(uploadsDir, fileName);
-
-                await using var stream = new FileStream(filePath, FileMode.Create);
-                await image.CopyToAsync(stream);
-
-                model.MediaUrl = Path.Combine("Uploads", "Ejercicios", fileName).Replace("\\", "/");
-            }
-
-            _db.Ejercicios.Add(model);
-            await _db.SaveChangesAsync();
+            _context.Ejercicios.Add(model);
+            await _context.SaveChangesAsync(ct);
             return CreatedAtAction(nameof(GetById), new { id = model.Id }, model);
         }
 
-        // === PUT: api/ejercicios/5 ===
+        // ===============================
+        // 🔹 PUT (actualizar existente)
+        // ===============================
         [HttpPut("{id:int}")]
-        [RequestSizeLimit(10_000_000)]
-        public async Task<IActionResult> Update(int id, [FromForm] Ejercicio model, IFormFile? image)
+        public async Task<IActionResult> Update(int id, [FromBody] Ejercicio model, CancellationToken ct)
         {
-            var existing = await _db.Ejercicios.FindAsync(id);
+            var existing = await _context.Ejercicios.FindAsync(new object[] { id }, ct);
             if (existing == null)
                 return NotFound();
 
             existing.Nombre = model.Nombre;
             existing.Tips = model.Tips;
             existing.GrupoMuscularId = model.GrupoMuscularId;
+            existing.MediaUrl = model.MediaUrl;
 
-            if (image != null)
-            {
-                var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Ejercicios");
-                Directory.CreateDirectory(uploadsDir);
-
-                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
-                var filePath = Path.Combine(uploadsDir, fileName);
-
-                await using var stream = new FileStream(filePath, FileMode.Create);
-                await image.CopyToAsync(stream);
-
-                existing.MediaUrl = Path.Combine("Uploads", "Ejercicios", fileName).Replace("\\", "/");
-            }
-
-            await _db.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
             return Ok(existing);
         }
 
-        // === DELETE: api/ejercicios/5 ===
+        // ===============================
+        // 🔹 DELETE
+        // ===============================
         [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
-            var entity = await _db.Ejercicios.FindAsync(id);
-            if (entity == null)
+            var existing = await _context.Ejercicios.FindAsync(new object[] { id }, ct);
+            if (existing == null)
                 return NotFound();
 
-            _db.Ejercicios.Remove(entity);
-            await _db.SaveChangesAsync();
-
+            _context.Ejercicios.Remove(existing);
+            await _context.SaveChangesAsync(ct);
             return NoContent();
         }
 
-        // === POST: api/ejercicios/upload ===
+        // ===============================
+        // 🔹 POST: api/ejercicios/upload
+        // ===============================
         [HttpPost("upload")]
-        [RequestSizeLimit(10_000_000)]
-        public async Task<IActionResult> UploadImage([FromForm] IFormFile file)
+        [RequestSizeLimit(10_000_000)] // 10 MB
+        public async Task<IActionResult> Upload(IFormFile file)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("Debe seleccionar un archivo válido.");
+                return BadRequest("Archivo no válido.");
 
-            var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Ejercicios");
-            Directory.CreateDirectory(uploadsDir);
+            var uploadsFolder = Path.Combine(_env.WebRootPath, "Uploads", "Ejercicios");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
 
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var filePath = Path.Combine(uploadsDir, fileName);
+            var filePath = Path.Combine(uploadsFolder, fileName);
 
-            await using var stream = new FileStream(filePath, FileMode.Create);
-            await file.CopyToAsync(stream);
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+                await file.CopyToAsync(stream);
 
             var relativePath = Path.Combine("Uploads", "Ejercicios", fileName).Replace("\\", "/");
-            return Ok(new { imageUrl = relativePath });
+            return Ok(new { url = relativePath });
         }
+
     }
 }

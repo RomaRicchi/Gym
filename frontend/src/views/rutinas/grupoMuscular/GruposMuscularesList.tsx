@@ -8,8 +8,6 @@ import { GrupoMuscularEditSwal } from "@/views/rutinas/grupoMuscular/GrupoMuscul
 interface GrupoMuscular {
   id: number;
   nombre: string;
-  descripcion?: string;
-  imagenUrl?: string;
 }
 
 export default function GruposMuscularesList() {
@@ -110,25 +108,7 @@ export default function GruposMuscularesList() {
       <div className="row g-3">
         {grupos.map((g) => (
           <div key={g.id} className="col-md-4 col-lg-3">
-            <div className="card shadow-sm text-center">
-              {g.imagenUrl ? (
-                <img
-                  src={g.imagenUrl}
-                  alt={g.nombre}
-                  className="card-img-top"
-                  style={{ height: "150px", objectFit: "cover" }}
-                />
-              ) : (
-                <div
-                  className="bg-light d-flex align-items-center justify-content-center"
-                  style={{ height: "150px" }}
-                >
-                  <span className="text-muted">Sin imagen</span>
-                </div>
-              )}
-              <div className="card-body">
                 <h5 className="fw-bold">{g.nombre}</h5>
-                <p className="text-muted small">{g.descripcion || "—"}</p>
                 <div className="d-flex justify-content-center gap-2">
                   <button
                     className="btn btn-sm btn-warning"
@@ -144,8 +124,6 @@ export default function GruposMuscularesList() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
         ))}
       </div>
 
