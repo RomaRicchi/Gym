@@ -97,5 +97,15 @@ namespace Api.Repositories
             await _db.SaveChangesAsync(ct);
             return true;
         }
+        public async Task<IEnumerable<Ejercicio>> GetByGrupoMuscularAsync(int grupoMuscularId, CancellationToken ct)
+        {
+            return await _db.Ejercicios
+                .Include(e => e.GrupoMuscular)
+                .Where(e => e.GrupoMuscularId == grupoMuscularId)
+                .OrderBy(e => e.Nombre)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
     }
 }

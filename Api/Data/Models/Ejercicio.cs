@@ -1,14 +1,20 @@
-﻿public partial class Ejercicio
+﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+
+namespace Api.Data.Models
 {
-    public int Id { get; set; }
-    public string Nombre { get; set; } = null!;
-    public string? Tips { get; set; }
-    public string? MediaUrl { get; set; }
+    public partial class Ejercicio
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = null!;
+        public string? Tips { get; set; }
+        public string? MediaUrl { get; set; }
 
-    // 🔗 Relación con grupo muscular
-    public int GrupoMuscularId { get; set; }
-    public virtual GrupoMuscular GrupoMuscular { get; set; } = null!;
+        // 🔗 Relación con grupo muscular
+        public int GrupoMuscularId { get; set; }
+        public virtual GrupoMuscular GrupoMuscular { get; set; } = null!;
 
-    public virtual ICollection<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; } 
-        = new List<RutinaPlantillaEjercicio>();
+        public virtual ICollection<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; }
+            = new List<RutinaPlantillaEjercicio>();
+    }
 }

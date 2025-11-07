@@ -1,19 +1,25 @@
-﻿public class RutinaPlantilla
+﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+
+namespace Api.Data.Models
 {
-    public int Id { get; set; }
+    public class RutinaPlantilla
+    {
+        public int Id { get; set; }
 
-    [Required, StringLength(120)]
-    public string Nombre { get; set; } = string.Empty;
+        [Required, StringLength(120)]
+        public string Nombre { get; set; } = string.Empty;
 
-    [StringLength(120)]
-    public string? Objetivo { get; set; }
+        [StringLength(120)]
+        public string? Objetivo { get; set; }
 
-    // 🔗 Relación con grupo muscular
-    public int GrupoMuscularId { get; set; }
-    public virtual GrupoMuscular GrupoMuscular { get; set; } = null!;
+        // 🔗 Relación con grupo muscular
+        public int GrupoMuscularId { get; set; }
+        public virtual GrupoMuscular GrupoMuscular { get; set; } = null!;
 
-    public string? ImagenUrl { get; set; }
+        public string? ImagenUrl { get; set; }
 
-    public virtual ICollection<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; } 
-        = new List<RutinaPlantillaEjercicio>();
+        public virtual ICollection<RutinaPlantillaEjercicio> RutinaPlantillaEjercicios { get; set; }
+            = new List<RutinaPlantillaEjercicio>();
+    }
 }

@@ -1,160 +1,155 @@
 using Api.Data;
 using Api.Data.Models;
-using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Api.Controllers
 {
     [ApiController]
-    [Route("api/ejercicios")]
+    [Route("api/[controller]")]
     [Authorize(Roles = "Administrador, Profesor")]
     public class EjerciciosController : ControllerBase
     {
-        private readonly IEjercicioRepository _repo;
-        private readonly GymDbContext _context;
+        private readonly GymDbContext _db;
+        private readonly IWebHostEnvironment _env;
 
-        public EjerciciosController(IEjercicioRepository repo, GymDbContext context)
+        public EjerciciosController(GymDbContext db, IWebHostEnvironment env)
         {
-            _repo = repo;
-            _context = context;
+            _db = db;
+            _env = env;
         }
 
-        // ===============================
-        // 🔹 GET: api/ejercicios?page=1&pageSize=10&q=press
-        // ===============================
+        // === GET: api/ejercicios ===
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? q = null)
         {
-            var query = _context.Ejercicios
+            var query = _db.Ejercicios
                 .Include(e => e.GrupoMuscular)
                 .AsQueryable();
 
-            // 🔍 Búsqueda por nombre o grupo muscular
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var term = q.ToLower();
                 query = query.Where(e =>
                     e.Nombre.ToLower().Contains(term) ||
-                    e.GrupoMuscular.Nombre.ToLower().Contains(term));
+                    (e.GrupoMuscular != null && e.GrupoMuscular.Nombre.ToLower().Contains(term)));
             }
 
             var totalItems = await query.CountAsync();
 
-            // 📄 Paginación
-            var ejercicios = await query
+            var items = await query
                 .OrderBy(e => e.Nombre)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .AsNoTracking()
                 .ToListAsync();
 
-            // 🔹 DTO directo
-            var items = ejercicios.Select(e => new
-            {
-                e.Id,
-                e.Nombre,
-                e.Tips,
-                e.MediaUrl,
-                e.GrupoMuscularId,
-                GrupoMuscularNombre = e.GrupoMuscular != null ? e.GrupoMuscular.Nombre : null
-            });
-
-            return Ok(new { totalItems, items });
+            return Ok(new { items, totalItems });
         }
 
-        // ===============================
-        // 🔹 GET: api/ejercicios/5
-        // ===============================
+        // === GET: api/ejercicios/5 ===
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken ct)
+        public async Task<IActionResult> GetById(int id)
         {
-            var item = await _context.Ejercicios
+            var item = await _db.Ejercicios
                 .Include(e => e.GrupoMuscular)
-                .FirstOrDefaultAsync(e => e.Id == id, ct);
+                .FirstOrDefaultAsync(e => e.Id == id);
 
-            if (item == null)
-                return NotFound(new { message = "Ejercicio no encontrado." });
-
-            var dto = new
-            {
-                item.Id,
-                item.Nombre,
-                item.Tips,
-                item.MediaUrl,
-                item.GrupoMuscularId,
-                GrupoMuscularNombre = item.GrupoMuscular?.Nombre
-            };
-
-            return Ok(dto);
+            return item == null ? NotFound() : Ok(item);
         }
 
-        // ===============================
-        // 🔹 POST: api/ejercicios
-        // ===============================
+        // === POST: api/ejercicios ===
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Ejercicio model, CancellationToken ct)
+        [RequestSizeLimit(10_000_000)] // 10 MB máx
+        public async Task<IActionResult> Create([FromForm] Ejercicio model, IFormFile? image)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            await _repo.AddAsync(model, ct);
-
-            var dto = new
+            if (image != null)
             {
-                model.Id,
-                model.Nombre,
-                model.Tips,
-                model.MediaUrl,
-                model.GrupoMuscularId
-            };
+                var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Ejercicios");
+                Directory.CreateDirectory(uploadsDir);
 
-            return CreatedAtAction(nameof(GetById), new { id = model.Id }, dto);
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
+                var filePath = Path.Combine(uploadsDir, fileName);
+
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await image.CopyToAsync(stream);
+
+                model.MediaUrl = Path.Combine("Uploads", "Ejercicios", fileName).Replace("\\", "/");
+            }
+
+            _db.Ejercicios.Add(model);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById), new { id = model.Id }, model);
         }
 
-        // ===============================
-        // 🔹 PUT: api/ejercicios/5
-        // ===============================
+        // === PUT: api/ejercicios/5 ===
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Ejercicio model, CancellationToken ct)
+        [RequestSizeLimit(10_000_000)]
+        public async Task<IActionResult> Update(int id, [FromForm] Ejercicio model, IFormFile? image)
         {
-            if (id != model.Id)
-                return BadRequest(new { message = "El ID no coincide con la URL." });
+            var existing = await _db.Ejercicios.FindAsync(id);
+            if (existing == null)
+                return NotFound();
 
-            var updated = await _repo.UpdateAsync(id, model, ct);
-            if (updated == null)
-                return NotFound(new { message = "Ejercicio no encontrado." });
+            existing.Nombre = model.Nombre;
+            existing.Tips = model.Tips;
+            existing.GrupoMuscularId = model.GrupoMuscularId;
 
-            var dto = new
+            if (image != null)
             {
-                updated.Id,
-                updated.Nombre,
-                updated.Tips,
-                updated.MediaUrl,
-                updated.GrupoMuscularId
-            };
+                var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Ejercicios");
+                Directory.CreateDirectory(uploadsDir);
 
-            return Ok(dto);
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
+                var filePath = Path.Combine(uploadsDir, fileName);
+
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await image.CopyToAsync(stream);
+
+                existing.MediaUrl = Path.Combine("Uploads", "Ejercicios", fileName).Replace("\\", "/");
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok(existing);
         }
 
-        // ===============================
-        // 🔹 DELETE: api/ejercicios/5
-        // ===============================
+        // === DELETE: api/ejercicios/5 ===
         [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id, CancellationToken ct)
+        public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _repo.DeleteAsync(id, ct);
-            if (!deleted)
-                return NotFound(new { message = "Ejercicio no encontrado." });
+            var entity = await _db.Ejercicios.FindAsync(id);
+            if (entity == null)
+                return NotFound();
+
+            _db.Ejercicios.Remove(entity);
+            await _db.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        // === POST: api/ejercicios/upload ===
+        [HttpPost("upload")]
+        [RequestSizeLimit(10_000_000)]
+        public async Task<IActionResult> UploadImage([FromForm] IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Debe seleccionar un archivo válido.");
+
+            var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Ejercicios");
+            Directory.CreateDirectory(uploadsDir);
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var filePath = Path.Combine(uploadsDir, fileName);
+
+            await using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+
+            var relativePath = Path.Combine("Uploads", "Ejercicios", fileName).Replace("\\", "/");
+            return Ok(new { imageUrl = relativePath });
         }
     }
 }

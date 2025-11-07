@@ -1,97 +1,103 @@
+using Api.Data;
 using Api.Data.Models;
-using Api.Dtos;
-using Api.Mappers;
-using Api.Repositories.Interfaces;
+using Api.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Administrador, Profesor")]
     public class GrupoMuscularController : ControllerBase
     {
-        private readonly IGrupoMuscularRepository _repo;
+        private readonly GymDbContext _context;
 
-        public GrupoMuscularController(IGrupoMuscularRepository repo)
+        public GrupoMuscularController(GymDbContext context)
         {
-            _repo = repo;
+            _context = context;
         }
 
-        // ===============================
-        //  GET: api/grupomuscular?page=1&pageSize=50&q=pecho
-        // ===============================
+        // === GET: api/grupomuscular ===
         [HttpGet]
-        public async Task<ActionResult> GetAll(
+        public async Task<IActionResult> GetAll(
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 50,
-            [FromQuery] string? q = null,
-            CancellationToken ct = default)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? q = null)
         {
-            var (items, totalItems) = await _repo.GetPagedAsync(page, pageSize, q, ct);
-            var dtos = items.Select(g => g.ToDto());
-            return Ok(new { totalItems, items = dtos });
+            var query = _context.GruposMusculares.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.ToLower();
+                query = query.Where(g =>
+                    g.Nombre.ToLower().Contains(term) ||
+                    (g.Descripcion != null && g.Descripcion.ToLower().Contains(term)));
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var grupos = await query
+                .OrderBy(g => g.Nombre)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return Ok(new { items = grupos, totalItems });
         }
 
-        // ===============================
-        // GET: api/grupomuscular/5
-        // ===============================
-        [HttpGet("{id}")]
-        public async Task<ActionResult<GrupoMuscularDto>> GetById(int id, CancellationToken ct)
+        // === GET: api/grupomuscular/5 ===
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            var grupo = await _repo.GetByIdAsync(id, ct);
-            if (grupo == null)
-                return NotFound(new { message = "Grupo muscular no encontrado." });
-
-            return Ok(grupo.ToDto());
+            var grupo = await _context.GruposMusculares.FindAsync(id);
+            return grupo == null ? NotFound() : Ok(grupo);
         }
 
-        // ===============================
-        // POST: api/grupomuscular
-        // ===============================
+        // === POST: api/grupomuscular ===
         [HttpPost]
-        public async Task<ActionResult<GrupoMuscularDto>> Create(
-            [FromBody] GrupoMuscularDto dto,
-            CancellationToken ct)
+        public async Task<IActionResult> Create([FromBody] GrupoMuscularDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var entity = new GrupoMuscular
+            {
+                Nombre = dto.Nombre,
+                Descripcion = dto.Descripcion,
+                ImagenUrl = dto.ImagenUrl
+            };
 
-            var entity = dto.ToEntity();
-            await _repo.AddAsync(entity, ct);
+            _context.GruposMusculares.Add(entity);
+            await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById),
-                new { id = entity.Id },
-                entity.ToDto());
+            return CreatedAtAction(nameof(GetById), new { id = entity.Id }, entity);
         }
 
-        // ===============================
-        // PUT: api/grupomuscular/5
-        // ===============================
-        [HttpPut("{id}")]
-        public async Task<ActionResult<GrupoMuscularDto>> Update(
-            int id,
-            [FromBody] GrupoMuscularDto dto,
-            CancellationToken ct)
+        // === PUT: api/grupomuscular/5 ===
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] GrupoMuscularDto dto)
         {
-            if (id != dto.Id)
-                return BadRequest(new { message = "El ID del cuerpo no coincide con la URL." });
+            var entity = await _context.GruposMusculares.FindAsync(id);
+            if (entity == null)
+                return NotFound();
 
-            var updated = await _repo.UpdateAsync(id, dto.ToEntity(), ct);
-            if (updated == null)
-                return NotFound(new { message = "Grupo muscular no encontrado." });
+            entity.Nombre = dto.Nombre;
+            entity.Descripcion = dto.Descripcion;
+            entity.ImagenUrl = dto.ImagenUrl;
 
-            return Ok(updated.ToDto());
+            await _context.SaveChangesAsync();
+            return Ok(entity);
         }
 
-        // ===============================
-        // DELETE: api/grupomuscular/5
-        // ===============================
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id, CancellationToken ct)
+        // === DELETE: api/grupomuscular/5 ===
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _repo.DeleteAsync(id, ct);
-            if (!deleted)
-                return NotFound(new { message = "Grupo muscular no encontrado." });
+            var entity = await _context.GruposMusculares.FindAsync(id);
+            if (entity == null)
+                return NotFound();
+
+            _context.GruposMusculares.Remove(entity);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }

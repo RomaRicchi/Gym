@@ -1,71 +1,106 @@
+// @ts-nocheck
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import "@/styles/swal-card.css";
 
-export async function RutinaPlantillaEditSwal(id: string, onSuccess?: () => void) {
+export async function RutinaPlantillaEditSwal(id: number, onSuccess?: () => void) {
   try {
-    const [resRutina, resGrupos] = await Promise.all([
+    const [{ data: rutina }, { data: gruposRes }] = await Promise.all([
       gymApi.get(`/rutinasplantilla/${id}`),
       gymApi.get("/grupomuscular"),
     ]);
 
-    const r = resRutina.data;
-    const grupos = resGrupos.data.items || resGrupos.data;
+    const grupos = gruposRes.items || gruposRes;
 
-    const options = grupos
-      .map(
-        (g: any) =>
-          `<option value="${g.id}" ${g.id === r.grupoMuscularId ? "selected" : ""}>${g.nombre}</option>`
-      )
+    const opcionesGrupo = grupos
+      .map((g: any) => {
+        const selected = g.id === rutina.grupoMuscularId ? "selected" : "";
+        return `<option value="${g.id}" ${selected}>${g.nombre}</option>`;
+      })
       .join("");
 
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Rutina",
+      width: 650,
+      customClass: {
+        popup: "swal2-card-style",
+        confirmButton: "btn-orange",
+        cancelButton: "btn-secondary",
+      },
+      buttonsStyling: false,
       html: `
-        <div class="mb-2 text-start">
-          <label class="form-label fw-semibold">Nombre</label>
-          <input id="nombre" class="form-control" value="${r.nombre || ""}" />
-        </div>
-        <div class="mb-2 text-start">
-          <label class="form-label fw-semibold">Objetivo</label>
-          <input id="objetivo" class="form-control" value="${r.objetivo || ""}" />
-        </div>
-        <div class="mb-2 text-start">
-          <label class="form-label fw-semibold">Grupo Muscular</label>
-          <select id="grupoMuscularId" class="form-select">${options}</select>
-        </div>
-        <div class="mb-2 text-start">
-          <label class="form-label fw-semibold">Imagen URL</label>
-          <input id="imagenUrl" class="form-control" value="${r.imagenUrl || ""}" />
-        </div>
+        <form class="swal-form">
+          <div class="swal-input-group">
+            <label class="swal-label">Nombre</label>
+            <input id="nombreInput" type="text" class="swal2-input" value="${rutina.nombre || ""}">
+          </div>
+
+          <div class="swal-input-group">
+            <label class="swal-label">Objetivo</label>
+            <input id="objetivoInput" type="text" class="swal2-input" value="${rutina.objetivo || ""}">
+          </div>
+
+          <div class="swal-input-group">
+            <label class="swal-label">Grupo muscular</label>
+            <select id="grupoSelect" class="swal2-input form-select">
+              ${opcionesGrupo}
+            </select>
+          </div>
+
+          <div class="swal-input-group">
+            <label class="swal-label">Imagen (opcional)</label>
+            <input id="imagenInput" type="file" class="form-control" accept=".jpg,.jpeg,.png">
+            ${
+              rutina.imagenUrl
+                ? `<div style="margin-top:10px;text-align:center">
+                     <img src="${import.meta.env.VITE_API_URL}/${rutina.imagenUrl}"
+                          style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid #ff6600;">
+                   </div>`
+                : ""
+            }
+          </div>
+        </form>
       `,
-      confirmButtonText: "Guardar cambios",
       showCancelButton: true,
+      confirmButtonText: "💾 Guardar cambios",
       cancelButtonText: "Cancelar",
-      confirmButtonColor: "#ff6600",
       focusConfirm: false,
       preConfirm: () => {
-        const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
-        const objetivo = (document.getElementById("objetivo") as HTMLInputElement).value.trim();
-        const grupoMuscularId = (document.getElementById("grupoMuscularId") as HTMLSelectElement).value;
-        const imagenUrl = (document.getElementById("imagenUrl") as HTMLInputElement).value.trim();
+        const nombre = document.getElementById("nombreInput").value.trim();
+        const objetivo = document.getElementById("objetivoInput").value.trim();
+        const grupoId = document.getElementById("grupoSelect").value;
+        const file = (document.getElementById("imagenInput") as HTMLInputElement).files?.[0];
 
-        if (!nombre || !grupoMuscularId) {
-          Swal.showValidationMessage("⚠️ Nombre y grupo muscular son obligatorios.");
+        if (!nombre || !grupoId) {
+          Swal.showValidationMessage("Completá los campos obligatorios");
           return false;
         }
-
-        return { id: r.id, nombre, objetivo, grupoMuscularId: Number(grupoMuscularId), imagenUrl };
+        return { nombre, objetivo, grupoId, file };
       },
     });
 
-    if (formValues) {
-      await gymApi.put(`/rutinasplantilla/${id}`, formValues);
-      Swal.fire("✅ Actualizado", "Rutina editada correctamente.", "success");
-      onSuccess?.();
-    }
-  } catch (error) {
-    console.error(error);
-    Swal.fire("Error", "No se pudo editar la rutina.", "error");
+    if (!formValues) return;
+
+    const formData = new FormData();
+    formData.append("id", id.toString());
+    formData.append("nombre", formValues.nombre);
+    formData.append("objetivo", formValues.objetivo || "");
+    formData.append("grupoMuscularId", formValues.grupoId);
+    if (formValues.file) formData.append("image", formValues.file);
+
+    await gymApi.put(`/rutinasplantilla/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    Swal.fire({
+      icon: "success",
+      title: "✅ Cambios guardados",
+      timer: 1200,
+      showConfirmButton: false,
+    });
+
+    onSuccess?.();
+  } catch (err: any) {
+    Swal.fire("Error", err.response?.data || "No se pudo editar la rutina", "error");
   }
 }

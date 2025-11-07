@@ -1,0 +1,93 @@
+/* === 🎨 SweetAlert2 — Estilo Naranja FitGym === */
+
+.swal2-popup.swal2-card-style {
+  border-radius: 14px !important;
+  background-color: #ffa940 !important;
+  color: #222 !important;
+  padding: 2rem 2.5rem !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+  font-family: "Poppins", "Segoe UI", sans-serif !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === 📋 Formulario interno === */
+.swal-form {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+/* === 🏷️ Etiquetas === */
+.swal-label {
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* === 📦 Inputs / Select === */
+.swal2-input,
+.swal2-textarea,
+.form-control,
+.form-select {
+  width: 100% !important;
+  border-radius: 8px !important;
+  border: 1.5px solid #ccc !important;
+  padding: 0.55rem 0.75rem !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.swal2-input:focus,
+.swal2-textarea:focus,
+.form-control:focus,
+.form-select:focus {
+  border-color: #ff6600 !important;
+  box-shadow: 0 0 6px rgba(255, 102, 0, 0.5) !important;
+  outline: none !important;
+}
+
+/* === ✅ Botones === */
+.swal2-actions .btn-orange,
+.swal2-confirm.btn-orange {
+  background-color: #ff6600 !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600;
+  border-radius: 8px !important;
+  padding: 0.6rem 1.4rem !important;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.swal2-actions .btn-orange:hover,
+.swal2-confirm.btn-orange:hover {
+  background-color: #e65c00 !important;
+}
+
+/* === ❌ Botón cancelar === */
+.swal2-actions .btn-secondary {
+  background-color: #ccc !important;
+  border: none !important;
+  color: #222 !important;
+  font-weight: 500;
+  border-radius: 8px !important;
+  padding: 0.6rem 1.4rem !important;
+}
+
+.swal2-actions .btn-secondary:hover {
+  background-color: #bdbdbd !important;
+}
+
+/* === 🧱 Alineación general === */
+.swal2-actions {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  margin-top: 1.5rem !important;
+}

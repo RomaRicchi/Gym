@@ -79,7 +79,41 @@ public partial class GymDbContext : DbContext
             .HasForeignKey(e => e.SocioId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("fk_evolucion_socio");
+        // Ejercicio -> GrupoMuscular (N:1)
+        modelBuilder.Entity<Ejercicio>()
+            .HasOne(e => e.GrupoMuscular)
+            .WithMany(g => g.Ejercicios)
+            .HasForeignKey(e => e.GrupoMuscularId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("fk_ejercicio_grupo_muscular");
+                
 
+        //  RutinaPlantilla -> GrupoMuscular (N:1)
+        modelBuilder.Entity<RutinaPlantilla>()
+            .HasOne(r => r.GrupoMuscular)
+            .WithMany(g => g.RutinasPlantilla)
+            .HasForeignKey(r => r.GrupoMuscularId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("fk_rutina_grupo_muscular");
+                
+
+        // RutinaPlantillaEjercicio -> RutinaPlantilla (N:1)
+        modelBuilder.Entity<RutinaPlantillaEjercicio>()
+            .HasOne(rpe => rpe.RutinaPlantilla)
+            .WithMany(r => r.RutinaPlantillaEjercicios)
+            .HasForeignKey(rpe => rpe.RutinaId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("fk_rpe_rutina");
+                
+
+        // RutinaPlantillaEjercicio -> Ejercicio (N:1)
+        modelBuilder.Entity<RutinaPlantillaEjercicio>()
+            .HasOne(rpe => rpe.Ejercicio)
+            .WithMany(e => e.RutinaPlantillaEjercicios)
+            .HasForeignKey(rpe => rpe.EjercicioId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("fk_rpe_ejercicio");
+                        
         modelBuilder.Entity<PasswordResetToken>()
             .HasOne(p => p.Usuario)
             .WithMany()

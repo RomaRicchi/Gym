@@ -1,80 +1,106 @@
+// @ts-nocheck
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import "@/styles/swal-card.css";
 
-export async function EjercicioEditSwal(id: string, onSuccess?: () => void) {
+export async function EjercicioEditSwal(id: number, onSuccess?: () => void) {
   try {
-    const [resEjercicio, resGrupos] = await Promise.all([
+    const [{ data: ejercicio }, { data: gruposRes }] = await Promise.all([
       gymApi.get(`/ejercicios/${id}`),
       gymApi.get("/grupomuscular"),
     ]);
 
-    const e = resEjercicio.data;
-    const grupos = resGrupos.data.items || resGrupos.data;
+    const grupos = gruposRes.items || gruposRes;
 
-    const options = grupos
-      .map(
-        (g: any) =>
-          `<option value="${g.id}" ${g.id === e.grupoMuscularId ? "selected" : ""}>
-             ${g.nombre}
-           </option>`
-      )
+    const opcionesGrupo = grupos
+      .map((g: any) => {
+        const selected = g.id === ejercicio.grupoMuscularId ? "selected" : "";
+        return `<option value="${g.id}" ${selected}>${g.nombre}</option>`;
+      })
       .join("");
 
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Ejercicio",
+      width: 650,
+      customClass: {
+        popup: "swal2-card-style",
+        confirmButton: "btn-orange",
+        cancelButton: "btn-secondary",
+      },
+      buttonsStyling: false,
       html: `
-        <form id="form-ejercicio-edit" class="swal-form">
-          <div class="mb-2 text-start">
-            <label class="form-label fw-semibold">Nombre</label>
-            <input id="nombre" class="form-control" value="${e.nombre || ""}" />
+        <form class="swal-form">
+          <div class="swal-input-group">
+            <label class="swal-label">Nombre</label>
+            <input id="nombreInput" type="text" class="swal2-input" value="${ejercicio.nombre || ""}">
           </div>
 
-          <div class="mb-2 text-start">
-            <label class="form-label fw-semibold">Grupo Muscular</label>
-            <select id="grupoMuscularId" class="form-select">
-              ${options}
+          <div class="swal-input-group">
+            <label class="swal-label">Grupo muscular</label>
+            <select id="grupoSelect" class="swal2-input form-select">
+              ${opcionesGrupo}
             </select>
           </div>
 
-          <div class="mb-2 text-start">
-            <label class="form-label fw-semibold">Tips</label>
-            <textarea id="tips" class="form-control" rows="2">${e.tips || ""}</textarea>
+          <div class="swal-input-group">
+            <label class="swal-label">Tips o recomendaciones</label>
+            <textarea id="tipsInput" rows="3" class="swal2-textarea">${ejercicio.tips || ""}</textarea>
           </div>
 
-          <div class="mb-2 text-start">
-            <label class="form-label fw-semibold">Media URL</label>
-            <input id="mediaUrl" class="form-control" value="${e.mediaUrl || ""}" />
+          <div class="swal-input-group">
+            <label class="swal-label">Imagen (opcional)</label>
+            <input id="imagenInput" type="file" accept=".jpg,.jpeg,.png" class="form-control">
+            ${
+              ejercicio.imagenUrl
+                ? `<div style="margin-top:10px;text-align:center">
+                     <img src="${import.meta.env.VITE_API_URL}/${ejercicio.imagenUrl}" 
+                          style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid #ff6600;">
+                   </div>`
+                : ""
+            }
           </div>
         </form>
       `,
-      focusConfirm: false,
-      confirmButtonText: "Guardar cambios",
       showCancelButton: true,
+      confirmButtonText: "💾 Guardar cambios",
       cancelButtonText: "Cancelar",
-      confirmButtonColor: "#ff6600",
+      focusConfirm: false,
       preConfirm: () => {
-        const nombre = (document.getElementById("nombre") as HTMLInputElement)?.value.trim();
-        const grupoMuscularId = (document.getElementById("grupoMuscularId") as HTMLSelectElement)?.value;
-        const tips = (document.getElementById("tips") as HTMLTextAreaElement)?.value.trim();
-        const mediaUrl = (document.getElementById("mediaUrl") as HTMLInputElement)?.value.trim();
+        const nombre = (document.getElementById("nombreInput") as HTMLInputElement).value.trim();
+        const grupoId = (document.getElementById("grupoSelect") as HTMLSelectElement).value;
+        const tips = (document.getElementById("tipsInput") as HTMLTextAreaElement).value;
+        const file = (document.getElementById("imagenInput") as HTMLInputElement).files?.[0];
 
-        if (!nombre || !grupoMuscularId) {
-          Swal.showValidationMessage("⚠️ El nombre y el grupo muscular son obligatorios.");
+        if (!nombre || !grupoId) {
+          Swal.showValidationMessage("Completá los campos obligatorios");
           return false;
         }
-
-        return { id: e.id, nombre, grupoMuscularId: Number(grupoMuscularId), tips, mediaUrl };
+        return { nombre, grupoId, tips, file };
       },
     });
 
-    if (formValues) {
-      await gymApi.put(`/ejercicios/${id}`, formValues);
-      Swal.fire("✅ Actualizado", "Ejercicio editado correctamente.", "success");
-      onSuccess?.();
-    }
-  } catch (err) {
-    console.error(err);
-    Swal.fire("Error", "No se pudo editar el ejercicio.", "error");
+    if (!formValues) return;
+
+    // 🔹 Crear FormData
+    const formData = new FormData();
+    formData.append("nombre", formValues.nombre);
+    formData.append("grupoMuscularId", formValues.grupoId);
+    formData.append("tips", formValues.tips || "");
+    if (formValues.file) formData.append("image", formValues.file);
+
+    await gymApi.put(`/ejercicios/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    Swal.fire({
+      icon: "success",
+      title: "✅ Cambios guardados",
+      timer: 1200,
+      showConfirmButton: false,
+    });
+
+    onSuccess?.();
+  } catch (err: any) {
+    Swal.fire("Error", err.response?.data || "No se pudo editar el ejercicio", "error");
   }
 }
