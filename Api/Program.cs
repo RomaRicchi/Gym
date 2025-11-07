@@ -124,6 +124,8 @@ builder.Services.AddScoped<IEjercicioRepository, EjercicioRepository>();
 builder.Services.AddScoped<IRutinaPlantillaRepository, RutinaPlantillaRepository>();
 builder.Services.AddScoped<IRutinaPlantillaEjercicioRepository, RutinaPlantillaEjercicioRepository>();
 builder.Services.AddScoped<IRutinaAsignadaRepository, RutinaAsignadaRepository>();
+builder.Services.AddScoped<IGrupoMuscularRepository, GrupoMuscularRepository>();
+
 
 var app = builder.Build();
 

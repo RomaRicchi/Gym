@@ -35,6 +35,8 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<RutinaPlantillaEjercicio> RutinasPlantillaEjercicios { get; set; } = null!;
     public virtual DbSet<RutinaAsignada> RutinasAsignadas { get; set; } = null!;
     public virtual DbSet<Evaluacion> Evaluaciones { get; set; }
+    public virtual DbSet<GrupoMuscular> GruposMusculares { get; set; }
+
 
 
     // === Vistas ===
@@ -69,7 +71,7 @@ public partial class GymDbContext : DbContext
         modelBuilder.Entity<DiaSemana>().ToTable("dia_semana");
         modelBuilder.Entity<PasswordResetToken>().ToTable("password_reset_tokens");
         modelBuilder.Entity<EvolucionFisica>().ToTable("evolucion_fisica");
-
+        modelBuilder.Entity<GrupoMuscular>().ToTable("grupo_muscular");
         // Relaciones
         modelBuilder.Entity<EvolucionFisica>()
             .HasOne<Socio>()
