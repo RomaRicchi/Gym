@@ -8,28 +8,27 @@ import { EjercicioEditSwal } from "@/views/rutinas/ejercicios/EjercicioEditSwal"
 interface Ejercicio {
   id: number;
   nombre: string;
-  grupo: string;
   tips?: string;
+  mediaUrl?: string;
+  grupoMuscularId: number;
+  grupoMuscularNombre?: string;
 }
 
 export default function EjerciciosList() {
   const [ejercicios, setEjercicios] = useState<Ejercicio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Estado para paginación y búsqueda
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [search, setSearch] = useState("");
-  
+
   const fetchEjercicios = async () => {
     setLoading(true);
     try {
       const res = await gymApi.get(`/ejercicios?page=${page}&pageSize=${pageSize}&q=${search}`);
-
       const data = res.data;
 
-      // Siempre obtener un array
       const lista = Array.isArray(data.items)
         ? data.items
         : Array.isArray(data)
@@ -81,7 +80,7 @@ export default function EjerciciosList() {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
-    setPage(1); 
+    setPage(1);
   };
 
   if (loading) return <p>Cargando ejercicios...</p>;
@@ -101,7 +100,7 @@ export default function EjerciciosList() {
         <div className="flex-grow-1 d-flex justify-content-start">
           <input
             type="text"
-            placeholder="Buscar por nombre o grupo..."
+            placeholder="Buscar por nombre o grupo muscular..."
             value={search}
             onChange={handleSearch}
             className="form-control"
@@ -123,7 +122,7 @@ export default function EjerciciosList() {
           <thead className="table-dark">
             <tr>
               <th>Nombre</th>
-              <th>Grupo</th>
+              <th>Grupo Muscular</th>
               <th>Tips</th>
               <th>Acciones</th>
             </tr>
@@ -132,7 +131,7 @@ export default function EjerciciosList() {
             {ejercicios.map((e) => (
               <tr key={e.id}>
                 <td>{e.nombre}</td>
-                <td>{e.grupo}</td>
+                <td>{e.grupoMuscularNombre || "—"}</td>
                 <td style={{ maxWidth: "400px", whiteSpace: "pre-wrap" }}>
                   {e.tips || "-"}
                 </td>

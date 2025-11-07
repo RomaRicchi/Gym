@@ -1,76 +1,80 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/swal-ejercicio.css"; // ✅ importante
+import "@/styles/swal-card.css";
 
 export async function EjercicioEditSwal(id: string, onSuccess?: () => void) {
   try {
-    // 🔹 Cargar datos del ejercicio
-    const { data: ejercicio } = await gymApi.get(`/ejercicios/${id}`);
+    const [resEjercicio, resGrupos] = await Promise.all([
+      gymApi.get(`/ejercicios/${id}`),
+      gymApi.get("/grupomuscular"),
+    ]);
 
-    // 🔹 Modal con estilo unificado
+    const e = resEjercicio.data;
+    const grupos = resGrupos.data.items || resGrupos.data;
+
+    const options = grupos
+      .map(
+        (g: any) =>
+          `<option value="${g.id}" ${g.id === e.grupoMuscularId ? "selected" : ""}>
+             ${g.nombre}
+           </option>`
+      )
+      .join("");
+
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Ejercicio",
       html: `
-        <form class="swal-form-ejercicio">
-          <input 
-            id="nombre" 
-            type="text" 
-            placeholder="Nombre del ejercicio" 
-            value="${ejercicio.nombre || ""}"
-          >
-          <input 
-            id="grupo" 
-            type="text" 
-            placeholder="Grupo muscular (ej: Core, Piernas...)" 
-            value="${ejercicio.grupo || ""}"
-          >
-          <textarea 
-            id="tips" 
-            rows="3" 
-            placeholder="Consejos o indicaciones">${ejercicio.tips || ""}</textarea>
+        <form id="form-ejercicio-edit" class="swal-form">
+          <div class="mb-2 text-start">
+            <label class="form-label fw-semibold">Nombre</label>
+            <input id="nombre" class="form-control" value="${e.nombre || ""}" />
+          </div>
+
+          <div class="mb-2 text-start">
+            <label class="form-label fw-semibold">Grupo Muscular</label>
+            <select id="grupoMuscularId" class="form-select">
+              ${options}
+            </select>
+          </div>
+
+          <div class="mb-2 text-start">
+            <label class="form-label fw-semibold">Tips</label>
+            <textarea id="tips" class="form-control" rows="2">${e.tips || ""}</textarea>
+          </div>
+
+          <div class="mb-2 text-start">
+            <label class="form-label fw-semibold">Media URL</label>
+            <input id="mediaUrl" class="form-control" value="${e.mediaUrl || ""}" />
+          </div>
         </form>
       `,
-      showCancelButton: true,
-      confirmButtonText: "💾 Guardar cambios",
-      cancelButtonText: "Cancelar",
       focusConfirm: false,
-      customClass: {
-        popup: "swal2-card-ejercicio",    // 🔸 usa el fondo naranja suave
-        confirmButton: "btn btn-orange",
-        cancelButton: "btn btn-secondary",
-      },
-      buttonsStyling: false,
-
+      confirmButtonText: "Guardar cambios",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#ff6600",
       preConfirm: () => {
         const nombre = (document.getElementById("nombre") as HTMLInputElement)?.value.trim();
-        const grupo = (document.getElementById("grupo") as HTMLInputElement)?.value.trim();
+        const grupoMuscularId = (document.getElementById("grupoMuscularId") as HTMLSelectElement)?.value;
         const tips = (document.getElementById("tips") as HTMLTextAreaElement)?.value.trim();
+        const mediaUrl = (document.getElementById("mediaUrl") as HTMLInputElement)?.value.trim();
 
-        if (!nombre || !grupo) {
-          Swal.showValidationMessage("Nombre y grupo son obligatorios");
+        if (!nombre || !grupoMuscularId) {
+          Swal.showValidationMessage("⚠️ El nombre y el grupo muscular son obligatorios.");
           return false;
         }
 
-        return { nombre, grupo, tips };
+        return { id: e.id, nombre, grupoMuscularId: Number(grupoMuscularId), tips, mediaUrl };
       },
     });
 
-    if (!formValues) return;
-
-    // 🔹 Guardar los cambios
-    await gymApi.put(`/ejercicios/${id}`, formValues);
-
-    await Swal.fire({
-      icon: "success",
-      title: "✅ Ejercicio actualizado",
-      text: "Los cambios se guardaron correctamente.",
-      timer: 1600,
-      showConfirmButton: false,
-    });
-
-    onSuccess?.();
-  } catch (error) {
-    console.error(error);
-    Swal.fire("Error", "No se pudo cargar o guardar el ejercicio", "error");
+    if (formValues) {
+      await gymApi.put(`/ejercicios/${id}`, formValues);
+      Swal.fire("✅ Actualizado", "Ejercicio editado correctamente.", "success");
+      onSuccess?.();
+    }
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "No se pudo editar el ejercicio.", "error");
   }
 }

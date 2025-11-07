@@ -1,73 +1,72 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/swal-ejercicio.css"; 
+import "@/styles/swal-card.css";
 
 export async function EjercicioCreateSwal(onSuccess?: () => void) {
-  const { value: formValues } = await Swal.fire({
-    title: "➕ Nuevo Ejercicio",
-    html: `
-      <form class="swal-form-ejercicio">
-        <input 
-          id="nombre" 
-          type="text" 
-          placeholder="Nombre del ejercicio"
-        >
-        <input 
-          id="grupo" 
-          type="text" 
-          placeholder="Grupo muscular (piernas, pecho, etc.)"
-        >
-        <textarea 
-          id="tips" 
-          rows="3" 
-          placeholder="Consejos o tips de ejecución"></textarea>
-      </form>
-    `,
-    showCancelButton: true,
-    confirmButtonText: "💾 Guardar",
-    cancelButtonText: "Cancelar",
-    focusConfirm: false,
-    customClass: {
-      popup: "swal2-card-ejercicio",
-      confirmButton: "btn btn-orange",
-      cancelButton: "btn btn-secondary",
-    },
-    buttonsStyling: false,
-
-    preConfirm: () => {
-      const nombre = (document.getElementById("nombre") as HTMLInputElement)?.value.trim();
-      const grupo = (document.getElementById("grupo") as HTMLInputElement)?.value.trim();
-      const tips = (document.getElementById("tips") as HTMLTextAreaElement)?.value.trim();
-
-      if (!nombre || !grupo) {
-        Swal.showValidationMessage("Nombre y grupo son obligatorios");
-        return false;
-      }
-
-      return { nombre, grupo, tips };
-    },
-  });
-
-  if (!formValues) return;
-
   try {
-    await gymApi.post("/ejercicios", formValues);
+    // 🔹 Obtener grupos musculares
+    const { data: grupos } = await gymApi.get("/grupomuscular");
+    const lista = grupos.items || grupos;
 
-    await Swal.fire({
-      icon: "success",
-      title: "✅ Ejercicio creado",
-      text: "El ejercicio fue registrado correctamente.",
-      timer: 1500,
-      showConfirmButton: false,
+    const options = lista
+      .map((g: any) => `<option value="${g.id}">${g.nombre}</option>`)
+      .join("");
+
+    const { value: formValues } = await Swal.fire({
+      title: "➕ Nuevo Ejercicio",
+      html: `
+        <form id="form-ejercicio" class="swal-form">
+          <div class="mb-2 text-start">
+            <label class="form-label fw-semibold">Nombre</label>
+            <input id="nombre" class="form-control" placeholder="Nombre del ejercicio" required />
+          </div>
+
+          <div class="mb-2 text-start">
+            <label class="form-label fw-semibold">Grupo Muscular</label>
+            <select id="grupoMuscularId" class="form-select">
+              <option value="" disabled selected>Seleccionar...</option>
+              ${options}
+            </select>
+          </div>
+
+          <div class="mb-2 text-start">
+            <label class="form-label fw-semibold">Tips</label>
+            <textarea id="tips" class="form-control" rows="2" placeholder="Consejos o técnica (opcional)"></textarea>
+          </div>
+
+          <div class="mb-2 text-start">
+            <label class="form-label fw-semibold">Media URL</label>
+            <input id="mediaUrl" class="form-control" placeholder="/img/press-banca.jpg" />
+          </div>
+        </form>
+      `,
+      focusConfirm: false,
+      confirmButtonText: "Guardar",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#ff6600",
+      preConfirm: () => {
+        const nombre = (document.getElementById("nombre") as HTMLInputElement)?.value.trim();
+        const grupoMuscularId = (document.getElementById("grupoMuscularId") as HTMLSelectElement)?.value;
+        const tips = (document.getElementById("tips") as HTMLTextAreaElement)?.value.trim();
+        const mediaUrl = (document.getElementById("mediaUrl") as HTMLInputElement)?.value.trim();
+
+        if (!nombre || !grupoMuscularId) {
+          Swal.showValidationMessage("⚠️ El nombre y el grupo muscular son obligatorios.");
+          return false;
+        }
+
+        return { nombre, grupoMuscularId: Number(grupoMuscularId), tips, mediaUrl };
+      },
     });
 
-    onSuccess?.();
-  } catch (error) {
-    console.error(error);
-    await Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "No se pudo crear el ejercicio.",
-    });
+    if (formValues) {
+      await gymApi.post("/ejercicios", formValues);
+      Swal.fire("✅ Guardado", "Ejercicio creado correctamente.", "success");
+      onSuccess?.();
+    }
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "No se pudo crear el ejercicio.", "error");
   }
 }

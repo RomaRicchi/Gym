@@ -9,13 +9,15 @@ interface RutinaPlantilla {
   id: number;
   nombre: string;
   objetivo?: string;
+  grupoMuscularId: number;
+  grupoMuscularNombre?: string;
+  imagenUrl?: string;
 }
 
 export default function RutinaPlantillaList() {
   const [rutinas, setRutinas] = useState<RutinaPlantilla[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -38,7 +40,6 @@ export default function RutinaPlantillaList() {
     }
   };
 
-  // 🔹 Búsqueda reactiva con debounce y mínimo 3 letras
   useEffect(() => {
     const delay = setTimeout(() => {
       if (search.length >= 3 || search.length === 0) {
@@ -87,11 +88,12 @@ export default function RutinaPlantillaList() {
         💪 RUTINAS PLANTILLA
       </h1>
 
+      {/* 🔸 Barra superior */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="flex-grow-1 d-flex justify-content-start">
           <input
             type="text"
-            placeholder="Buscar por nombre u objetivo..."
+            placeholder="Buscar por nombre, objetivo o grupo muscular..."
             value={search}
             onChange={handleSearch}
             className="form-control"
@@ -107,12 +109,15 @@ export default function RutinaPlantillaList() {
         </button>
       </div>
 
+      {/* 🔸 Tabla */}
       <div className="table-responsive">
         <table className="table table-striped table-hover align-middle">
           <thead className="table-dark">
             <tr>
               <th>Nombre</th>
               <th>Objetivo</th>
+              <th>Grupo Muscular</th>
+              <th>Imagen</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -121,6 +126,18 @@ export default function RutinaPlantillaList() {
               <tr key={r.id}>
                 <td>{r.nombre}</td>
                 <td>{r.objetivo || "-"}</td>
+                <td>{r.grupoMuscularNombre || "—"}</td>
+                <td>
+                  {r.imagenUrl ? (
+                    <img
+                      src={r.imagenUrl}
+                      alt={r.nombre}
+                      style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px" }}
+                    />
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td>
                   <button
                     className="btn btn-sm btn-warning me-2"
@@ -141,6 +158,7 @@ export default function RutinaPlantillaList() {
         </table>
       </div>
 
+      {/* 🔸 Paginación */}
       <Pagination
         currentPage={page}
         totalPages={Math.ceil(totalItems / pageSize)}
