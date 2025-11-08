@@ -110,9 +110,14 @@ export default function RutinaPlantillaList() {
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3 className="fw-bold text-orange mb-0">🏋️‍♀️ Gestión de Rutinas</h3>
+          <h1
+            className="text-center fw-bold mb-4"
+            style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+          >
+            RUTINAS
+          </h1>
         <Button
-          className="btn btn-orange fw-semibold"
+          className="btn btn-success fw-semibold"
           onClick={() => RutinaPlantillaCreateSwal(() => cargarDatos(page, search ?? ""))}
         >
           ➕ Nueva

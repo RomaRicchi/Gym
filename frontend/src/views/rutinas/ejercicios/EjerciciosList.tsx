@@ -18,7 +18,7 @@ export default function EjerciciosList() {
   const [search, setSearch] = useState<string | null>(null);
   const [options, setOptions] = useState<any[]>([]);
 
-  // === 🔹 Cargar ejercicios ===
+  // ===  Cargar ejercicios ===
   const cargarDatos = async (p = 1, q = "") => {
     setLoading(true);
     try {
@@ -37,7 +37,7 @@ export default function EjerciciosList() {
     cargarDatos(page, search ?? "");
   }, [page, search]);
 
-  // === 🔍 Cargar opciones del buscador (React-Select) ===
+  // === Cargar opciones del buscador (React-Select) ===
   const fetchOptions = async (inputValue: string) => {
     try {
       const { data } = await gymApi.get(
@@ -56,7 +56,7 @@ export default function EjerciciosList() {
     }
   };
 
-  // === 🗑️ Eliminar ejercicio ===
+  // === Eliminar ejercicio ===
   const eliminarEjercicio = async (id: number, nombre: string) => {
     const result = await Swal.fire({
       title: `¿Eliminar "${nombre}"?`,
@@ -89,7 +89,7 @@ export default function EjerciciosList() {
     }
   };
 
-  // === 🎨 Estilos del Select ===
+  // === Estilos del Select ===
   const selectStyles = {
     control: (base: any) => ({
       ...base,
@@ -104,20 +104,24 @@ export default function EjerciciosList() {
     }),
   };
 
-  // === 🎯 Render ===
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3 className="fw-bold text-orange mb-0">🏋️‍♂️ Gestión de Ejercicios</h3>
+         <h1
+            className="text-center fw-bold mb-4"
+            style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+          >
+            EJERCICIOS
+          </h1>
         <Button
-          className="btn btn-orange fw-semibold"
+          className="btn btn-success fw-semibold"
           onClick={() => EjercicioCreateSwal(() => cargarDatos(page, search ?? ""))}
         >
           ➕ Nuevo
         </Button>
       </div>
 
-      {/* 🔍 Buscador con React-Select */}
+      {/*  Buscador con React-Select */}
       <div className="mb-3" style={{ maxWidth: "400px" }}>
         <Select
           placeholder="Buscar ejercicio o grupo muscular..."
@@ -170,8 +174,23 @@ export default function EjerciciosList() {
                               objectFit: "cover",
                               borderRadius: "8px",
                               border: "2px solid #ff6600",
+                              cursor: "pointer",
+                              transition: "transform 0.2s",
                             }}
                             onError={(ev) => (ev.currentTarget.src = "/placeholder.png")}
+                            onMouseEnter={(ev) => (ev.currentTarget.style.transform = "scale(1.05)")}
+                            onMouseLeave={(ev) => (ev.currentTarget.style.transform = "scale(1.0)")}
+                            onClick={() =>
+                              Swal.fire({
+                                imageUrl: `${import.meta.env.VITE_API_BASE_URL.replace(/\/api$/, "")}/${e.mediaUrl}`,
+                                imageAlt: e.nombre,
+                                background: "#000",
+                                showConfirmButton: false,
+                                showCloseButton: true,
+                                width: "auto",
+                                padding: "1rem",
+                              })
+                            }
                           />
                         ) : (
                           <span className="text-muted">Sin imagen</span>
