@@ -5,114 +5,111 @@ import "@/styles/swal-card.css";
 
 export async function EjercicioEditSwal(id: number, onSuccess?: () => void) {
   try {
-    // 🔹 Obtener ejercicio + grupos musculares
-    const [{ data: ejercicio }, { data: gruposData }] = await Promise.all([
-      gymApi.get(`/ejercicios/${id}`),
-      gymApi.get(`/grupomuscular`),
-    ]);
+    // 🔹 Obtener datos actuales
+    const { data: ejercicio } = await gymApi.get(`/ejercicios/${id}`);
 
-    const gruposMusculares = gruposData.items || gruposData || [];
+    // 🔹 Obtener grupos musculares
+    const { data: grupos } = await gymApi.get("/grupomuscular");
+    const opcionesGrupo = (grupos.items || grupos)
+      .map(
+        (g: any) =>
+          `<option value="${g.id}" ${
+            ejercicio.grupoMuscularId === g.id ? "selected" : ""
+          }>${g.nombre}</option>`
+      )
+      .join("");
 
-    // 🧱 Formulario SweetAlert2
     const { value: formValues } = await Swal.fire({
       title: "✏️ Editar Ejercicio",
       width: 650,
+      showCancelButton: true,
+      confirmButtonText: "Guardar cambios",
+      cancelButtonText: "Cancelar",
+      buttonsStyling: false,
       customClass: {
         popup: "swal2-card-style",
         confirmButton: "btn btn-orange",
         cancelButton: "btn btn-secondary",
       },
-      buttonsStyling: false,
-      showCancelButton: true,
-      confirmButtonText: "💾 Guardar",
-      cancelButtonText: "Cancelar",
       html: `
-        <form class="swal-form" enctype="multipart/form-data">
-          <div class="mb-3 text-start">
-            <label class="form-label fw-semibold">Nombre</label>
-            <input id="nombre" type="text" class="form-control"
-              value="${ejercicio.nombre || ""}" placeholder="Nombre del ejercicio">
+        <form class="swal-form">
+          <div class="swal-input-group">
+            <label class="swal-label">Nombre</label>
+            <input id="nombre" class="swal-field" type="text" value="${
+              ejercicio.nombre || ""
+            }">
           </div>
 
-          <div class="mb-3 text-start">
-            <label class="form-label fw-semibold">Tips</label>
-            <textarea id="tips" class="form-control" 
-              placeholder="Consejos o notas">${ejercicio.tips || ""}</textarea>
-          </div>
-
-          <div class="mb-3 text-start">
-            <label class="form-label fw-semibold">Grupo Muscular</label>
-            <select id="grupoMuscularId" class="form-select">
-              ${gruposMusculares
-                .map(
-                  (g: any) =>
-                    `<option value="${g.id}" ${
-                      g.id === ejercicio.grupoMuscularId ? "selected" : ""
-                    }>${g.nombre}</option>`
-                )
-                .join("")}
+          <div class="swal-input-group">
+            <label class="swal-label">Grupo muscular</label>
+            <select id="grupo" class="swal-field">
+              ${opcionesGrupo}
             </select>
           </div>
 
-          <div class="mb-3 text-start">
-            <label class="form-label fw-semibold">Imagen</label><br>
+          <div class="swal-input-group">
+            <label class="swal-label">Tips</label>
+            <textarea id="tips" class="swal-field" rows="2">${
+              ejercicio.tips || ""
+            }</textarea>
+          </div>
+
+          <div class="swal-input-group">
+            <label class="swal-label">Imagen (opcional)</label>
+            <input id="imagen" type="file" accept="image/*" class="swal-field">
             ${
               ejercicio.mediaUrl
-                ? `<img src="${import.meta.env.VITE_API_URL}/${ejercicio.mediaUrl}"
-                     id="preview" alt="preview"
-                     style="width:100px;height:100px;object-fit:cover;
-                            border-radius:8px;border:2px solid #ff6600;margin-bottom:8px;">`
-                : `<span class="text-muted d-block mb-2">Sin imagen actual</span>`
+                ? `<div style="margin-top:6px">
+                     <img src="${import.meta.env.VITE_API_URL}/${
+                    ejercicio.mediaUrl
+                  }" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #ff6600">
+                   </div>`
+                : ""
             }
-            <input id="imagen" type="file" class="form-control" accept="image/*">
           </div>
         </form>
       `,
-      preConfirm: async () => {
-        const nombre = (document.getElementById("nombre") as HTMLInputElement).value.trim();
-        const tips = (document.getElementById("tips") as HTMLTextAreaElement).value.trim();
-        const grupoMuscularId = parseInt(
-          (document.getElementById("grupoMuscularId") as HTMLSelectElement).value
-        );
-        const imagenFile = (document.getElementById("imagen") as HTMLInputElement).files?.[0] || null;
-
-        if (!nombre) {
-          Swal.showValidationMessage("El nombre es obligatorio");
-          return false;
-        }
-
-        // 📤 Si hay nueva imagen, subirla al backend
-        let mediaUrl = ejercicio.mediaUrl;
-        if (imagenFile) {
-          const formData = new FormData();
-          formData.append("file", imagenFile);
-
-          const { data } = await gymApi.post("/ejercicios/upload", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-
-          mediaUrl = data.url; // el backend devuelve { url: "Uploads/Ejercicios/archivo.jpg" }
-        }
-
-        return { nombre, tips, grupoMuscularId, mediaUrl };
+      preConfirm: () => {
+        const nombre = (document.getElementById("nombre") as HTMLInputElement)
+          .value;
+        const grupo = (document.getElementById("grupo") as HTMLSelectElement)
+          .value;
+        const tips = (document.getElementById("tips") as HTMLTextAreaElement)
+          .value;
+        const imagen = (document.getElementById("imagen") as HTMLInputElement)
+          .files?.[0];
+        return { nombre, grupo, tips, imagen };
       },
     });
 
     if (!formValues) return;
 
-    // 📨 Actualizar ejercicio
-    await gymApi.put(`/ejercicios/${id}`, {
-       Id: id,
-  Nombre: formValues.nombre,
-  Tips: formValues.tips,
-  GrupoMuscularId: formValues.grupoMuscularId,
-  MediaUrl: formValues.mediaUrl ?? null
+    const { nombre, grupo, tips, imagen } = formValues;
+
+    // 🔹 Crear FormData (multipart/form-data)
+    const formData = new FormData();
+    formData.append("Id", id.toString());
+    formData.append("Nombre", nombre);
+    formData.append("GrupoMuscularId", grupo);
+    formData.append("Tips", tips || "");
+
+    // Si el usuario subió nueva imagen
+    if (imagen) {
+      formData.append("Imagen", imagen);
+    } else if (ejercicio.mediaUrl) {
+      // mantener la anterior
+      formData.append("MediaUrl", ejercicio.mediaUrl);
+    }
+
+    // 🔹 Enviar al backend
+    await gymApi.put(`/ejercicios/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
     Swal.fire({
       icon: "success",
       title: "Ejercicio actualizado",
-      timer: 1200,
+      timer: 1000,
       showConfirmButton: false,
     });
 

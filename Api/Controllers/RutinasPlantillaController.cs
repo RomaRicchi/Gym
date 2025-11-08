@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Data.Models;
+using Api.Contracts;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +17,10 @@ namespace Api.Controllers
         private readonly GymDbContext _context;
         private readonly IWebHostEnvironment _env;
 
-        public RutinasPlantillaController(IRutinaPlantillaRepository repo, GymDbContext context, IWebHostEnvironment env)
+        public RutinasPlantillaController(
+            IRutinaPlantillaRepository repo,
+            GymDbContext context,
+            IWebHostEnvironment env)
         {
             _repo = repo;
             _context = context;
@@ -24,7 +28,7 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 GET paginado
+        // 🔹 GET paginado con búsqueda
         // ===============================
         [HttpGet]
         public async Task<IActionResult> GetAll(
@@ -33,22 +37,28 @@ namespace Api.Controllers
             [FromQuery] string? q = null,
             CancellationToken ct = default)
         {
-            var query = _context.RutinasPlantilla
+            // 🧩 Asegurar límites mínimos
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize < 1 ? 10 : pageSize;
+
+            var queryable = _context.RutinasPlantilla
                 .Include(r => r.GrupoMuscular)
                 .AsQueryable();
 
+            // 🔍 Filtro por texto (nombre, objetivo o grupo muscular)
             if (!string.IsNullOrWhiteSpace(q))
             {
-                var term = q.ToLower();
-                query = query.Where(r =>
+                var term = q.Trim().ToLowerInvariant();
+                queryable = queryable.Where(r =>
                     r.Nombre.ToLower().Contains(term) ||
                     (r.Objetivo != null && r.Objetivo.ToLower().Contains(term)) ||
                     (r.GrupoMuscular != null && r.GrupoMuscular.Nombre.ToLower().Contains(term)));
             }
 
-            var totalItems = await query.CountAsync(ct);
+            var totalItems = await queryable.CountAsync(ct);
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
-            var items = await query
+            var items = await queryable
                 .OrderBy(r => r.Nombre)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -62,8 +72,16 @@ namespace Api.Controllers
                 })
                 .ToListAsync(ct);
 
-            return Ok(new { totalItems, items });
+            return Ok(new
+            {
+                page,
+                pageSize,
+                totalItems,
+                totalPages,
+                items
+            });
         }
+
 
         // ===============================
         // 🔹 GET por ID
@@ -84,34 +102,75 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 POST (crear nueva rutina)
+        // 🔹 POST (crear nueva rutina con imagen)
         // ===============================
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] RutinaPlantilla model, CancellationToken ct)
+        public async Task<IActionResult> Create([FromForm] RutinaPlantillaDto dto, IFormFile? imagen, CancellationToken ct)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _context.RutinasPlantilla.Add(model);
+            var rutina = new RutinaPlantilla
+            {
+                Nombre = dto.Nombre,
+                Objetivo = dto.Objetivo,
+                GrupoMuscularId = dto.GrupoMuscularId
+            };
+
+            // Procesar imagen (si existe)
+            if (imagen != null && imagen.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "Uploads", "Rutinas");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await imagen.CopyToAsync(stream, ct);
+
+                rutina.ImagenUrl = Path.Combine("Uploads", "Rutinas", fileName).Replace("\\", "/");
+            }
+
+            _context.RutinasPlantilla.Add(rutina);
             await _context.SaveChangesAsync(ct);
 
-            return CreatedAtAction(nameof(GetById), new { id = model.Id }, model);
+            return CreatedAtAction(nameof(GetById), new { id = rutina.Id }, rutina);
         }
 
         // ===============================
-        // 🔹 PUT (actualizar existente)
+        // 🔹 PUT (actualizar rutina existente con o sin imagen)
         // ===============================
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] RutinaPlantilla model, CancellationToken ct)
+        public async Task<IActionResult> Update(int id, [FromForm] RutinaPlantillaDto dto, IFormFile? imagen, CancellationToken ct)
         {
             var existing = await _context.RutinasPlantilla.FindAsync(new object[] { id }, ct);
             if (existing == null)
                 return NotFound();
 
-            existing.Nombre = model.Nombre;
-            existing.Objetivo = model.Objetivo;
-            existing.GrupoMuscularId = model.GrupoMuscularId;
-            existing.ImagenUrl = model.ImagenUrl;
+            existing.Nombre = dto.Nombre;
+            existing.Objetivo = dto.Objetivo;
+            existing.GrupoMuscularId = dto.GrupoMuscularId;
+
+            if (imagen != null && imagen.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "Uploads", "Rutinas");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await imagen.CopyToAsync(stream, ct);
+
+                existing.ImagenUrl = Path.Combine("Uploads", "Rutinas", fileName).Replace("\\", "/");
+            }
+            else if (!string.IsNullOrEmpty(dto.ImagenUrl))
+            {
+                existing.ImagenUrl = dto.ImagenUrl; // mantiene la actual
+            }
 
             await _context.SaveChangesAsync(ct);
             return Ok(existing);
@@ -133,7 +192,7 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 POST /api/rutinasplantilla/upload (subida de imagen)
+        // 🔹 POST: api/rutinasplantilla/upload
         // ===============================
         [HttpPost("upload")]
         [RequestSizeLimit(10_000_000)] // 10 MB
@@ -149,8 +208,8 @@ namespace Api.Controllers
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
             var filePath = Path.Combine(uploadsFolder, fileName);
 
-            await using (var stream = new FileStream(filePath, FileMode.Create))
-                await file.CopyToAsync(stream);
+            await using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
 
             var relativePath = Path.Combine("Uploads", "Rutinas", fileName).Replace("\\", "/");
             return Ok(new { url = relativePath });

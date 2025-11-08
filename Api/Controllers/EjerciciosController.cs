@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Data.Models;
+using Api.Contracts;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -95,23 +96,49 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 PUT (actualizar existente)
+        // 🔹 PUT (actualizar existente con o sin imagen)
         // ===============================
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Ejercicio model, CancellationToken ct)
+        public async Task<IActionResult> Update(
+            int id,
+            [FromForm] EjercicioDto dto,
+            IFormFile? Imagen,
+            CancellationToken ct)
         {
             var existing = await _context.Ejercicios.FindAsync(new object[] { id }, ct);
             if (existing == null)
                 return NotFound();
 
-            existing.Nombre = model.Nombre;
-            existing.Tips = model.Tips;
-            existing.GrupoMuscularId = model.GrupoMuscularId;
-            existing.MediaUrl = model.MediaUrl;
+            // Actualizar campos básicos
+            existing.Nombre = dto.Nombre;
+            existing.Tips = dto.Tips;
+            existing.GrupoMuscularId = dto.GrupoMuscularId;
+
+            // Procesar nueva imagen (si se envía)
+            if (Imagen != null && Imagen.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "Uploads", "Ejercicios");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(Imagen.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await Imagen.CopyToAsync(stream, ct);
+
+                existing.MediaUrl = Path.Combine("Uploads", "Ejercicios", fileName).Replace("\\", "/");
+            }
+            else
+            {
+                // Si no se envía imagen nueva, conservar la actual
+                existing.MediaUrl = dto.MediaUrl;
+            }
 
             await _context.SaveChangesAsync(ct);
             return Ok(existing);
         }
+
 
         // ===============================
         // 🔹 DELETE

@@ -1,4 +1,4 @@
-namespace Api.Dtos
+namespace Api.Contracts
 {
     public class EjercicioDto
     {
