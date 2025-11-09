@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import "@/styles/swal-card.css";
 import "@/styles/rutina-cards.css";
+import { RutinaMostrarEjerciciosSwal } from "@/views/rutinas/rutina-ejercicios/RutinaMostrarEjerciciosSwal";
 
 export default function RutinaCardsList() {
   const [grupos, setGrupos] = useState<any[]>([]);
@@ -42,45 +43,6 @@ export default function RutinaCardsList() {
   useEffect(() => {
     cargarRutinas();
   }, []);
-
-  // === Mostrar ejercicios en SweetAlert ===
-  const mostrarEjercicios = async (rutinaId: number, rutinaNombre: string) => {
-    try {
-      const { data: ejercicios } = await gymApi.get(
-        `/rutinasplantillaejercicios?page=1&pageSize=100&q=${encodeURIComponent(
-          rutinaNombre
-        )}`
-      );
-
-      const lista = (ejercicios.items || ejercicios)
-        .map(
-          (e: any) => `
-            <div class="ej-card">
-              <div class="ej-nombre">${e.ejercicio}</div>
-              <div class="ej-detalle">
-                Series: ${e.series} | Reps: ${e.repeticiones} | Descanso: ${e.descansoSeg}s
-              </div>
-            </div>
-          `
-        )
-        .join("");
-
-      Swal.fire({
-        title: `<strong>${rutinaNombre}</strong>`,
-        html:
-          lista ||
-          "<p class='text-muted'>Esta rutina no tiene ejercicios asignados.</p>",
-        width: 700,
-        customClass: { popup: "swal2-card-style" },
-        confirmButtonText: "Cerrar",
-        buttonsStyling: false,
-        scrollbarPadding: false,
-      });
-    } catch (error) {
-      console.error(error);
-      Swal.fire("Error", "No se pudieron cargar los ejercicios", "error");
-    }
-  };
 
   // === Render ===
   if (loading)
@@ -128,7 +90,7 @@ export default function RutinaCardsList() {
                   <div
                     key={r.id}
                     className="rutina-card"
-                    onClick={() => mostrarEjercicios(r.id, r.nombre)}
+                    onClick={() => RutinaMostrarEjerciciosSwal(r.id, r.nombre)}
                   >
                     <img
                       src={

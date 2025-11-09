@@ -32,7 +32,7 @@ namespace Api.Controllers
                 .Include(rpe => rpe.Ejercicio)
                 .AsQueryable();
 
-            // 🔍 Filtro opcional por nombre de rutina o ejercicio
+            // Filtro opcional por nombre de rutina o ejercicio
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var term = q.ToLower();
@@ -41,10 +41,10 @@ namespace Api.Controllers
                     rpe.Ejercicio.Nombre.ToLower().Contains(term));
             }
 
-            // 📊 Total antes de paginar
+            //  Total antes de paginar
             var totalItems = await query.CountAsync(ct);
 
-            // 📄 Paginado
+            // Paginado + selección con imagen
             var items = await query
                 .OrderBy(rpe => rpe.RutinaId)
                 .ThenBy(rpe => rpe.Orden)
@@ -58,7 +58,8 @@ namespace Api.Controllers
                     rpe.Orden,
                     rpe.Series,
                     rpe.Repeticiones,
-                    rpe.DescansoSeg
+                    rpe.DescansoSeg,
+                    ImagenUrl = rpe.Ejercicio.MediaUrl
                 })
                 .AsNoTracking()
                 .ToListAsync(ct);
@@ -68,6 +69,31 @@ namespace Api.Controllers
                 items,
                 totalItems
             });
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllSinPaginacion(CancellationToken ct = default)
+        {
+            var rutinas = await _context.RutinasPlantillaEjercicios
+                .Include(rpe => rpe.RutinaPlantilla)
+                .Include(rpe => rpe.Ejercicio)
+                .Select(rpe => new
+                {
+                    rpe.Id,
+                    Rutina = rpe.RutinaPlantilla.Nombre,
+                    Ejercicio = rpe.Ejercicio.Nombre,
+                    rpe.Orden,
+                    rpe.Series,
+                    rpe.Repeticiones,
+                    rpe.DescansoSeg,
+                    ImagenUrl = rpe.Ejercicio.MediaUrl 
+                })
+                .OrderBy(rpe => rpe.Rutina)
+                .ThenBy(rpe => rpe.Orden)
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            return Ok(rutinas);
         }
 
 
