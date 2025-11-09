@@ -1,14 +1,14 @@
-// @ts-nocheck
+
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import "@/styles/swal-card.css";
 
 export async function EjercicioEditSwal(id: number, onSuccess?: () => void) {
   try {
-    // 🔹 Obtener datos actuales
+    //  Obtener datos actuales
     const { data: ejercicio } = await gymApi.get(`/ejercicios/${id}`);
 
-    // 🔹 Obtener grupos musculares
+    //  Obtener grupos musculares
     const { data: grupos } = await gymApi.get("/grupomuscular");
     const opcionesGrupo = (grupos.items || grupos)
       .map(
@@ -60,10 +60,12 @@ export async function EjercicioEditSwal(id: number, onSuccess?: () => void) {
             ${
               ejercicio.mediaUrl
                 ? `<div style="margin-top:6px">
-                     <img src="${import.meta.env.VITE_API_URL}/${
-                    ejercicio.mediaUrl
-                  }" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #ff6600">
-                   </div>`
+                     <img 
+                        src="${import.meta.env.VITE_API_BASE_URL.replace(/\/api$/, '')}/${ejercicio.mediaUrl}" 
+                        style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #ff6600"
+                        onerror="this.src='/placeholder.png'"
+                      >
+                      </div>`
                 : ""
             }
           </div>

@@ -7,7 +7,8 @@ import Pagination from "@/components/Pagination";
 import gymApi from "@/api/gymApi";
 import { EjercicioCreateSwal } from "./EjercicioCreateSwal";
 import { EjercicioEditSwal } from "./EjercicioEditSwal";
-import "@/styles/swal-card.css";
+import "@/styles/swal-ejercicio.css";
+
 
 export default function EjerciciosList() {
   const [ejercicios, setEjercicios] = useState<any[]>([]);
@@ -18,7 +19,7 @@ export default function EjerciciosList() {
   const [search, setSearch] = useState<string | null>(null);
   const [options, setOptions] = useState<any[]>([]);
 
-  // ===  Cargar ejercicios ===
+  // === Cargar ejercicios ===
   const cargarDatos = async (p = 1, q = "") => {
     setLoading(true);
     try {
@@ -37,7 +38,7 @@ export default function EjerciciosList() {
     cargarDatos(page, search ?? "");
   }, [page, search]);
 
-  // === Cargar opciones del buscador (React-Select) ===
+  // === Buscador ===
   const fetchOptions = async (inputValue: string) => {
     try {
       const { data } = await gymApi.get(
@@ -50,13 +51,12 @@ export default function EjerciciosList() {
         })) ?? [];
       setOptions(opts);
       return opts;
-    } catch (err) {
-      console.error("⚠️ Error cargando opciones:", err);
+    } catch {
       return [];
     }
   };
 
-  // === Eliminar ejercicio ===
+  // === Eliminar ===
   const eliminarEjercicio = async (id: number, nombre: string) => {
     const result = await Swal.fire({
       title: `¿Eliminar "${nombre}"?`,
@@ -84,12 +84,13 @@ export default function EjerciciosList() {
         showConfirmButton: false,
       });
       cargarDatos(page, search ?? "");
-    } catch {
-      Swal.fire("Error", "No se pudo eliminar el ejercicio", "error");
+    } catch (err) {
+      console.error("❌ Error al eliminar:", err.response || err);
+      const msg = err.response?.data || "No se pudo eliminar el ejercicio";
+      Swal.fire("Error", msg, "error");
     }
   };
 
-  // === Estilos del Select ===
   const selectStyles = {
     control: (base: any) => ({
       ...base,
@@ -97,43 +98,39 @@ export default function EjerciciosList() {
       boxShadow: "none",
       "&:hover": { borderColor: "#ff6600" },
     }),
-    option: (base: any, state: any) => ({
-      ...base,
-      backgroundColor: state.isFocused ? "#ffe0cc" : "white",
-      color: "#333",
-    }),
+  };
+
+  const handleInputChange = (value: string) => {
+    fetchOptions(value);
+    return value;
   };
 
   return (
     <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-         <h1
-            className="text-center fw-bold mb-4"
-            style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
-          >
-            EJERCICIOS
-          </h1>
+      <h1 className="titulo-modulo">EJERCICIOS</h1>
+
+      {/* 🔍 Buscador y Botón alineados */}
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div style={{ flex: "1 1 400px", maxWidth: "450px" }}>
+          <Select
+            placeholder="Buscar ejercicio o grupo muscular..."
+            isClearable
+            onInputChange={handleInputChange}
+            onChange={(opt) => {
+              setSearch(opt ? opt.label.split(" (")[0] : null);
+              setPage(1);
+            }}
+            options={options}
+            styles={selectStyles}
+          />
+        </div>
+
         <Button
-          className="btn btn-success fw-semibold"
+          className="btn btn-success"
           onClick={() => EjercicioCreateSwal(() => cargarDatos(page, search ?? ""))}
         >
           ➕ Nuevo
         </Button>
-      </div>
-
-      {/*  Buscador con React-Select */}
-      <div className="mb-3" style={{ maxWidth: "400px" }}>
-        <Select
-          placeholder="Buscar ejercicio o grupo muscular..."
-          isClearable
-          onInputChange={(value) => fetchOptions(value)}
-          onChange={(opt) => {
-            setSearch(opt ? opt.label.split(" (")[0] : null);
-            setPage(1);
-          }}
-          options={options}
-          styles={selectStyles}
-        />
       </div>
 
       {loading ? (
@@ -143,14 +140,14 @@ export default function EjerciciosList() {
       ) : (
         <>
           <div className="table-responsive">
-            <table className="table table-striped align-middle text-center">
-              <thead className="table-dark">
+            <table className="tabla-gestion table align-middle text-center">
+              <thead>
                 <tr>
-                  <th style={{ width: "90px" }}>Imagen</th>
-                  <th>Nombre</th>
-                  <th>Grupo Muscular</th>
-                  <th>Tips</th>
-                  <th style={{ width: "140px" }}>Acciones</th>
+                  <th>IMAGEN</th>
+                  <th>NOMBRE</th>
+                  <th>GRUPO MUSCULAR</th>
+                  <th>TIPS</th>
+                  <th>ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
@@ -168,18 +165,7 @@ export default function EjerciciosList() {
                           <img
                             src={`${import.meta.env.VITE_API_BASE_URL.replace(/\/api$/, "")}/${e.mediaUrl}`}
                             alt={e.nombre}
-                            style={{
-                              width: "70px",
-                              height: "70px",
-                              objectFit: "cover",
-                              borderRadius: "8px",
-                              border: "2px solid #ff6600",
-                              cursor: "pointer",
-                              transition: "transform 0.2s",
-                            }}
-                            onError={(ev) => (ev.currentTarget.src = "/placeholder.png")}
-                            onMouseEnter={(ev) => (ev.currentTarget.style.transform = "scale(1.05)")}
-                            onMouseLeave={(ev) => (ev.currentTarget.style.transform = "scale(1.0)")}
+                            className="miniatura-ejercicio"
                             onClick={() =>
                               Swal.fire({
                                 imageUrl: `${import.meta.env.VITE_API_BASE_URL.replace(/\/api$/, "")}/${e.mediaUrl}`,
@@ -191,33 +177,28 @@ export default function EjerciciosList() {
                                 padding: "1rem",
                               })
                             }
+                            onError={(ev) => (ev.currentTarget.src = "/placeholder.png")}
                           />
                         ) : (
                           <span className="text-muted">Sin imagen</span>
                         )}
                       </td>
-                      <td>{e.nombre}</td>
+                      <td className="fw-semibold">{e.nombre}</td>
                       <td>{e.grupoMuscularNombre || "—"}</td>
-                      <td className="text-muted small" style={{ maxWidth: "220px" }}>
-                        {e.tips || "—"}
-                      </td>
+                      <td className="text-muted small">{e.tips || "—"}</td>
                       <td>
-                        <div className="d-flex justify-content-center gap-2">
+                        <div className="acciones-botones">
                           <Button
-                            size="sm"
-                            variant="warning"
-                            className="fw-semibold"
+                            className="btn-accion btn-editar"
                             onClick={() => EjercicioEditSwal(e.id, () => cargarDatos(page, search ?? ""))}
-                          >
-                            <i className="fa fa-edit"></i>
+                          >✏️ 
+                            
                           </Button>
                           <Button
-                            size="sm"
-                            variant="danger"
-                            className="fw-semibold"
+                            className="btn-accion btn-eliminar"
                             onClick={() => eliminarEjercicio(e.id, e.nombre)}
-                          >
-                            <i className="fa fa-trash"></i>
+                          >🗑️ 
+                          
                           </Button>
                         </div>
                       </td>
@@ -228,7 +209,6 @@ export default function EjerciciosList() {
             </table>
           </div>
 
-          {/* 📄 Paginación */}
           <Pagination
             currentPage={page}
             totalPages={Math.ceil(totalItems / pageSize)}

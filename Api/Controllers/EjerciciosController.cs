@@ -25,7 +25,7 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 GET paginado
+        //  GET paginado
         // ===============================
         [HttpGet]
         public async Task<IActionResult> GetAll(
@@ -66,7 +66,7 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 GET por ID
+        //  GET por ID
         // ===============================
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
@@ -82,21 +82,42 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 POST (crear nuevo)
+        //  POST (crear nuevo)
         // ===============================
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Ejercicio model, CancellationToken ct)
+        public async Task<IActionResult> Create([FromForm] EjercicioDto dto, IFormFile? Imagen, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var ejercicio = new Ejercicio
+            {
+                Nombre = dto.Nombre,
+                Tips = dto.Tips,
+                GrupoMuscularId = dto.GrupoMuscularId
+            };
 
-            _context.Ejercicios.Add(model);
+            if (Imagen != null && Imagen.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "Uploads", "Ejercicios");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(Imagen.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await Imagen.CopyToAsync(stream, ct);
+
+                ejercicio.MediaUrl = Path.Combine("Uploads", "Ejercicios", fileName).Replace("\\", "/");
+            }
+
+            _context.Ejercicios.Add(ejercicio);
             await _context.SaveChangesAsync(ct);
-            return CreatedAtAction(nameof(GetById), new { id = model.Id }, model);
+
+            return CreatedAtAction(nameof(GetById), new { id = ejercicio.Id }, ejercicio);
         }
 
+
         // ===============================
-        // 🔹 PUT (actualizar existente con o sin imagen)
+        // PUT (actualizar existente con o sin imagen)
         // ===============================
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(
@@ -146,17 +167,34 @@ namespace Api.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
-            var existing = await _context.Ejercicios.FindAsync(new object[] { id }, ct);
-            if (existing == null)
-                return NotFound();
+            try
+            {
+                var existing = await _context.Ejercicios.FindAsync(new object[] { id }, ct);
+                if (existing == null)
+                    return NotFound();
 
-            _context.Ejercicios.Remove(existing);
-            await _context.SaveChangesAsync(ct);
-            return NoContent();
+                _context.Ejercicios.Remove(existing);
+                await _context.SaveChangesAsync(ct);
+                return NoContent();
+            }
+            catch (DbUpdateException ex)
+            {
+                if (ex.InnerException != null && ex.InnerException.Message.Contains("REFERENCE"))
+                {
+                    return BadRequest("Este ejercicio no se puede eliminar porque pertenece a una rutina.");
+                }
+
+                return StatusCode(500, new { error = ex.InnerException?.Message ?? ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
+
         // ===============================
-        // 🔹 POST: api/ejercicios/upload
+        //  POST: api/ejercicios/upload
         // ===============================
         [HttpPost("upload")]
         [RequestSizeLimit(10_000_000)] // 10 MB

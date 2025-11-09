@@ -28,7 +28,7 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 GET paginado con búsqueda
+        //  GET paginado con búsqueda
         // ===============================
         [HttpGet]
         public async Task<IActionResult> GetAll(
@@ -37,7 +37,7 @@ namespace Api.Controllers
             [FromQuery] string? q = null,
             CancellationToken ct = default)
         {
-            // 🧩 Asegurar límites mínimos
+            // Asegurar límites mínimos
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 10 : pageSize;
 
@@ -45,7 +45,7 @@ namespace Api.Controllers
                 .Include(r => r.GrupoMuscular)
                 .AsQueryable();
 
-            // 🔍 Filtro por texto (nombre, objetivo o grupo muscular)
+            //  Filtro por texto (nombre, objetivo o grupo muscular)
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var term = q.Trim().ToLowerInvariant();
@@ -84,7 +84,7 @@ namespace Api.Controllers
 
 
         // ===============================
-        // 🔹 GET por ID
+        //  GET por ID
         // ===============================
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
@@ -102,14 +102,11 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 POST (crear nueva rutina con imagen)
+        //  POST (crear nueva rutina con imagen)
         // ===============================
         [HttpPost]
-        public async Task<IActionResult> Create([FromForm] RutinaPlantillaDto dto, IFormFile? imagen, CancellationToken ct)
+        public async Task<IActionResult> Create([FromForm] RutinaPlantillaDto dto, IFormFile? Imagen, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var rutina = new RutinaPlantilla
             {
                 Nombre = dto.Nombre,
@@ -117,18 +114,17 @@ namespace Api.Controllers
                 GrupoMuscularId = dto.GrupoMuscularId
             };
 
-            // Procesar imagen (si existe)
-            if (imagen != null && imagen.Length > 0)
+            if (Imagen != null && Imagen.Length > 0)
             {
                 var uploadsFolder = Path.Combine(_env.WebRootPath, "Uploads", "Rutinas");
                 if (!Directory.Exists(uploadsFolder))
                     Directory.CreateDirectory(uploadsFolder);
 
-                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName)}";
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(Imagen.FileName)}";
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
                 await using var stream = new FileStream(filePath, FileMode.Create);
-                await imagen.CopyToAsync(stream, ct);
+                await Imagen.CopyToAsync(stream, ct);
 
                 rutina.ImagenUrl = Path.Combine("Uploads", "Rutinas", fileName).Replace("\\", "/");
             }
@@ -139,8 +135,9 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = rutina.Id }, rutina);
         }
 
+
         // ===============================
-        // 🔹 PUT (actualizar rutina existente con o sin imagen)
+        // PUT (actualizar rutina existente con o sin imagen)
         // ===============================
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromForm] RutinaPlantillaDto dto, IFormFile? imagen, CancellationToken ct)
@@ -177,7 +174,7 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 DELETE
+        // DELETE
         // ===============================
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
@@ -192,7 +189,7 @@ namespace Api.Controllers
         }
 
         // ===============================
-        // 🔹 POST: api/rutinasplantilla/upload
+        // POST: api/rutinasplantilla/upload
         // ===============================
         [HttpPost("upload")]
         [RequestSizeLimit(10_000_000)] // 10 MB

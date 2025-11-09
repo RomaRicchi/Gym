@@ -5,10 +5,10 @@ import "@/styles/swal-card.css";
 
 export async function EjercicioCreateSwal(onSuccess?: () => void) {
   try {
-    // 🔹 Cargar grupos musculares para el selector
+    // 🔹 Cargar grupos musculares
     const { data: gruposMusculares } = await gymApi.get("/grupomuscular");
 
-    // 🧱 Construcción del formulario HTML
+    // 🧱 Construir formulario
     const { value: formValues } = await Swal.fire({
       title: "➕ Nuevo Ejercicio",
       width: 650,
@@ -25,71 +25,64 @@ export async function EjercicioCreateSwal(onSuccess?: () => void) {
         <form class="swal-form">
           <div class="mb-3 text-start">
             <label class="form-label fw-semibold">Nombre</label>
-            <input id="nombre" type="text" class="form-control" 
-              placeholder="Nombre del ejercicio">
+            <input id="nombre" type="text" class="form-control" placeholder="Nombre del ejercicio">
           </div>
 
           <div class="mb-3 text-start">
             <label class="form-label fw-semibold">Tips</label>
-            <textarea id="tips" class="form-control" 
-              placeholder="Consejos o notas opcionales"></textarea>
+            <textarea id="tips" class="form-control" placeholder="Consejos o notas opcionales"></textarea>
           </div>
 
           <div class="mb-3 text-start">
             <label class="form-label fw-semibold">Grupo Muscular</label>
             <select id="grupoMuscularId" class="form-select">
               <option value="">Seleccione un grupo</option>
-              ${gruposMusculares
-                .map(
-                  (g: any) =>
-                    `<option value="${g.id}">${g.nombre}</option>`
-                )
+              ${(gruposMusculares.items || gruposMusculares)
+                .map((g: any) => `<option value="${g.id}">${g.nombre}</option>`)
                 .join("")}
             </select>
           </div>
 
           <div class="mb-3 text-start">
-            <label class="form-label fw-semibold">URL de Imagen (opcional)</label>
-            <input id="mediaUrl" type="text" class="form-control" 
-              placeholder="ej: uploads/ejercicios/press-banca.jpg">
+            <label class="form-label fw-semibold">Imagen (opcional)</label>
+            <input id="imagen" type="file" class="form-control" accept="image/*">
           </div>
         </form>
       `,
       preConfirm: () => {
-        const nombre = (document.getElementById("nombre") as HTMLInputElement)
-          .value;
-        const tips = (document.getElementById("tips") as HTMLTextAreaElement)
-          .value;
-        const grupoMuscularId = parseInt(
-          (document.getElementById("grupoMuscularId") as HTMLSelectElement).value
-        );
-        const mediaUrl = (
-          document.getElementById("mediaUrl") as HTMLInputElement
-        ).value;
+        const nombre = document.getElementById("nombre").value.trim();
+        const tips = document.getElementById("tips").value.trim();
+        const grupoMuscularId = parseInt(document.getElementById("grupoMuscularId").value);
+        const imagen = document.getElementById("imagen").files?.[0];
 
-        if (!nombre.trim()) {
+        if (!nombre) {
           Swal.showValidationMessage("El nombre es obligatorio");
           return false;
         }
-
         if (isNaN(grupoMuscularId)) {
           Swal.showValidationMessage("Debe seleccionar un grupo muscular");
           return false;
         }
 
-        return { nombre, tips, grupoMuscularId, mediaUrl };
+        return { nombre, tips, grupoMuscularId, imagen };
       },
     });
 
     // 🚫 Cancelado
     if (!formValues) return;
 
-    // 📨 Enviar creación
-    await gymApi.post("/ejercicios", {
-      nombre: formValues.nombre,
-      tips: formValues.tips,
-      grupoMuscularId: formValues.grupoMuscularId,
-      mediaUrl: formValues.mediaUrl || null,
+    // 📦 Crear FormData (multipart/form-data)
+    const formData = new FormData();
+    formData.append("Nombre", formValues.nombre);
+    formData.append("Tips", formValues.tips);
+    formData.append("GrupoMuscularId", formValues.grupoMuscularId);
+    if (formValues.imagen) {
+      formData.append("Imagen", formValues.imagen);
+    }
+
+    // 📨 Enviar al backend
+    await gymApi.post("/ejercicios", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
     Swal.fire({
@@ -102,6 +95,8 @@ export async function EjercicioCreateSwal(onSuccess?: () => void) {
     if (onSuccess) onSuccess();
   } catch (error: any) {
     console.error(error);
-    Swal.fire("Error", "No se pudo crear el ejercicio", "error");
+    const msg =
+      error.response?.data || "No se pudo crear el ejercicio";
+    Swal.fire("Error", msg, "error");
   }
 }

@@ -5,75 +5,83 @@ import "@/styles/swal-card.css";
 
 export async function RutinaPlantillaCreateSwal(onSuccess?: () => void) {
   try {
-    // 🔹 Cargar grupos musculares
+    // 🔹 Obtener grupos musculares
     const { data: grupos } = await gymApi.get("/grupomuscular");
     const gruposOptions = (grupos.items || grupos)
       .map((g: any) => `<option value="${g.id}">${g.nombre}</option>`)
       .join("");
 
+    // 🧱 Construcción del formulario
     const { value: formValues } = await Swal.fire({
       title: "🧩 Nueva Rutina",
       width: 650,
-      showCancelButton: true,
-      confirmButtonText: "Guardar",
-      cancelButtonText: "Cancelar",
-      buttonsStyling: false,
       customClass: {
         popup: "swal2-card-style",
         confirmButton: "btn btn-orange",
         cancelButton: "btn btn-secondary",
       },
+      buttonsStyling: false,
+      showCancelButton: true,
+      confirmButtonText: "💾 Guardar",
+      cancelButtonText: "Cancelar",
       html: `
         <form class="swal-form">
-          <div class="swal-input-group">
-            <label class="swal-label">Nombre</label>
-            <input id="nombre" type="text" class="swal-field" placeholder="Nombre de la rutina">
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Nombre</label>
+            <input id="nombre" type="text" class="form-control" placeholder="Nombre de la rutina">
           </div>
 
-          <div class="swal-input-group">
-            <label class="swal-label">Objetivo</label>
-            <textarea id="objetivo" class="swal-field" rows="2" placeholder="Objetivo de la rutina"></textarea>
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Objetivo</label>
+            <textarea id="objetivo" class="form-control" placeholder="Ej: fuerza, tonificación, resistencia..."></textarea>
           </div>
 
-          <div class="swal-input-group">
-            <label class="swal-label">Grupo Muscular</label>
-            <select id="grupo" class="swal-field">
-              <option value="">Seleccionar...</option>
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Grupo Muscular</label>
+            <select id="grupoMuscularId" class="form-select">
+              <option value="">Seleccione un grupo</option>
               ${gruposOptions}
             </select>
           </div>
 
-          <div class="swal-input-group">
-            <label class="swal-label">Imagen</label>
-            <input id="imagen" type="file" accept="image/*" class="swal-field">
+          <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Imagen (opcional)</label>
+            <input id="imagen" type="file" class="form-control" accept="image/*">
           </div>
         </form>
       `,
       preConfirm: () => {
-        const nombre = (document.getElementById("nombre") as HTMLInputElement).value;
-        const objetivo = (document.getElementById("objetivo") as HTMLTextAreaElement).value;
-        const grupoMuscularId = (document.getElementById("grupo") as HTMLSelectElement).value;
-        const imagen = (document.getElementById("imagen") as HTMLInputElement).files?.[0];
+        const nombre = document.getElementById("nombre").value.trim();
+        const objetivo = document.getElementById("objetivo").value.trim();
+        const grupoMuscularId = parseInt(document.getElementById("grupoMuscularId").value);
+        const imagen = document.getElementById("imagen").files?.[0];
 
-        if (!nombre || !grupoMuscularId) {
-          Swal.showValidationMessage("⚠️ Nombre y Grupo Muscular son obligatorios");
+        if (!nombre) {
+          Swal.showValidationMessage("El nombre es obligatorio");
           return false;
         }
+        if (isNaN(grupoMuscularId)) {
+          Swal.showValidationMessage("Debe seleccionar un grupo muscular");
+          return false;
+        }
+
         return { nombre, objetivo, grupoMuscularId, imagen };
       },
     });
 
+    // 🚫 Cancelado
     if (!formValues) return;
 
-    const { nombre, objetivo, grupoMuscularId, imagen } = formValues;
-
-    // Crear FormData
+    // 📦 Crear FormData (multipart/form-data)
     const formData = new FormData();
-    formData.append("nombre", nombre);
-    formData.append("objetivo", objetivo);
-    formData.append("grupoMuscularId", grupoMuscularId);
-    if (imagen) formData.append("imagen", imagen);
+    formData.append("Nombre", formValues.nombre);
+    formData.append("Objetivo", formValues.objetivo);
+    formData.append("GrupoMuscularId", formValues.grupoMuscularId);
+    if (formValues.imagen) {
+      formData.append("Imagen", formValues.imagen);
+    }
 
+    // 📨 Enviar al backend
     await gymApi.post("/rutinasplantilla", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
@@ -81,13 +89,15 @@ export async function RutinaPlantillaCreateSwal(onSuccess?: () => void) {
     Swal.fire({
       icon: "success",
       title: "Rutina creada",
-      timer: 1000,
+      timer: 1200,
       showConfirmButton: false,
     });
 
     if (onSuccess) onSuccess();
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    Swal.fire("Error", "No se pudo crear la rutina", "error");
+    const msg =
+      error.response?.data || "No se pudo crear la rutina. Verificá los datos.";
+    Swal.fire("Error", msg, "error");
   }
 }
