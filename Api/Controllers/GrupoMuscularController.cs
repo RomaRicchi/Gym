@@ -9,7 +9,7 @@ namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Administrador, Profesor")]
+    [Authorize(Roles = "Administrador")]
     public class GrupoMuscularController : ControllerBase
     {
         private readonly GymDbContext _context;

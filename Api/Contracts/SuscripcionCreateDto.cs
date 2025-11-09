@@ -1,4 +1,4 @@
-namespace Api.Data.Models
+namespace Api.Contracts
 {
     public class SuscripcionCreateDto
     {

@@ -22,6 +22,7 @@ import {
   faFileAlt,
   faCheckSquare,
   faChartLine,
+  faClipboardUser,
 } from "@fortawesome/free-solid-svg-icons";
 import "@/styles/Sidebar.css";
 
@@ -151,6 +152,11 @@ export default function Sidebar() {
                 <li className="nav-item">
                   <NavLink to="/rutinas/plantilla-ejercicios" className="nav-link">
                     <FontAwesomeIcon icon={faFileAlt} className="me-2" /> Planilla de Ejercicios
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/rutinas/grupoMuscular" className="nav-link">
+                    <FontAwesomeIcon icon={faDumbbell} className="me-2" /> Grupos Musculares
                   </NavLink>
                 </li>
               </>

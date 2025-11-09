@@ -262,6 +262,7 @@ export default function TurnosList() {
             <th>Profesor</th>
             <th>Duración</th>
             <th>Cupo</th>
+            <th>Rutina</th>
             <th>Check-in</th>
             <th>Acciones</th>
           </tr>
@@ -300,6 +301,7 @@ export default function TurnosList() {
                   <td className={`${color} fw-bold`}>
                     {cupoDisponible}/{cupoTotal}
                   </td>
+                  <td>{(t as any).rutina?.nombre || "—"}</td>
                   <td>
                     <button
                       className={`btn btn-sm fw-bold ${
@@ -315,13 +317,67 @@ export default function TurnosList() {
                     </button>
                   </td>
                   <td>
+                    {/* 🏋️ Asignar rutina */}
+                    <button
+                      className="btn btn-sm btn-success me-2"
+                      title="Asignar rutina"
+                      onClick={async () => {
+                        try {
+                          const { data } = await gymApi.get("/rutinasplantilla");
+                          const rutinas = data.items || data;
+
+                          if (!rutinas || rutinas.length === 0) {
+                            Swal.fire("Sin rutinas", "No hay rutinas disponibles.", "info");
+                            return;
+                          }
+
+                          const { value: rutinaId } = await Swal.fire({
+                            title: "🏋️ Asignar rutina al turno",
+                            input: "select",
+                            inputOptions: Object.fromEntries(
+                              rutinas.map((r: any) => [r.id, r.nombre])
+                            ),
+                            inputPlaceholder: "Seleccioná una rutina",
+                            showCancelButton: true,
+                            confirmButtonText: "Guardar",
+                            cancelButtonText: "Cancelar",
+                            confirmButtonColor: "#ff6600",
+                          });
+
+                          if (!rutinaId) return;
+
+                          await gymApi.patch(`/suscripcionturno/${t.id}/rutina`, rutinaId);
+
+                          Swal.fire({
+                            icon: "success",
+                            title: "Rutina asignada",
+                            text: "La rutina fue asignada correctamente al turno.",
+                            confirmButtonColor: "#ff6600",
+                          });
+
+                          fetchTurnos(); // 🔄 refresca la tabla
+                        } catch (error: any) {
+                          Swal.fire(
+                            "Error",
+                            error.response?.data?.message || "No se pudo asignar la rutina",
+                            "error"
+                          );
+                        }
+                      }}
+                    >
+                      🏋️
+                    </button>
+
+                    {/* 🗑️ Eliminar turno */}
                     <button
                       className="btn btn-sm btn-danger"
+                      title="Eliminar turno"
                       onClick={() => handleDelete(t.id)}
                     >
                       🗑️
                     </button>
                   </td>
+
                 </tr>
               );
             })

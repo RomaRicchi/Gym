@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Data.Models;
+using Api.Contracts;
 using Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,7 @@ namespace Api.Controllers
                 .Select(s => new
                 {
                     s.Id,
+                    s.SocioId,
                     socio = s.Socio != null ? s.Socio.Nombre : "(sin socio)",
                     plan = s.Plan != null ? s.Plan.Nombre : "(sin plan)",
                     s.PlanId,

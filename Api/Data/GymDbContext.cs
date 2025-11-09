@@ -28,13 +28,9 @@ public partial class GymDbContext : DbContext
     public virtual DbSet<Avatar> Avatares { get; set; } = null!;
     public virtual DbSet<EvolucionFisica> EvolucionFisica { get; set; }
     public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
-
-    // === Tablas del módulo de rutinas ===
     public virtual DbSet<Ejercicio> Ejercicios { get; set; } = null!;
     public virtual DbSet<RutinaPlantilla> RutinasPlantilla { get; set; } = null!;
     public virtual DbSet<RutinaPlantillaEjercicio> RutinasPlantillaEjercicios { get; set; } = null!;
-    public virtual DbSet<RutinaAsignada> RutinasAsignadas { get; set; } = null!;
-    public virtual DbSet<Evaluacion> Evaluaciones { get; set; }
     public virtual DbSet<GrupoMuscular> GruposMusculares { get; set; }
 
 
@@ -66,8 +62,6 @@ public partial class GymDbContext : DbContext
         modelBuilder.Entity<TurnoPlantilla>().ToTable("turno_plantilla");
         modelBuilder.Entity<RutinaPlantilla>().ToTable("rutina_plantilla");
         modelBuilder.Entity<RutinaPlantillaEjercicio>().ToTable("rutina_plantilla_ejercicio");
-        modelBuilder.Entity<RutinaAsignada>().ToTable("rutina_asignada");
-        modelBuilder.Entity<Evaluacion>().ToTable("evaluacion");
         modelBuilder.Entity<DiaSemana>().ToTable("dia_semana");
         modelBuilder.Entity<PasswordResetToken>().ToTable("password_reset_tokens");
         modelBuilder.Entity<EvolucionFisica>().ToTable("evolucion_fisica");

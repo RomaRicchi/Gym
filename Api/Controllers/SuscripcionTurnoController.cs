@@ -406,5 +406,32 @@ namespace Api.Controllers
             }
         }
 
+        [HttpPatch("{id}/rutina")]
+        public async Task<IActionResult> AsignarRutina(
+            [FromRoute] int id,
+            [FromBody] int rutinaId,
+            CancellationToken ct = default)
+        {
+            try
+            {
+                var ok = await _repo.AsignarRutinaAsync(id, rutinaId, ct);
+
+                if (!ok)
+                    return NotFound(new { message = "No se pudo asignar la rutina (turno o rutina inexistente)." });
+
+                return Ok(new
+                {
+                    ok = true,
+                    message = "Rutina asignada correctamente y registrada en historial."
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR AsignarRutina] {ex.Message}");
+                return StatusCode(500, new { message = "Error interno al asignar rutina." });
+            }
+        }
+
+
     }
 }

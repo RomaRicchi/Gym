@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
@@ -17,12 +18,11 @@ export default function GruposMuscularesList() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
-  const [search, setSearch] = useState("");
 
   const fetchGrupos = async () => {
     setLoading(true);
     try {
-      const res = await gymApi.get(`/grupomuscular?page=${page}&pageSize=${pageSize}&q=${search}`);
+      const res = await gymApi.get(`/grupomuscular?page=${page}&pageSize=${pageSize}`);
       const data = res.data;
       const lista = data.items || data;
       setGrupos(lista);
@@ -36,22 +36,12 @@ export default function GruposMuscularesList() {
   };
 
   useEffect(() => {
-    const delay = setTimeout(() => {
-      if (search.length >= 3 || search.length === 0) {
-        fetchGrupos();
-      }
-    }, 400);
-    return () => clearTimeout(delay);
-  }, [page, search]);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    setPage(1);
-  };
+    fetchGrupos();
+  }, [page]);
 
   const handleDelete = async (id: number, nombre: string) => {
     const result = await Swal.fire({
-      title: `¿Eliminar ${nombre}?`,
+      title: `¿Eliminar "${nombre}"?`,
       text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
@@ -63,7 +53,13 @@ export default function GruposMuscularesList() {
     if (result.isConfirmed) {
       try {
         await gymApi.delete(`/grupomuscular/${id}`);
-        Swal.fire("Eliminado", "Grupo muscular eliminado correctamente.", "success");
+        Swal.fire({
+          icon: "success",
+          title: "Eliminado",
+          text: "Grupo muscular eliminado correctamente.",
+          timer: 1200,
+          showConfirmButton: false,
+        });
         fetchGrupos();
       } catch {
         Swal.fire("Error", "No se pudo eliminar el grupo muscular.", "error");
@@ -71,62 +67,74 @@ export default function GruposMuscularesList() {
     }
   };
 
-  if (loading) return <p>Cargando grupos musculares...</p>;
-  if (error) return <p className="text-danger">{error}</p>;
+  if (loading)
+    return <p className="text-center mt-5 text-light">Cargando grupos musculares...</p>;
+  if (error)
+    return <p className="text-danger text-center mt-4">{error}</p>;
 
   return (
-    <div className="mt-4">
+    <div className="container mt-4">
       <h1
         className="text-center fw-bold mb-4"
         style={{ color: "#ff6600", fontSize: "2.3rem", letterSpacing: "2px" }}
       >
-        🧠 GRUPOS MUSCULARES
+        GRUPOS MUSCULARES
       </h1>
 
-      {/* 🔸 Barra superior */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="flex-grow-1 d-flex justify-content-start">
-          <input
-            type="text"
-            placeholder="Buscar grupo muscular..."
-            value={search}
-            onChange={handleSearch}
-            className="form-control"
-            style={{ width: "50%" }}
-          />
-        </div>
-
+      {/* Botón superior */}
+      <div className="d-flex justify-content-end mb-4">
         <button
-          className="btn btn-success ms-3"
+          className="btn btn-success fw-semibold"
           onClick={() => GrupoMuscularCreateSwal(fetchGrupos)}
         >
           ➕ Nuevo Grupo
         </button>
       </div>
 
-      {/* 🔸 Cards de grupos */}
-      <div className="row g-3">
-        {grupos.map((g) => (
-          <div key={g.id} className="col-md-4 col-lg-3">
-                <h5 className="fw-bold">{g.nombre}</h5>
-                <div className="d-flex justify-content-center gap-2">
-                  <button
-                    className="btn btn-sm btn-warning"
-                    onClick={() => GrupoMuscularEditSwal(g.id.toString(), fetchGrupos)}
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() => handleDelete(g.id, g.nombre)}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-        ))}
+      {/* Tabla */}
+      <div className="table-responsive">
+        <table className="table table-striped align-middle text-center">
+          <thead className="table-dark">
+            <tr>
+              <th>Nombre del Grupo Muscular</th>
+              <th style={{ width: "140px" }}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {grupos.length === 0 ? (
+              <tr>
+                <td colSpan={2} className="text-muted py-4">
+                  No hay grupos musculares registrados.
+                </td>
+              </tr>
+            ) : (
+              grupos.map((g) => (
+                <tr key={g.id}>
+                  <td className="fw-semibold text-start ps-4">{g.nombre}</td>
+                  <td>
+                    <div className="d-flex justify-content-center gap-2">
+                      <button
+                        className="btn btn-sm btn-warning fw-semibold"
+                        onClick={() => GrupoMuscularEditSwal(g.id.toString(), fetchGrupos)}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger fw-semibold"
+                        onClick={() => handleDelete(g.id, g.nombre)}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
+      {/* Paginación */}
       <Pagination
         currentPage={page}
         totalPages={Math.ceil(totalItems / pageSize)}

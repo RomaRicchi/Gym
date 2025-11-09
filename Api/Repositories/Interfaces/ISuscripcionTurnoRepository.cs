@@ -14,6 +14,7 @@ namespace Api.Repositories.Interfaces
         Task DeleteAsync(int id, CancellationToken ct = default);
         Task<bool> CancelarTurnoAsync(int id, CancellationToken ct = default);
         Task<(bool ok, string message)> ReagendarTurnoAsync(int idSuscripcion, int turnoActualId, int nuevoTurnoId, CancellationToken ct = default);
+        Task<bool> AsignarRutinaAsync(int turnoId, int rutinaId, CancellationToken ct = default);
 
     }
 }

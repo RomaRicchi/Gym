@@ -14,7 +14,7 @@ namespace Api.Repositories
             _db = db;
         }
 
-        // 🔹 Obtener todos con cálculo de cupo dinámico
+        //  Obtener todos con cálculo de cupo dinámico
         public async Task<List<SuscripcionTurno>> GetAllAsync(CancellationToken ct = default)
         {
             var lista = await _db.SuscripcionTurnos
@@ -55,6 +55,7 @@ namespace Api.Repositories
                     .ThenInclude(tp => tp.Personal)
                 .Include(st => st.TurnoPlantilla)
                     .ThenInclude(tp => tp.DiaSemana)
+                .Include(st => st.Rutina) // 👈 NUEVO: carga la rutina asociada
                 .Select(st => new
                 {
                     st.Id,
@@ -81,6 +82,11 @@ namespace Api.Repositories
                         Personal = new { st.TurnoPlantilla.Personal!.Nombre },
                         DiaSemana = new { st.TurnoPlantilla.DiaSemana!.Nombre }
                     },
+                    Rutina = st.Rutina != null ? new
+                    {
+                        st.Rutina.Id,
+                        st.Rutina.Nombre
+                    } : null, // 👈 NUEVO: devuelve los datos de la rutina
                     CheckinHecho = _db.Checkins.Any(c =>
                         c.SocioId == st.Suscripcion.Socio.Id &&
                         c.TurnoPlantillaId == st.TurnoPlantillaId &&
@@ -92,7 +98,8 @@ namespace Api.Repositories
             return data.Cast<object>().ToList();
         }
 
-        // 🔹 Obtener por ID
+
+        // Obtener por ID
         public async Task<SuscripcionTurno?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             var entity = await _db.SuscripcionTurnos
@@ -119,7 +126,7 @@ namespace Api.Repositories
             return entity;
         }
 
-        // 🔹 Obtener turnos por suscripción
+        //  Obtener turnos por suscripción
         public async Task<List<SuscripcionTurno>> GetBySuscripcionAsync(int suscripcionId, CancellationToken ct = default)
         {
             var lista = await _db.SuscripcionTurnos
@@ -147,7 +154,7 @@ namespace Api.Repositories
             return lista;
         }
 
-        // 🔹 Obtener turnos por socio
+        // Obtener turnos por socio
         public async Task<List<SuscripcionTurno>> GetBySocioAsync(int socioId, CancellationToken ct = default)
         {
             var lista = await _db.SuscripcionTurnos
@@ -175,7 +182,7 @@ namespace Api.Repositories
             return lista;
         }
 
-        // 🔹 Crear
+        //  Crear
         public async Task<SuscripcionTurno> AddAsync(SuscripcionTurno entity, CancellationToken ct = default)
         {
             _db.SuscripcionTurnos.Add(entity);
@@ -183,14 +190,14 @@ namespace Api.Repositories
             return entity;
         }
 
-        // 🔹 Actualizar
+        // Actualizar
         public async Task UpdateAsync(SuscripcionTurno entity, CancellationToken ct = default)
         {
             _db.SuscripcionTurnos.Update(entity);
             await _db.SaveChangesAsync(ct);
         }
 
-        // 🔹 Eliminar
+        //  Eliminar
         public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
             var entity = await _db.SuscripcionTurnos.FindAsync(new object?[] { id }, ct);
@@ -283,6 +290,21 @@ namespace Api.Repositories
             return (true, "Turno reagendado correctamente.");
         }
 
+        public async Task<bool> AsignarRutinaAsync(int turnoId, int rutinaId, CancellationToken ct = default)
+        {
+            var turno = await _db.SuscripcionTurnos
+                .Include(st => st.Suscripcion)
+                .ThenInclude(s => s.Socio)
+                .FirstOrDefaultAsync(st => st.Id == turnoId, ct);
 
+            if (turno == null)
+                return false;
+
+            turno.RutinaId = rutinaId;
+
+            await _db.SaveChangesAsync(ct);
+            Console.WriteLine($"✅ Rutina asignada al turno {turnoId}");
+            return true;
+        }
     }
 }

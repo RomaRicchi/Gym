@@ -23,5 +23,8 @@ namespace Api.Data.Models
 
         [ForeignKey(nameof(TurnoPlantillaId))]
         public TurnoPlantilla TurnoPlantilla { get; set; } = null!;
+        public int? RutinaId { get; set; }
+        public virtual RutinaPlantilla? Rutina { get; set; }
+
     }
 }
