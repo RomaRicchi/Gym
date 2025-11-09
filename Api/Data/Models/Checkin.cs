@@ -1,4 +1,6 @@
-﻿public class Checkin
+﻿using System;
+using Api.Data.Models;
+public class Checkin
 {
     public int Id { get; set; }
     public int SocioId { get; set; }

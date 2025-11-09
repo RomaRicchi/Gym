@@ -24,7 +24,6 @@ namespace Api.Data.Models
         public bool Activo { get; set; }
 
         // Relaciones
-        public virtual ICollection<RutinaAsignada>? RutinasAsignadas { get; set; }
         public virtual ICollection<Suscripcion>? Suscripciones { get; set; }
     }
 }

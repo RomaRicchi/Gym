@@ -32,18 +32,45 @@ namespace Api.Controllers
             if (!socioExiste || !turnoExiste)
                 return BadRequest(new { message = "Socio o turno no válidos." });
 
-            // Crear nuevo registro
+            // ⚙️ Crear nuevo registro de check-in
             var checkin = new Checkin
             {
                 SocioId = dto.SocioId,
                 TurnoPlantillaId = dto.TurnoPlantillaId,
+                ProfesorId = dto.ProfesorId,                 // 👈 nuevo campo opcional
+                Observaciones = dto.Observaciones?.Trim(),   // 👈 nuevo campo opcional
                 FechaHora = DateTime.UtcNow
             };
 
             _db.Checkins.Add(checkin);
             await _db.SaveChangesAsync(ct);
 
-            return Ok(new { ok = true, message = "✅ Check-in registrado correctamente." });
+            return Ok(new
+            {
+                ok = true,
+                message = "✅ Check-in registrado correctamente.",
+                checkin.Id
+            });
+        }
+
+        // 🔹 PATCH: api/Checkin/{id}
+        // Permite actualizar observaciones o profesor
+        [HttpPatch("{id:int}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] CheckinDto dto, CancellationToken ct = default)
+        {
+            var checkin = await _db.Checkins.FindAsync(new object[] { id }, ct);
+            if (checkin == null)
+                return NotFound(new { message = "Check-in no encontrado." });
+
+            if (!string.IsNullOrWhiteSpace(dto.Observaciones))
+                checkin.Observaciones = dto.Observaciones.Trim();
+
+            if (dto.ProfesorId.HasValue)
+                checkin.ProfesorId = dto.ProfesorId;
+
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new { ok = true, message = "✅ Check-in actualizado correctamente." });
         }
 
         // 🔹 GET: api/Checkin/socio/{id}
@@ -56,6 +83,7 @@ namespace Api.Controllers
                     .ThenInclude(t => t.Sala)
                 .Include(c => c.TurnoPlantilla)
                     .ThenInclude(t => t.DiaSemana)
+                .Include(c => c.Profesor)
                 .Where(c => c.SocioId == id)
                 .OrderByDescending(c => c.FechaHora)
                 .ToListAsync(ct);

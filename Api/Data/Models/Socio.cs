@@ -32,7 +32,5 @@ public partial class Socio
 
     public virtual ICollection<OrdenPago> OrdenesPago { get; set; } = new List<OrdenPago>();
 
-    public virtual ICollection<RutinaAsignada> RutinasAsignadas { get; set; } = new List<RutinaAsignada>();
-
     public virtual ICollection<Suscripcion> Suscripciones { get; set; } = new List<Suscripcion>();
 }
