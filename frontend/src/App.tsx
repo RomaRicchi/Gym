@@ -36,6 +36,7 @@ import RutinaPlantillaList from "@/views/rutinas/rutina-plantilla/RutinaPlantill
 import RutinaPlantillaEjercicioList from "@/views/rutinas/rutina-ejercicios/RutinaPlantillaEjercicioList";
 import RutinaAsignadaList from "@/views/rutinas/RutinaAsignadaList";
 import EvaluacionesList from "@/views/rutinas/evaluacion/EvaluacionesList";
+import RutinaCardsList from "@/views/rutinas/rutina-plantilla/RutinaCardsList";
 
 /* === Vistas del SOCIO === */
 import DashboardSocio from "@/views/DashboardSocio";
@@ -106,6 +107,7 @@ export default function App() {
           <Route path="/rutinas/plantilla-ejercicios" element={<RutinaPlantillaEjercicioList />} />
           <Route path="/rutinas/asignadas" element={<RutinaAsignadaList />} />
           <Route path="/rutinas/evaluaciones" element={<EvaluacionesList />} />
+          <Route path="/rutinas/cards" element={<RutinaCardsList />} />
         </Route>
         {/* 🧡 Panel del Socio */}
         <Route element={<LayoutSocio />}>

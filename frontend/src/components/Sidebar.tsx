@@ -142,6 +142,12 @@ export default function Sidebar() {
                     <FontAwesomeIcon icon={faClipboardList} className="me-2" /> Rutinas
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink to="/rutinas/cards" className="nav-link">
+                    <FontAwesomeIcon icon={faClipboardList} className="me-2" /> Rutinas (Cards)
+                  </NavLink>
+                </li>
+
                 <li className="nav-item">
                   <NavLink to="/rutinas/plantilla-ejercicios" className="nav-link">
                     <FontAwesomeIcon icon={faFileAlt} className="me-2" /> Planilla de Ejercicios

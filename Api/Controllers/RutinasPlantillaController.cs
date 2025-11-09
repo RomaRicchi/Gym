@@ -211,5 +211,27 @@ namespace Api.Controllers
             var relativePath = Path.Combine("Uploads", "Rutinas", fileName).Replace("\\", "/");
             return Ok(new { url = relativePath });
         }
+        // ===============================
+        // GET todas (sin paginación)
+        // ===============================
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllSinPaginacion()
+        {
+            var rutinas = await _context.RutinasPlantilla
+                .Include(r => r.GrupoMuscular)
+                .OrderBy(r => r.Nombre)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Nombre,
+                    r.Objetivo,
+                    r.ImagenUrl,
+                    GrupoMuscularNombre = r.GrupoMuscular != null ? r.GrupoMuscular.Nombre : "(Sin grupo)"
+                })
+                .ToListAsync();
+
+            return Ok(rutinas);
+        }
+
     }
 }
