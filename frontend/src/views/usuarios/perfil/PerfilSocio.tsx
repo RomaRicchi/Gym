@@ -29,7 +29,7 @@ export default function PerfilSocio() {
   const storedUser = localStorage.getItem("usuario");
   const userId = storedUser ? JSON.parse(storedUser).id : null;
 
-  // 🔹 Obtener perfil del socio
+  // Obtener perfil del socio
   const fetchPerfil = async () => {
     try {
       const res = await gymApi.get("/perfil/socio");
@@ -46,7 +46,7 @@ export default function PerfilSocio() {
     fetchPerfil();
   }, []);
 
-  // 📸 Cambiar avatar
+  // Cambiar avatar
   const handleAvatarUpload = async () => {
     const { value: file } = await Swal.fire({
       title: "📸 Cambiar Avatar",
@@ -89,7 +89,7 @@ export default function PerfilSocio() {
     }
   };
 
-  // ✏️ Editar datos del socio + usuario
+  // Editar datos del socio + usuario
   const handleEditDatos = async () => {
     if (!perfil || !perfil.usuario) return;
 
@@ -133,19 +133,14 @@ export default function PerfilSocio() {
 
     try {
       // Actualizar socio
-      await gymApi.put(`/socios/${socio.id}`, {
+      await gymApi.patch(`/perfil/${usuario.id}/socio`, {
         nombre: formValues.nombre,
-        dni: formValues.dni,
         telefono: formValues.telefono,
         fechaNacimiento: formValues.fechaNacimiento,
-      });
-
-      // Actualizar usuario (perfil)
-      await gymApi.patch(`/perfil/${usuario.id}`, {
         alias: formValues.alias,
         email: formValues.email,
       });
-
+      
       Swal.fire("✅ Datos actualizados", "Los cambios se guardaron correctamente.", "success");
       await fetchPerfil();
     } catch (err) {

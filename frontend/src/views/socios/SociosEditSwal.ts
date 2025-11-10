@@ -50,7 +50,7 @@ export async function mostrarFormEditarSocio(id: number): Promise<boolean> {
       cancelButtonText: "Cancelar",
       focusConfirm: false,
       customClass: {
-        popup: "swal2-card-socio",      // 🧡 usa el estilo exclusivo
+        popup: "swal2-card-socio",     
         confirmButton: "btn btn-orange",
         cancelButton: "btn btn-secondary",
       },

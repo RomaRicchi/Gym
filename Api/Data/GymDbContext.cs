@@ -45,7 +45,6 @@ public partial class GymDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Mapeo explícito
         modelBuilder.Entity<Usuario>().ToTable("usuario");
         modelBuilder.Entity<Rol>().ToTable("rol");
         modelBuilder.Entity<Socio>().ToTable("socio");
@@ -80,8 +79,6 @@ public partial class GymDbContext : DbContext
             .HasForeignKey(e => e.GrupoMuscularId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("fk_ejercicio_grupo_muscular");
-                
-
         //  RutinaPlantilla -> GrupoMuscular (N:1)
         modelBuilder.Entity<RutinaPlantilla>()
             .HasOne(r => r.GrupoMuscular)
@@ -89,8 +86,6 @@ public partial class GymDbContext : DbContext
             .HasForeignKey(r => r.GrupoMuscularId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("fk_rutina_grupo_muscular");
-                
-
         // RutinaPlantillaEjercicio -> RutinaPlantilla (N:1)
         modelBuilder.Entity<RutinaPlantillaEjercicio>()
             .HasOne(rpe => rpe.RutinaPlantilla)
@@ -98,8 +93,6 @@ public partial class GymDbContext : DbContext
             .HasForeignKey(rpe => rpe.RutinaId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("fk_rpe_rutina");
-                
-
         // RutinaPlantillaEjercicio -> Ejercicio (N:1)
         modelBuilder.Entity<RutinaPlantillaEjercicio>()
             .HasOne(rpe => rpe.Ejercicio)

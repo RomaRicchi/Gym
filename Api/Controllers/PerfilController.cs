@@ -24,7 +24,7 @@ namespace Api.Controllers
             _env = env;
         }
 
-        // ✅ PERFIL GENERAL (ADMIN / PERSONAL)
+        // PERFIL GENERAL (ADMIN / PERSONAL)
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetPerfil(int id, CancellationToken ct)
         {
@@ -61,7 +61,7 @@ namespace Api.Controllers
             });
         }
 
-        // ✅ PERFIL DEL SOCIO LOGUEADO
+        // PERFIL DEL SOCIO LOGUEADO
         [Authorize(Roles = "Socio")]
         [HttpGet("socio")]
         public async Task<IActionResult> GetPerfilSocio(CancellationToken ct)
@@ -117,7 +117,7 @@ namespace Api.Controllers
             }
         }
 
-        // ✅ SUBIR / REEMPLAZAR AVATAR
+        // SUBIR / REEMPLAZAR AVATAR
         [Authorize(Roles = "Socio, Administrador")]
         [HttpPost("{id:int}/avatar")]
         public async Task<IActionResult> SubirAvatar(int id, IFormFile archivo, CancellationToken ct)
@@ -172,7 +172,7 @@ namespace Api.Controllers
             return Ok(new { url = nuevoAvatar.Url });
         }
 
-        // ✅ CAMBIAR CONTRASEÑA
+        // CAMBIAR CONTRASEÑA
         [HttpPatch("{id:int}/password")]
         public async Task<IActionResult> CambiarPassword(int id, [FromBody] PasswordUpdateDto dto, CancellationToken ct)
         {
@@ -241,14 +241,20 @@ namespace Api.Controllers
                 if (usuario.Socio == null)
                     return NotFound("El usuario no está vinculado a un socio.");
 
-                // Actualiza datos del socio
+                // 🔹 Actualiza datos del socio
                 if (!string.IsNullOrWhiteSpace(dto.Nombre))
                     usuario.Socio.Nombre = dto.Nombre;
 
                 if (!string.IsNullOrWhiteSpace(dto.Telefono))
                     usuario.Socio.Telefono = dto.Telefono;
 
-                // Actualiza datos del usuario
+                if (!string.IsNullOrWhiteSpace(dto.Dni))
+                    usuario.Socio.Dni = dto.Dni; 
+
+                if (dto.FechaNacimiento.HasValue)
+                    usuario.Socio.FechaNacimiento = dto.FechaNacimiento.Value;
+
+                // 🔹 Actualiza datos del usuario
                 if (!string.IsNullOrWhiteSpace(dto.Alias))
                     usuario.Alias = dto.Alias;
 
@@ -265,8 +271,7 @@ namespace Api.Controllers
             }
         }
 
-
-        // ✅ ACTUALIZAR PERFIL DE PERSONAL / ADMIN / PROFESOR
+        // ACTUALIZAR PERFIL DE PERSONAL / ADMIN / PROFESOR
         [Authorize(Roles = "Administrador, Profesor, Recepción")]
         [HttpPatch("{id:int}/personal")]
         public async Task<IActionResult> ActualizarPerfilPersonal(int id, [FromBody] PerfilUpdateDto dto, CancellationToken ct)

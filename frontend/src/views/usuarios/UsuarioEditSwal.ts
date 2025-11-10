@@ -1,6 +1,6 @@
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
-import "@/styles/swal-usuario.css"; // ✅ Importá este CSS
+import "@/styles/swal-usuario.css"; 
 
 export async function UsuarioEditSwal(id: number | string, onSuccess?: () => void) {
   try {
