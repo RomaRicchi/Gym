@@ -81,11 +81,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="/dashboard" element={<Dashboard />} />
-
-          {/* Perfil administrativo */}
           <Route path="/perfil" element={<PerfilView />} />
-
-          {/* Gestión */}
           <Route path="/socios" element={<SociosList />} />
           <Route path="/personal" element={<PersonalList />} />
           <Route path="/suscripciones" element={<SuscripcionesList />} />
@@ -106,7 +102,7 @@ export default function App() {
           <Route path="/rutinas/plantillas" element={<RutinaPlantillaList />} />
           <Route path="/rutinas/plantilla-ejercicios" element={<RutinaPlantillaEjercicioList />} />
           <Route path="/rutinas/cards" element={<RutinaCardsList />} />
-          <Route path="/grupoMuscular" element={<GruposMuscularesList />} />
+          <Route path="/rutinas/grupoMuscular" element={<GruposMuscularesList />} />
         </Route>
         {/* 🧡 Panel del Socio */}
         <Route element={<LayoutSocio />}>

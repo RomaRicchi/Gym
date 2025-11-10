@@ -3,6 +3,8 @@ import Pagination from "@/components/Pagination";
 import Swal from "sweetalert2";
 import gymApi from "@/api/gymApi";
 import Select from "react-select";
+import { AsignarRutinaSwal } from "@/views/agenda/suscripcionTurno/AsignarRutinaSwal";
+import { CheckinSwal } from "@/views/agenda/suscripcionTurno/CheckinSwal";
 
 interface Turno {
   id: number;
@@ -309,61 +311,25 @@ export default function TurnosList() {
                       }`}
                       onClick={() => {
                         if (!checkinHecho && socioId && turnoId)
-                          handleCheckin(socioId, turnoId);
+                          CheckinSwal(socioId, turnoId, socio, fetchTurnos);
                       }}
                       disabled={checkinHecho}
                     >
                       {checkinHecho ? "✅" : "☑️"}
                     </button>
+
                   </td>
                   <td>
-                    {/* 🏋️ Asignar rutina */}
                     <button
                       className="btn btn-sm btn-success me-2"
                       title="Asignar rutina"
-                      onClick={async () => {
-                        try {
-                          const { data } = await gymApi.get("/rutinasplantilla");
-                          const rutinas = data.items || data;
-
-                          if (!rutinas || rutinas.length === 0) {
-                            Swal.fire("Sin rutinas", "No hay rutinas disponibles.", "info");
-                            return;
-                          }
-
-                          const { value: rutinaId } = await Swal.fire({
-                            title: "🏋️ Asignar rutina al turno",
-                            input: "select",
-                            inputOptions: Object.fromEntries(
-                              rutinas.map((r: any) => [r.id, r.nombre])
-                            ),
-                            inputPlaceholder: "Seleccioná una rutina",
-                            showCancelButton: true,
-                            confirmButtonText: "Guardar",
-                            cancelButtonText: "Cancelar",
-                            confirmButtonColor: "#ff6600",
-                          });
-
-                          if (!rutinaId) return;
-
-                          await gymApi.patch(`/suscripcionturno/${t.id}/rutina`, rutinaId);
-
-                          Swal.fire({
-                            icon: "success",
-                            title: "Rutina asignada",
-                            text: "La rutina fue asignada correctamente al turno.",
-                            confirmButtonColor: "#ff6600",
-                          });
-
-                          fetchTurnos(); // 🔄 refresca la tabla
-                        } catch (error: any) {
-                          Swal.fire(
-                            "Error",
-                            error.response?.data?.message || "No se pudo asignar la rutina",
-                            "error"
-                          );
-                        }
-                      }}
+                      onClick={() =>
+                        AsignarRutinaSwal(
+                          t.id,
+                          t.suscripcion?.socio?.nombre || "este socio",
+                          fetchTurnos
+                        )
+                      }
                     >
                       🏋️
                     </button>
@@ -377,7 +343,6 @@ export default function TurnosList() {
                       🗑️
                     </button>
                   </td>
-
                 </tr>
               );
             })
