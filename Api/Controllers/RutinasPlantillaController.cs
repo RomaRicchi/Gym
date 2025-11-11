@@ -232,6 +232,5 @@ namespace Api.Controllers
 
             return Ok(rutinas);
         }
-
     }
 }

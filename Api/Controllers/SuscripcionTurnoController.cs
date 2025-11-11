@@ -5,8 +5,10 @@ using Api.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
-
 
 namespace Api.Controllers
 {
@@ -431,7 +433,77 @@ namespace Api.Controllers
                 return StatusCode(500, new { message = "Error interno al asignar rutina." });
             }
         }
+        
+        [Authorize(Roles = "Socio")]
+        [HttpGet("rutina/socio")]
+        public async Task<IActionResult> GetRutinaSocio(CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+                return BadRequest("Token inválido.");
 
+            int userId = int.Parse(userIdClaim);
 
+            var socioId = await _db.Usuarios
+                .Where(u => u.Id == userId && u.SocioId != null)
+                .Select(u => u.SocioId)
+                .FirstOrDefaultAsync(ct);
+
+            if (socioId == null)
+                return NotFound("El usuario no está vinculado a un socio.");
+
+            var suscripcionIds = await _db.Suscripciones
+                .Where(s => s.SocioId == socioId && s.Estado)
+                .Select(s => s.Id)
+                .ToListAsync(ct);
+
+            if (!suscripcionIds.Any())
+                return NotFound("No hay suscripción activa.");
+
+            var hoy = DateTime.UtcNow.AddHours(-3);
+            var dow = hoy.DayOfWeek;
+            int diaNumero = dow == DayOfWeek.Sunday ? 7 : (int)dow;
+
+            var rutinaData = await (
+                from st in _db.SuscripcionTurnos
+                join t in _db.TurnosPlantilla on st.TurnoPlantillaId equals t.Id
+                join ds in _db.DiasSemana on t.DiaSemanaId equals ds.Id
+                join r in _db.RutinasPlantilla on st.RutinaId equals r.Id
+                where suscripcionIds.Contains(st.SuscripcionId)
+                    && st.RutinaId != null
+                    && t.DiaSemanaId == diaNumero
+                orderby st.Id
+                select new
+                {
+                    id = r.Id,
+                    nombre = r.Nombre,
+                    objetivo = r.Objetivo,
+                    imagenUrl = r.ImagenUrl, 
+                    dia = ds.Nombre,
+                    ejercicios = _db.RutinasPlantillaEjercicios
+                        .Where(e => e.RutinaId == r.Id)
+                        .OrderBy(e => e.Orden)
+                        .Select(ej => new
+                        {
+                            id = ej.Ejercicio.Id,
+                            nombre = ej.Ejercicio.Nombre,
+                            mediaUrl = ej.Ejercicio.MediaUrl,
+                            tips = ej.Ejercicio.Tips,
+                            series = ej.Series,
+                            repeticiones = ej.Repeticiones,
+                            descansoSeg = ej.DescansoSeg
+                        })
+                        .ToList()
+                }
+            ).OrderByDescending(r => r.id).FirstOrDefaultAsync(ct);
+
+            if (rutinaData == null)
+            {
+                Console.WriteLine($"ℹ️ No hay rutina asignada para el día {diaNumero} para suscripciones [{string.Join(",", suscripcionIds)}]");
+                return NotFound("No hay rutina asignada para hoy.");
+            }
+
+            return Ok(rutinaData);
+        }
     }
 }
