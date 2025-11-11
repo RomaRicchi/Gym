@@ -162,7 +162,7 @@ Roles:
 
 - Profesor → Rutinas y turnos (aun no implementado).
 
-- Socio → Consultas personales (aun no implementado).
+- Socio → Consultas personales.
 
 🖼️ Manejo de Archivos
 
@@ -207,8 +207,8 @@ Acceder a Swagger:
 | ------------- | ------------------------------------- | ---------- |
 | Administrador | [admin@gym.com](mailto:admin@gym.com) | admin123   |
 | Recepcionista | [rece@gym.com](mailto:rece@gym.com)   | rece123    |
-| Socio         | [socio@gym.com](mailto:socio@gym.com) | Socio123   |
-
+| Socio         | [socio@gym.com](mailto:socio@gym.com) | socio123   |
+| Profe         | [profe@gym.com](mailto:profe@gym.com) | profe123   |
 
 ## ✅ Cumplimiento de los Requerimientos
 
