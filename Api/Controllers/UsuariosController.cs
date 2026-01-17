@@ -87,7 +87,7 @@ namespace Api.Controllers
         // ============================================================
         // 🔹 GET: /api/usuarios/{id}
         // ============================================================
-        [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
+        [Authorize(Roles = "Administrador")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
@@ -134,7 +134,7 @@ namespace Api.Controllers
         // ============================================================
         // PUT: /api/usuarios/{id}
         // ============================================================
-        [Authorize(Roles = "Administrador, Profesor, Recepción, Socio")]
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> ActualizarUsuario(int id, [FromBody] UsuarioUpdateDto dto, CancellationToken ct)
         {

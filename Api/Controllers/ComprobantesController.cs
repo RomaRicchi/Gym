@@ -16,7 +16,7 @@ namespace Api.Controllers
 {
     [ApiController]
     [Route("api/comprobantes")]
-    [Authorize(Roles = "Administrador, Profesor, Recepción")]
+    [Authorize(Roles = "Administrador, Recepción")]
     public class ComprobantesController : ControllerBase
     {
         private readonly GymDbContext _db;

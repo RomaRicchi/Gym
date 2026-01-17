@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Profesor, Recepción")]
+    [Authorize(Roles = "Profesor")]
     [ApiController]
     [Route("api/[controller]")]
     public class CheckinController : ControllerBase
@@ -37,8 +37,8 @@ namespace Api.Controllers
             {
                 SocioId = dto.SocioId,
                 TurnoPlantillaId = dto.TurnoPlantillaId,
-                ProfesorId = dto.ProfesorId,                 // 👈 nuevo campo opcional
-                Observaciones = dto.Observaciones?.Trim(),   // 👈 nuevo campo opcional
+                ProfesorId = dto.ProfesorId,                 
+                Observaciones = dto.Observaciones?.Trim(),   
                 FechaHora = DateTime.UtcNow
             };
 
@@ -53,8 +53,7 @@ namespace Api.Controllers
             });
         }
 
-        // 🔹 PATCH: api/Checkin/{id}
-        // Permite actualizar observaciones o profesor
+        //  PATCH: api/Checkin/{id}
         [HttpPatch("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] CheckinDto dto, CancellationToken ct = default)
         {

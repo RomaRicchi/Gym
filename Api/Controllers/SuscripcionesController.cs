@@ -137,7 +137,6 @@ namespace Api.Controllers
                 return StatusCode(500, new { message = "Error al obtener las suscripciones del socio." });
             }
         }
-
                 
         [HttpGet("socio/{id:int}")]
         public async Task<IActionResult> GetBySocio([FromRoute] int id, CancellationToken ct)
@@ -179,8 +178,6 @@ namespace Api.Controllers
             });
         }
 
-
-
         // GET: api/suscripciones/por-orden/{ordenId}
         [HttpGet("por-orden/{ordenId:int:min(1)}")]
         public async Task<IActionResult> GetByOrdenPago([FromRoute] int ordenId, CancellationToken ct = default)
@@ -218,7 +215,6 @@ namespace Api.Controllers
             return Ok(sus);
         }
 
-
         // POST: api/suscripciones
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] SuscripcionCreateDto dto, CancellationToken ct = default)
@@ -226,7 +222,7 @@ namespace Api.Controllers
             if (dto == null)
                 return BadRequest("Datos inválidos.");
 
-            // 🧩 Validar existencia del socio
+            // Validar existencia del socio
             var socioExiste = await _repo.Query()
                 .Include(s => s.Socio)
                 .AnyAsync(s => s.SocioId == dto.SocioId, ct);
@@ -234,7 +230,7 @@ namespace Api.Controllers
             if (!socioExiste)
                 return BadRequest($"El socio con ID {dto.SocioId} no existe.");
 
-            // 🧩 Validar existencia del plan
+            // Validar existencia del plan
             var planExiste = await _repo.Query()
                 .Include(s => s.Plan)
                 .AnyAsync(s => s.PlanId == dto.PlanId, ct);
@@ -284,7 +280,6 @@ namespace Api.Controllers
                 nueva.Estado
             });
         }
-
 
         // PUT: api/suscripciones/{id}
         [HttpPut("{id}")]

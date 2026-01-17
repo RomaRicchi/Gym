@@ -1,9 +1,11 @@
 using Api.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
+    [Authorize(Roles = "Administrador, Profesor, Recepción")]
     [ApiController]
     [Route("api/dashboard")]
     public class DashboardController : ControllerBase
@@ -22,7 +24,7 @@ namespace Api.Controllers
             try
             {
                 var result = _db.VSuscripcionesAr
-                    .AsEnumerable() // ✅ fuerza evaluación en memoria
+                    .AsEnumerable()
                     .GroupBy(s => new { s.inicio_ar.Year, s.inicio_ar.Month })
                     .Select(g => new
                     {
@@ -47,7 +49,7 @@ namespace Api.Controllers
             }
         }
 
-        // 🏋️‍♀️ Salas con más reservas
+        //  Salas con más reservas
         [HttpGet("salas-mas-reservadas")]
         public async Task<IActionResult> GetSalasMasReservadas()
         {
@@ -66,7 +68,7 @@ namespace Api.Controllers
                     .Select(g => new
                     {
                         sala = g.Key,
-                        reservas = g.Sum(x => (int?)x.v.reservados ?? 0) // ✅ COALESCE equivalente
+                        reservas = g.Sum(x => (int?)x.v.reservados ?? 0) // COALESCE equivalente
                     })
                     .OrderByDescending(g => g.reservas)
                     .Take(10)
@@ -81,6 +83,7 @@ namespace Api.Controllers
         }
 
         // Ingresos mensuales (solo administrador)
+        [Authorize(Roles = "Administrador")]
         [HttpGet("ingresos-mensuales")]
         public IActionResult GetIngresosMensuales()
         {

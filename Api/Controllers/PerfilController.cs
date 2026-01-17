@@ -25,6 +25,7 @@ namespace Api.Controllers
         }
 
         // PERFIL GENERAL (ADMIN / PERSONAL)
+        [Authorize(Roles = "Administrador, Profesor, Recepción")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetPerfil(int id, CancellationToken ct)
         {
@@ -118,7 +119,7 @@ namespace Api.Controllers
         }
 
         // SUBIR / REEMPLAZAR AVATAR
-        [Authorize(Roles = "Socio, Administrador")]
+        [Authorize(Roles = "Socio, Administrador, Profesor, Recepción")]
         [HttpPost("{id:int}/avatar")]
         public async Task<IActionResult> SubirAvatar(int id, IFormFile archivo, CancellationToken ct)
         {
@@ -173,6 +174,7 @@ namespace Api.Controllers
         }
 
         // CAMBIAR CONTRASEÑA
+        [Authorize(Roles = "Socio, Administrador, Profesor, Recepción")]
         [HttpPatch("{id:int}/password")]
         public async Task<IActionResult> CambiarPassword(int id, [FromBody] PasswordUpdateDto dto, CancellationToken ct)
         {

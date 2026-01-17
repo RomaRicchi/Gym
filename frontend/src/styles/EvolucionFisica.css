@@ -1,16 +1,4 @@
-.btn-orange {
-  background-color: #ff6600;
-  color: white;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  transition: 0.3s;
-}
 
-.btn-orange:hover {
-  background-color: #e65700;
-}
 
 .evolucion-title {
   color: #ff6b00;
@@ -39,30 +27,13 @@
   font-weight: 700;
 }
 
-/* === Botones de acción === */
-.btn-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: 10px;
-  color: #fff;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
 .btn-action:hover {
   transform: scale(1.12);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
 }
 
-
-
 /* === Botones de acción === */
-.btn-action {
+.btn-action.btn-orange  {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,4 +68,17 @@
 
 .btn-red:hover {
   background-color: #e55361;
+}
+/* === Tamaño reducido del gráfico de evolución física === */
+.evolucion-chart {
+  max-width: 880px;   /* ancho máximo del gráfico */
+  height: 480px;      /* altura más baja */
+  margin: 0 auto;     /* centrado horizontal */
+}
+
+@media (max-width: 768px) {
+  .evolucion-chart {
+    max-width: 100%;
+    height: 240px;
+  }
 }

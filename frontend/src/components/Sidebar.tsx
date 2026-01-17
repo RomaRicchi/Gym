@@ -90,35 +90,42 @@ export default function Sidebar() {
             </li>
 
             {/* === Gestión === */}
-            <hr className="sidebar-divider" />
-            <li className="nav-section" onClick={() => toggle("gestion")}>
-              <span className="sidebar-title">
-                GESTIÓN{" "}
-                <FontAwesomeIcon
-                  icon={open.gestion ? faChevronUp : faChevronDown}
-                  className="ms-1"
-                />
-              </span>
-            </li>
-            {open.gestion && (
+            {rol !== "Profesor" && (
               <>
-                <li className="nav-item">
-                  <NavLink to="/socios" className="nav-link">
-                    <FontAwesomeIcon icon={faUsers} className="me-2" /> Socios
-                  </NavLink>
+                <hr className="sidebar-divider" />
+
+                <li className="nav-section" onClick={() => toggle("gestion")}>
+                  <span className="sidebar-title">
+                    GESTIÓN{" "}
+                    <FontAwesomeIcon
+                      icon={open.gestion ? faChevronUp : faChevronDown}
+                      className="ms-1"
+                    />
+                  </span>
                 </li>
-                <li className="nav-item">
-                  <NavLink to="/suscripciones" className="nav-link">
-                    <FontAwesomeIcon icon={faCreditCard} className="me-2" /> Suscripciones
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/planes" className="nav-link">
-                    <FontAwesomeIcon icon={faMoneyBill} className="me-2" /> Planes
-                  </NavLink>
-                </li>
+
+                {open.gestion && (
+                  <>
+                    <li className="nav-item">
+                      <NavLink to="/socios" className="nav-link">
+                        <FontAwesomeIcon icon={faUsers} className="me-2" /> Socios
+                      </NavLink>
+                    </li>
+                    <li className="nav-item">
+                      <NavLink to="/suscripciones" className="nav-link">
+                        <FontAwesomeIcon icon={faCreditCard} className="me-2" /> Suscripciones
+                      </NavLink>
+                    </li>
+                    <li className="nav-item">
+                      <NavLink to="/planes" className="nav-link">
+                        <FontAwesomeIcon icon={faMoneyBill} className="me-2" /> Planes
+                      </NavLink>
+                    </li>
+                  </>
+                )}
               </>
             )}
+
 
             {/* === Rutinas === */}
             <hr className="sidebar-divider" />
@@ -149,16 +156,21 @@ export default function Sidebar() {
                   </NavLink>
                 </li>
 
-                <li className="nav-item">
-                  <NavLink to="/rutinas/plantilla-ejercicios" className="nav-link">
-                    <FontAwesomeIcon icon={faFileAlt} className="me-2" /> Planilla de Ejercicios
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/rutinas/grupoMuscular" className="nav-link">
-                    <FontAwesomeIcon icon={faDumbbell} className="me-2" /> Grupos Musculares
-                  </NavLink>
-                </li>
+                {rol === "Administrador" && (
+                  <>
+                    <li className="nav-item">
+                      <NavLink to="/rutinas/plantilla-ejercicios" className="nav-link">
+                        <FontAwesomeIcon icon={faFileAlt} className="me-2" /> Planilla de Ejercicios
+                      </NavLink>
+                    </li>
+
+                    <li className="nav-item">
+                      <NavLink to="/rutinas/grupoMuscular" className="nav-link">
+                        <FontAwesomeIcon icon={faDumbbell} className="me-2" /> Grupos Musculares
+                      </NavLink>
+                    </li>
+                  </>
+                )}
               </>
             )}
 
@@ -180,11 +192,13 @@ export default function Sidebar() {
                     <FontAwesomeIcon icon={faCalendarDays} className="me-2" /> Calendario
                   </NavLink>
                 </li>
-                <li className="nav-item">
-                  <NavLink to="/turnos" className="nav-link">
-                    <FontAwesomeIcon icon={faListCheck} className="me-2" /> Turnos Plantilla
-                  </NavLink>
-                </li>
+                {(rol === "Administrador" || rol === "Recepcionista") && (
+                  <li className="nav-item">
+                    <NavLink to="/turnos" className="nav-link">
+                      <FontAwesomeIcon icon={faListCheck} className="me-2" /> Turnos Plantilla
+                    </NavLink>
+                  </li>
+                )}
                 <li className="nav-item">
                   <NavLink to="/suscripciones/turnos" className="nav-link">
                     <FontAwesomeIcon icon={faCalendarCheck} className="me-2" /> Turnos por Socio
@@ -223,40 +237,47 @@ export default function Sidebar() {
               </>
             )}
 
-            {/* === Pagos === */}
-            <hr className="sidebar-divider" />
-            <li className="nav-section" onClick={() => toggle("pagos")}>
-              <span className="sidebar-title">
-                PAGOS{" "}
-                <FontAwesomeIcon
-                  icon={open.pagos ? faChevronUp : faChevronDown}
-                  className="ms-1"
-                />
-              </span>
-            </li>
-            {open.pagos && (
-              <>
-                <li className="nav-item">
-                  <NavLink to="/ordenes" className="nav-link">
-                    <FontAwesomeIcon icon={faFileInvoice} className="me-2" /> Órdenes
-                  </NavLink>
-                </li>
-                {rol === "Administrador" && (
-                  <>
-                    <li className="nav-item">
-                      <NavLink to="/estados" className="nav-link">
-                        <FontAwesomeIcon icon={faGears} className="me-2" /> Estados
-                      </NavLink>
-                    </li>
-                    <li className="nav-item">
-                      <NavLink to="/pagos/ingresos" className="nav-link">
-                        <FontAwesomeIcon icon={faMoneyBill} className="me-2" /> Ingresos
-                      </NavLink>
-                    </li>
-                  </>
-                )}
-              </>
-            )}
+          {/* === Pagos === */}
+          <hr className="sidebar-divider" />
+
+          {open.pagos && (rol === "Administrador" || rol === "Recepcionista") && (
+            <>
+              <li className="nav-section" onClick={() => toggle("pagos")}>
+                <span className="sidebar-title">
+                  PAGOS{" "}
+                  <FontAwesomeIcon
+                    icon={open.pagos ? faChevronUp : faChevronDown}
+                    className="ms-1"
+                  />
+                </span>
+              </li>
+
+              {/* Solo para Admin y Recepcionista */}
+              <li className="nav-item">
+                <NavLink to="/ordenes" className="nav-link">
+                  <FontAwesomeIcon icon={faFileInvoice} className="me-2" /> Órdenes
+                </NavLink>
+              </li>
+
+              {/* Solo para Admin */}
+              {rol === "Administrador" && (
+                <>
+                  <li className="nav-item">
+                    <NavLink to="/estados" className="nav-link">
+                      <FontAwesomeIcon icon={faGears} className="me-2" /> Estados
+                    </NavLink>
+                  </li>
+
+                  <li className="nav-item">
+                    <NavLink to="/pagos/ingresos" className="nav-link">
+                      <FontAwesomeIcon icon={faMoneyBill} className="me-2" /> Ingresos
+                    </NavLink>
+                  </li>
+                </>
+              )}
+            </>
+          )}
+
 
             {/* === Usuarios === */}
             {rol === "Administrador" && (

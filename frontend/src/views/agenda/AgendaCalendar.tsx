@@ -12,7 +12,7 @@ import "@/styles/AgendaCalendar.css";
 interface TurnoPlantilla {
   id: number;
   sala: { id: number; nombre: string; cupoTotal?: number; cupoDisponible?: number };
-  personal: { id: number; nombre: string };
+  personal: { id: number; nombre: string; id_personal?: number };
   diaSemana: { id: number; nombre: string };
   horaInicio: string;
   duracionMin: number;
@@ -36,9 +36,23 @@ export default function AgendaCalendar() {
   const [filtroSala, setFiltroSala] = useState<string>("todos");
   const [filtroProfesor, setFiltroProfesor] = useState<string>("todos");
   const calendarRef = useRef<any>(null);
+
+  // 🔹 Detectar usuario logueado y rol
+  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+  const rol = usuario?.rol || "";
+  const idPersonal = usuario?.id_personal || usuario?.personal_id || null;
+
   // Cargar filtros de salas y profesores
   const cargarFiltros = async () => {
     try {
+      if (rol === "Profesor") {
+        // Solo carga salas, los profesores no necesitan ver el filtro de personal
+        const { data: salasRes } = await gymApi.get("/salas");
+        setSalas(salasRes.items || salasRes);
+        return;
+      }
+
+      // Para roles con permisos (Admin, Recepcionista)
       const [{ data: salasRes }, { data: profRes }] = await Promise.all([
         gymApi.get("/salas"),
         gymApi.get("/personal"),
@@ -52,11 +66,17 @@ export default function AgendaCalendar() {
     }
   };
 
+
   // Cargar turnos plantilla con cupos dinámicos
   const cargarTurnosPlantilla = async () => {
     try {
       const { data } = await gymApi.get("/turnosplantilla/activos");
-      const turnos: TurnoPlantilla[] = data.items || data;
+      let turnos: TurnoPlantilla[] = data.items || data;
+
+      // Si el usuario es profesor, filtrar solo sus turnos
+      if (rol === "Profesor" && idPersonal) {
+        turnos = turnos.filter((t) => t.personal?.id === idPersonal);
+      }
 
       // Filtros activos
       let filtrados = turnos;
@@ -123,8 +143,10 @@ export default function AgendaCalendar() {
     cargarTurnosPlantilla();
   }, [filtroSala, filtroProfesor]);
 
-  // 🧩 Crear turno nuevo
+  // 🧩 Crear turno nuevo (solo admin o recepcionista)
   const handleDateClick = async (info: DateClickArg) => {
+    if (rol !== "Administrador" && rol !== "Recepcionista") return;
+
     const { isConfirmed } = await Swal.fire({
       title: "➕ Nuevo turno plantilla",
       text: `¿Deseas crear un turno para el ${info.date.toLocaleDateString()}?`,
@@ -140,6 +162,7 @@ export default function AgendaCalendar() {
     }
   };
 
+  // 🧩 Mostrar detalle del turno
   const handleEventClick = async (info: EventClickArg) => {
     const { sala, profesor, duracion, cupoTotal, cupoDisponible } =
       info.event.extendedProps;
@@ -166,23 +189,21 @@ export default function AgendaCalendar() {
       confirmButtonColor: "#ff6600",
     });
   };
+
+  // 🔄 Redimensionar dinámicamente
   useEffect(() => {
     const resizeCalendar = () => {
       const calendarApi = calendarRef.current?.getApi();
       if (calendarApi) {
-        setTimeout(() => calendarApi.updateSize(), 300); // 🕓 pequeño delay para transiciones CSS
+        setTimeout(() => calendarApi.updateSize(), 300);
       }
     };
 
-    // Redimensiona al cambiar tamaño de ventana
     window.addEventListener("resize", resizeCalendar);
-
-    // Detecta cuando cambia el ancho del contenedor padre
     const container = document.querySelector(".agenda-calendar-container")?.parentElement;
     if (container) {
       const observer = new ResizeObserver(resizeCalendar);
       observer.observe(container);
-
       return () => {
         window.removeEventListener("resize", resizeCalendar);
         observer.disconnect();
@@ -192,52 +213,54 @@ export default function AgendaCalendar() {
     }
   }, []);
 
+  return (
+    <div className="agenda-container">
+      <h1
+        className="text-center fw-bold mb-3"
+        style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
+      >
+        CALENDARIO
+      </h1>
 
- return (
-  <div className="agenda-container">
-    <h1
-      className="text-center fw-bold mb-3"
-      style={{ color: "#ff6600", fontSize: "2.5rem", letterSpacing: "2px" }}
-    >
-      CALENDARIO
-    </h1>
+      {/* Filtros (solo para roles no profesor) */}
+      {rol !== "Profesor" && (
+        <div className="agenda-filtros mb-4 d-flex gap-3 justify-content-center">
+          <div>
+            <label className="form-label fw-bold">Filtrar por sala</label>
+            <select
+              className="form-select"
+              value={filtroSala}
+              onChange={(e) => setFiltroSala(e.target.value)}
+            >
+              <option value="todos">Todas las salas</option>
+              {salas.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
 
-    <div className="agenda-filtros mb-4 d-flex gap-3 justify-content-center">
-      <div>
-        <label className="form-label fw-bold">Filtrar por sala</label>
-        <select
-          className="form-select"
-          value={filtroSala}
-          onChange={(e) => setFiltroSala(e.target.value)}
-        >
-          <option value="todos">Todas las salas</option>
-          {salas.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div>
+            <label className="form-label fw-bold">Filtrar por profesor</label>
+            <select
+              className="form-select"
+              value={filtroProfesor}
+              onChange={(e) => setFiltroProfesor(e.target.value)}
+            >
+              <option value="todos">Todos los profesores</option>
+              {profesores.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
-      <div>
-        <label className="form-label fw-bold">Filtrar por profesor</label>
-        <select
-          className="form-select"
-          value={filtroProfesor}
-          onChange={(e) => setFiltroProfesor(e.target.value)}
-        >
-          <option value="todos">Todos los profesores</option>
-          {profesores.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-
-    {/* 📅 Calendario */}
-    <div className="agenda-calendar-container">
+      {/* 📅 Calendario */}
+      <div className="agenda-calendar-container">
         <FullCalendar
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -246,7 +269,7 @@ export default function AgendaCalendar() {
           allDaySlot={false}
           editable={false}
           selectable={true}
-          hiddenDays={[0, 6]} // 0 = domingo, 6 = sábado
+          hiddenDays={[0, 6]} // lunes a viernes
           events={eventos}
           dateClick={handleDateClick}
           eventClick={handleEventClick}
@@ -260,9 +283,6 @@ export default function AgendaCalendar() {
           }}
         />
       </div>
-
     </div>
-    
   );
-  
 }

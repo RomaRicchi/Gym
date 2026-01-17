@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Recepción")]
+    [Authorize(Roles = "Administrador, Recepción, Profesor")]
     [ApiController]
     [Route("api/[controller]")]
     public class SalasController : ControllerBase

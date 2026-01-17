@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Administrador, Recepción")]
+    [Authorize(Roles = "Administrador, Recepción, Profesor")]
     [ApiController]
     [Route("api/personal")]
     public class PersonalController : ControllerBase
@@ -23,7 +23,7 @@ namespace Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct = default)
         {
-            // 1️⃣ Traemos los datos desde la BD
+            // Traemos los datos desde la BD
             var lista = await _db.Personales
                 .AsNoTracking()
                 .Include(p => p.Usuario!)
@@ -31,7 +31,7 @@ namespace Api.Controllers
                 .OrderBy(p => p.Nombre)
                 .ToListAsync(ct);
 
-            // 2️⃣ Transformamos en memoria, donde sí se puede usar '?.'
+            //  Transformamos en memoria, donde sí se puede usar '?.'
             var result = lista.Select(p => new
             {
                 id = p.Id,
@@ -47,7 +47,7 @@ namespace Api.Controllers
             return Ok(result);
         }
 
-        // 🔹 GET /api/personal/{id}
+        // GET /api/personal/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
         {
@@ -77,7 +77,7 @@ namespace Api.Controllers
             return Ok(dto);
         }
 
-        // 🔹 POST /api/personal
+        //  POST /api/personal
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] PersonalCreateDto dto, CancellationToken ct = default)
         {
@@ -86,7 +86,7 @@ namespace Api.Controllers
 
             try
             {
-                // 🧩 Crear registro de personal
+                // Crear registro de personal
                 var nuevo = new Personal
                 {
                     Nombre = dto.Nombre,
@@ -99,7 +99,7 @@ namespace Api.Controllers
                 _db.Personales.Add(nuevo);
                 await _db.SaveChangesAsync(ct);
 
-                // 🧩 Crear usuario asociado (solo si tiene email y rol)
+                // Crear usuario asociado (solo si tiene email y rol)
                 if (!string.IsNullOrEmpty(dto.Email) && dto.RolId.HasValue)
                 {
                     var nuevoUsuario = new Usuario
@@ -124,7 +124,7 @@ namespace Api.Controllers
             }
         }
 
-        // 🔹 PUT /api/personal/{id}
+        // PUT /api/personal/{id}
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] PersonalUpdateDto dto, CancellationToken ct = default)
         {
@@ -135,14 +135,14 @@ namespace Api.Controllers
             if (p is null)
                 return NotFound(new { message = "Personal no encontrado." });
 
-            // 🧩 Actualizar datos básicos
+            // Actualizar datos básicos
             p.Nombre = dto.Nombre;
             p.Telefono = dto.Telefono;
             p.Especialidad = dto.Especialidad;
             p.Direccion = dto.Direccion ?? p.Direccion;
             p.Estado = dto.Activo;
 
-            // 🧩 Crear usuario si no existe
+            // Crear usuario si no existe
             if (p.Usuario == null && !string.IsNullOrEmpty(dto.Email) && dto.RolId.HasValue)
             {
                 p.Usuario = new Usuario
@@ -168,7 +168,8 @@ namespace Api.Controllers
             return Ok(new { ok = true, message = "Personal actualizado correctamente." });
         }
 
-        // 🔹 DELETE /api/personal/{id}
+        // DELETE /api/personal/{id}
+        [Authorize(Roles = "Administrador")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id, CancellationToken ct = default)
         {

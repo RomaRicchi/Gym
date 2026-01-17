@@ -108,12 +108,11 @@ namespace Api.Controllers
 
             return Ok(turno);
         }
-
         
         [HttpGet("dia/{id:int}")]
         public async Task<IActionResult> GetByDia(int id, CancellationToken ct = default)
         {
-            // 1️⃣ Precalcular inscripciones agrupadas por sala y hora
+            // Precalcular inscripciones agrupadas por sala y hora
             var inscripciones = await _db.SuscripcionTurnos
                 .Include(st => st.TurnoPlantilla)
                 .GroupBy(st => new
@@ -129,13 +128,13 @@ namespace Api.Controllers
                 })
                 .ToListAsync(ct);
 
-            // 2️⃣ Crear diccionario
+            // Crear diccionario
             var mapaInscriptos = inscripciones.ToDictionary(
                 x => new { x.SalaId, x.HoraInicio },
                 x => x.Cantidad
             );
 
-            // 3️⃣ Obtener los turnos del día (en memoria)
+            // Obtener los turnos del día (en memoria)
             var turnosDb = await _db.TurnosPlantilla
                 .Include(t => t.Sala)
                 .Include(t => t.Personal)
@@ -144,7 +143,7 @@ namespace Api.Controllers
                 .OrderBy(t => t.HoraInicio)
                 .ToListAsync(ct);
 
-            // 4️⃣ Calcular cupos en memoria
+            //  Calcular cupos en memoria
             var turnos = turnosDb.Select(t => new
             {
                 t.Id,
@@ -168,11 +167,9 @@ namespace Api.Controllers
                 Profesor = t.Personal?.Nombre ?? "(sin profesor)"
             }).ToList();
 
-            // 5️⃣ Devolver resultado
+            //  Devolver resultado
             return Ok(new { ok = true, items = turnos });
         }
-
-
 
         // Crear nuevo turno plantilla
         [HttpPost("crear")]

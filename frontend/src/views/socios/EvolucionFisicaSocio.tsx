@@ -205,7 +205,7 @@ export default function EvolucionFisicaSocio() {
         <>
           {/* === 📊 Gráfico con fondo oscuro === */}
           <div
-            className="chart-container mt-5 p-4 rounded-4"
+            className="evolucion-chart"
             style={{
               backgroundColor: "#1c1c1c",
               boxShadow: "0 0 15px rgba(0,0,0,0.5)",

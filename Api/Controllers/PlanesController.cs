@@ -57,7 +57,7 @@ public class PlanesController : ControllerBase
         return Ok(plan);
     }
 
-    // POST /api/planes
+    [Authorize(Roles = "Administrador")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] PlanCreateDto dto, CancellationToken ct)
     {
@@ -85,10 +85,12 @@ public class PlanesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    // DTO para actualización
+    // DTO para actualizaciónç
+       
     public record PlanUpdateDto(string? Nombre, int? DiasPorSemana, decimal? Precio, bool? Activo);
 
     // PUT /api/planes/5
+    [Authorize(Roles = "Administrador")] 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] PlanUpdateDto dto, CancellationToken ct)
     {
@@ -117,6 +119,7 @@ public class PlanesController : ControllerBase
 
     // DELETE /api/planes/5  → Baja lógica
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Administrador")] 
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         var plan = await _repo.GetAsync(id, ct);

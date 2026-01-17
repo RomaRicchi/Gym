@@ -23,42 +23,42 @@ namespace Api.Controllers
 
        
         [HttpPost("upload")]
-[Authorize(Roles = "Socio, Administrador, Profesor, Recepción")]
-public async Task<IActionResult> Upload([FromForm] IFormFile archivo)
-{
-    if (archivo == null || archivo.Length == 0)
-        return BadRequest("Debe seleccionar una imagen.");
+        [Authorize(Roles = "Socio, Administrador, Profesor, Recepción")]
+        public async Task<IActionResult> Upload([FromForm] IFormFile archivo)
+        {
+            if (archivo == null || archivo.Length == 0)
+                return BadRequest("Debe seleccionar una imagen.");
 
-    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "avatars");
-    if (!Directory.Exists(uploadsPath))
-        Directory.CreateDirectory(uploadsPath);
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "avatars");
+            if (!Directory.Exists(uploadsPath))
+                Directory.CreateDirectory(uploadsPath);
 
-    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(archivo.FileName)}";
-    var filePath = Path.Combine(uploadsPath, fileName);
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(archivo.FileName)}";
+            var filePath = Path.Combine(uploadsPath, fileName);
 
-    using (var stream = new FileStream(filePath, FileMode.Create))
-        await archivo.CopyToAsync(stream);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+                await archivo.CopyToAsync(stream);
 
-    var avatar = new Avatar
-    {
-        Url = $"/uploads/avatars/{fileName}",
-        Nombre = fileName,
-        EsPredeterminado = false
-    };
+            var avatar = new Avatar
+            {
+                Url = $"/uploads/avatars/{fileName}",
+                Nombre = fileName,
+                EsPredeterminado = false
+            };
 
-    _db.Avatares.Add(avatar);
-    await _db.SaveChangesAsync();
+            _db.Avatares.Add(avatar);
+            await _db.SaveChangesAsync();
 
-    var idUsuario = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
-    var usuario = await _db.Usuarios.FindAsync(idUsuario);
-    if (usuario == null)
-        return NotFound("Usuario no encontrado.");
+            var idUsuario = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var usuario = await _db.Usuarios.FindAsync(idUsuario);
+            if (usuario == null)
+                return NotFound("Usuario no encontrado.");
 
-    usuario.IdAvatar = avatar.Id;
-    await _db.SaveChangesAsync();
+            usuario.IdAvatar = avatar.Id;
+            await _db.SaveChangesAsync();
 
-    return Ok(new { message = "Avatar subido y asociado correctamente", id = avatar.Id, url = avatar.Url });
-}
+            return Ok(new { message = "Avatar subido y asociado correctamente", id = avatar.Id, url = avatar.Url });
+        }
 
         // GET: api/avatares
         [HttpGet]

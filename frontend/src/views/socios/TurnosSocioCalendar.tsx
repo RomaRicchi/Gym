@@ -29,82 +29,85 @@ export default function TurnosSocioCalendar() {
     JSON.parse(localStorage.getItem("usuario") || "{}")?.socio_id ||
     null;
 
-  // Cargar los turnos del socio
+  // Cargar los turnos del socio (todas las suscripciones activas)
   const cargarTurnosSocio = async () => {
     try {
-        if (!socioId) {
-        await Swal.fire("Sin suscripción", "No se detectó ningún socio logueado.", "info");
+      if (!socioId) {
+        await Swal.fire("Sin sesión", "No se detectó ningún socio logueado.", "info");
         return;
-        }
+      }
 
-        // 📦 Obtener suscripción activa del socio
-        const { data: susRes } = await gymApi.get(`/suscripciones?socioId=${socioId}`);
-        const suscripciones = susRes.items || susRes || [];
-        const suscripcionActiva = suscripciones.find((s: any) => s.estado);
+      // 📦 Obtener todas las suscripciones del socio
+      const { data: susRes } = await gymApi.get(`/suscripciones?socioId=${socioId}`);
+      const suscripciones = susRes.items || susRes || [];
 
-        if (!suscripcionActiva) {
-        await Swal.fire("Sin suscripción", "No tenés una suscripción activa.", "info");
+      // Filtrar solo las activas
+      const activas = suscripciones.filter((s: any) => s.estado);
+
+      if (!activas.length) {
+        await Swal.fire("Sin suscripciones", "No tenés suscripciones activas.", "info");
         return;
-        }
+      }
 
-        // Rango de validez
-        const inicioSus = new Date(suscripcionActiva.inicio);
-        const finSus = new Date(suscripcionActiva.fin);
+      // Obtener turnos de todas las suscripciones activas (en paralelo)
+      const resultados = await Promise.all(
+        activas.map((sus: any) =>
+          gymApi
+            .get(`/suscripcionturno/suscripcion/${sus.id}`)
+            .then((res) => ({ suscripcion: sus, turnos: res.data || [] }))
+        )
+      );
 
-        //Obtener turnos asociados a la suscripción activa
-        const { data: turnosRes } = await gymApi.get(
-        `/suscripcionturno/suscripcion/${suscripcionActiva.id}`
-        );
-        const turnos: TurnoSocio[] = turnosRes || [];
+      // Mapear todos los turnos de todas las suscripciones
+      const eventosMapeados = resultados.flatMap(({ suscripcion, turnos }) => {
+        const inicioSus = new Date(suscripcion.inicio);
+        const finSus = new Date(suscripcion.fin);
 
-        if (!turnos.length) {
-        await Swal.fire("Sin turnos", "No tenés turnos asignados actualmente.", "info");
-        return;
-        }
+        return turnos.map((t: TurnoSocio) => {
+          const tp = t.turnoPlantilla;
+          const [hora, minuto] = tp.horaInicio.split(":").map(Number);
+          const duracionHoras = Math.floor(tp.duracionMin / 60);
+          const duracionMinutos = tp.duracionMin % 60;
 
-        // Mapear turnos a eventos de calendario (con límites de recurrencia)
-        const eventosMapeados = turnos.map((t) => {
-        const tp = t.turnoPlantilla;
-        const [hora, minuto] = tp.horaInicio.split(":").map(Number);
-        const duracionHoras = Math.floor(tp.duracionMin / 60);
-        const duracionMinutos = tp.duracionMin % 60;
+          const horaFin = hora + duracionHoras + Math.floor((minuto + duracionMinutos) / 60);
+          const minutoFin = (minuto + duracionMinutos) % 60;
 
-        const horaFin = hora + duracionHoras + Math.floor((minuto + duracionMinutos) / 60);
-        const minutoFin = (minuto + duracionMinutos) % 60;
-
-        return {
-            id: t.id.toString(),
+          return {
+            id: `${t.id}-${suscripcion.id}`,
             title: `${tp.sala?.nombre || "Sala"} — ${tp.personal?.nombre || "Profesor"}`,
             daysOfWeek: [tp.diaSemana?.id || 1],
-            startTime: `${hora.toString().padStart(2, "0")}:${minuto
-            .toString()
-            .padStart(2, "0")}`,
+            startTime: `${hora.toString().padStart(2, "0")}:${minuto.toString().padStart(2, "0")}`,
             endTime: `${horaFin.toString().padStart(2, "0")}:${minutoFin
-            .toString()
-            .padStart(2, "0")}`,
+              .toString()
+              .padStart(2, "0")}`,
             startRecur: inicioSus.toISOString().split("T")[0],
             endRecur: finSus.toISOString().split("T")[0],
             backgroundColor: "#ff6b00",
             borderColor: "#ff6b00",
             textColor: "#fff",
             extendedProps: {
-            dia: tp.diaSemana?.nombre,
-            sala: tp.sala?.nombre,
-            profesor: tp.personal?.nombre,
-            duracion: tp.duracionMin,
-            inicioSus: inicioSus.toLocaleDateString(),
-            finSus: finSus.toLocaleDateString(),
+              dia: tp.diaSemana?.nombre,
+              sala: tp.sala?.nombre,
+              profesor: tp.personal?.nombre,
+              duracion: tp.duracionMin,
+              inicioSus: inicioSus.toLocaleDateString(),
+              finSus: finSus.toLocaleDateString(),
             },
-        };
-    });
+          };
+        });
+      });
 
-        setEventos(eventosMapeados);
+      if (!eventosMapeados.length) {
+        await Swal.fire("Sin turnos", "No se encontraron turnos asignados.", "info");
+        return;
+      }
+
+      setEventos(eventosMapeados);
     } catch (err) {
-        console.error("❌ Error al cargar turnos del socio:", err);
-        Swal.fire("Error", "No se pudieron cargar los turnos del socio.", "error");
+      console.error("❌ Error al cargar turnos del socio:", err);
+      Swal.fire("Error", "No se pudieron cargar los turnos del socio.", "error");
     }
-    };
-
+  };
 
   useEffect(() => {
     cargarTurnosSocio();
@@ -160,7 +163,7 @@ export default function TurnosSocioCalendar() {
           allDaySlot={false}
           editable={false}
           selectable={false}
-          hiddenDays={[0, 6]} // lunes a viernes
+          hiddenDays={[0, 6]} // Lunes a viernes
           events={eventos}
           eventClick={handleEventClick}
           height="auto"

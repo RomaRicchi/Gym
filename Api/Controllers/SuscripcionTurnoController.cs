@@ -126,7 +126,6 @@ namespace Api.Controllers
             }
         }
 
-
         // GET: api/SuscripcionTurno/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
@@ -438,12 +437,14 @@ namespace Api.Controllers
         [HttpGet("rutina/socio")]
         public async Task<IActionResult> GetRutinaSocio(CancellationToken ct)
         {
+            // Usuario logueado
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdClaim))
                 return BadRequest("Token inválido.");
 
             int userId = int.Parse(userIdClaim);
 
+            // Socio vinculado
             var socioId = await _db.Usuarios
                 .Where(u => u.Id == userId && u.SocioId != null)
                 .Select(u => u.SocioId)
@@ -452,6 +453,7 @@ namespace Api.Controllers
             if (socioId == null)
                 return NotFound("El usuario no está vinculado a un socio.");
 
+            // Suscripciones activas
             var suscripcionIds = await _db.Suscripciones
                 .Where(s => s.SocioId == socioId && s.Estado)
                 .Select(s => s.Id)
@@ -460,10 +462,12 @@ namespace Api.Controllers
             if (!suscripcionIds.Any())
                 return NotFound("No hay suscripción activa.");
 
+            // Día actual (Argentina)
             var hoy = DateTime.UtcNow.AddHours(-3);
             var dow = hoy.DayOfWeek;
             int diaNumero = dow == DayOfWeek.Sunday ? 7 : (int)dow;
 
+            // Buscar rutina del día
             var rutinaData = await (
                 from st in _db.SuscripcionTurnos
                 join t in _db.TurnosPlantilla on st.TurnoPlantillaId equals t.Id
@@ -475,35 +479,61 @@ namespace Api.Controllers
                 orderby st.Id
                 select new
                 {
-                    id = r.Id,
-                    nombre = r.Nombre,
-                    objetivo = r.Objetivo,
-                    imagenUrl = r.ImagenUrl, 
-                    dia = ds.Nombre,
-                    ejercicios = _db.RutinasPlantillaEjercicios
+                    RutinaId = r.Id,
+                    RutinaNombre = r.Nombre,
+                    RutinaObjetivo = r.Objetivo,
+                    RutinaImagen = r.ImagenUrl,
+                    Dia = ds.Nombre,
+                    Ejercicios = _db.RutinasPlantillaEjercicios
                         .Where(e => e.RutinaId == r.Id)
                         .OrderBy(e => e.Orden)
                         .Select(ej => new
                         {
-                            id = ej.Ejercicio.Id,
-                            nombre = ej.Ejercicio.Nombre,
-                            mediaUrl = ej.Ejercicio.MediaUrl,
-                            tips = ej.Ejercicio.Tips,
-                            series = ej.Series,
-                            repeticiones = ej.Repeticiones,
-                            descansoSeg = ej.DescansoSeg
+                            ej.Ejercicio.Id,
+                            ej.Ejercicio.Nombre,
+                            MediaUrl = ej.Ejercicio.MediaUrl,
+                            Tips = ej.Ejercicio.Tips,
+                            ej.Series,
+                            ej.Repeticiones,
+                            ej.DescansoSeg
                         })
                         .ToList()
                 }
-            ).OrderByDescending(r => r.id).FirstOrDefaultAsync(ct);
+            ).OrderByDescending(r => r.RutinaId).FirstOrDefaultAsync(ct);
 
             if (rutinaData == null)
             {
-                Console.WriteLine($"ℹ️ No hay rutina asignada para el día {diaNumero} para suscripciones [{string.Join(",", suscripcionIds)}]");
+                Console.WriteLine($"No hay rutina asignada para el día {diaNumero}");
                 return NotFound("No hay rutina asignada para hoy.");
             }
 
-            return Ok(rutinaData);
+            // Buscar observación aparte (esto evita el OUTER APPLY)
+            var observacion = await (
+                from c in _db.Checkins
+                join t in _db.TurnosPlantilla on c.TurnoPlantillaId equals t.Id
+                join p in _db.Personales on c.ProfesorId equals p.Id into prof
+                from profesor in prof.DefaultIfEmpty()
+                where c.SocioId == socioId && t.DiaSemanaId == diaNumero
+                orderby c.FechaHora descending
+                select new
+                {
+                    Profesor = profesor != null ? profesor.Nombre : "Profesor desconocido",
+                    Texto = c.Observaciones,
+                    Fecha = c.FechaHora
+                }
+            ).AsNoTracking().FirstOrDefaultAsync(ct);
+
+            // Devolver respuesta unificada
+            return Ok(new
+            {
+                id = rutinaData.RutinaId,
+                nombre = rutinaData.RutinaNombre,
+                objetivo = rutinaData.RutinaObjetivo,
+                imagenUrl = rutinaData.RutinaImagen,
+                dia = rutinaData.Dia,
+                ejercicios = rutinaData.Ejercicios,
+                observacion = observacion
+            });
         }
     }
 }

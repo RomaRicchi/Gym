@@ -9,12 +9,13 @@ export default function RutinasSocio() {
   const [ejercicios, setEjercicios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔧 Corrige la ruta de imagen (soporta rutas relativas, nulas o absolutas)
+  //  Función auxiliar para obtener imágenes absolutas seguras
   const getImagen = (url: string | null | undefined) => {
     if (!url || url === "null" || url.trim() === "") return "/images/empty.png";
-    // si es ruta relativa (ej: 'uploads/...') le antepone la base API
     if (!url.startsWith("http")) {
-      const base = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:5144/api";
+      const base =
+        import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
+        "http://localhost:5144/api";
       return `${base}/${url.replace(/^\/+/, "")}`;
     }
     return url;
@@ -56,10 +57,10 @@ export default function RutinasSocio() {
 
   return (
     <div className="rutina-container">
-      <h2 className="titulo-principal">Rutina de hoy 🏋️</h2>
+      <h2 className="titulo-principal">Rutina de Hoy 🧡</h2>
 
       <div className="rutina-card-grande">
-        {/* 🧍 LADO IZQUIERDO */}
+        {/* LADO IZQUIERDO */}
         <div className="rutina-izquierda">
           <img
             src={getImagen(rutina.imagenUrl)}
@@ -79,7 +80,7 @@ export default function RutinasSocio() {
           </div>
         </div>
 
-        {/* 💪 LADO DERECHO */}
+        {/* LADO DERECHO */}
         <div className="rutina-derecha">
           <h4>Ejercicios</h4>
           {ejercicios.length === 0 ? (
@@ -109,6 +110,25 @@ export default function RutinasSocio() {
           )}
         </div>
       </div>
+
+      {/* OBSERVACIONES DEL PROFESOR */}
+      {rutina.observacion && (
+        <div className="observacion-box">
+          <h4>Observaciones del profesor</h4>
+          <p>
+            <strong>{rutina.observacion.profesor}</strong>:{" "}
+            {rutina.observacion.texto || "Sin comentarios."}
+          </p>
+          <small style={{ color: "#aaa" }}>
+            {new Date(rutina.observacion.fecha).toLocaleDateString("es-AR", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </small>
+        </div>
+      )}
     </div>
   );
 }
