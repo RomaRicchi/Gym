@@ -8,7 +8,7 @@ echo ========================================
 
 REM === 📁 Rutas basadas en la ubicación del .bat ===
 set "ROOT=%~dp0"
-set "API_DIR=%ROOT%src\Gym.API"
+set "API_DIR=%ROOT%Api"
 set "WEB_DIR=%ROOT%frontend"
 
 REM === 🧩 Checks básicos ===
